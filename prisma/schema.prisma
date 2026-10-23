@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum Role {
@@ -19,10 +20,12 @@ enum UserType {
 }
 
 model User {
-  id              String    @id @default(uuid()) @db.Uuid
+  // Assigned by auth.users only. Cross-schema FK/trigger/RLS are owned by SQL.
+  id              String    @id @db.Uuid
   fullName        String    @map("full_name")
   email           String    @unique
-  passwordHash    String    @map("password_hash")
+  // Transitional legacy data only; never selected or written by the app.
+  passwordHash    String?   @map("password_hash")
   phoneNumber     String    @map("phone_number")
   role            Role
   userType        UserType? @map("user_type")

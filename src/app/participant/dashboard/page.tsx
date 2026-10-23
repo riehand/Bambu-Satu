@@ -1,15 +1,8 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/authOptions";
-import { redirect } from "next/navigation";
+import { requirePageRole } from "@/lib/auth/session";
+import { LogoutButton } from "@/components/logout-button";
 
 export default async function ParticipantDashboard() {
-  // Mengambil sesi user di sisi server
-  const session = await getServerSession(authOptions);
-
-  // Jika tidak ada sesi (belum login), kembalikan ke halaman login
-  if (!session) {
-    redirect("/auth/login");
-  }
+  const profile = await requirePageRole("PARTICIPANT");
 
   return (
     <div className="min-h-screen bg-brand-mint p-8">
@@ -19,10 +12,11 @@ export default async function ParticipantDashboard() {
         
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
           <h2 className="font-semibold text-gray-800 border-b pb-2 mb-2">Profil Anda</h2>
-          <p className="text-gray-600"><strong>Nama:</strong> {session.user?.name}</p>
-          <p className="text-gray-600"><strong>Identitas (NIM/NIP):</strong> {session.user?.institutionalId}</p>
-          <p className="text-gray-600"><strong>Role:</strong> {session.user?.role}</p>
+          <p className="text-gray-600"><strong>Nama:</strong> {profile.fullName}</p>
+          <p className="text-gray-600"><strong>Identitas (NIM/NIP):</strong> {profile.institutionalId}</p>
+          <p className="text-gray-600"><strong>Role:</strong> {profile.role}</p>
         </div>
+        <LogoutButton />
       </div>
     </div>
   );
