@@ -17,6 +17,7 @@ function request(body: unknown = input, origin = "http://localhost:3000") {
   return new Request("http://localhost:3000/api/auth/register", {
     method: "POST", headers: { origin, "content-type": "application/json" }, body: JSON.stringify(body),
   });
+}
 function diagnostic() {
   return vi.mocked(console.error).mock.calls.at(-1)?.[1];
 }

@@ -1,3 +1,3 @@
 export default function Loading() {
-  return <p role="status" className="p-8 text-center text-brand-dark">Memuat dashboard...</p>;
+  return <div className="wb-app wb-loading" role="status" aria-live="polite"><p>Menyiapkan ruang wellbeing Anda…</p><div className="wb-skeleton" aria-hidden="true"/><div className="wb-skeleton" aria-hidden="true"/></div>;
 }
