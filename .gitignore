@@ -44,3 +44,42 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# Private backup artifacts and key material; migrations remain tracked.
+*.age
+*.7z
+*.dump
+*.backup
+*.hc
+*.pfx
+*.p12
+*.key
+*.sql.gz
+/backups/
+
+# Owner-only operational records. Already-tracked files need approved
+# index-only removal; these rules do not erase files or Git history.
+/docs/evidence/
+/docs/AUTH-RECOVERY.md
+/docs/PHASE2-BACKUP-*.md
+/docs/PHASE2-BITLOCKER-*.md
+/docs/PHASE2-DATABASE-*.md
+/docs/PHASE2-FINALIZATION.md
+/docs/PHASE2-GOOGLE-DRIVE-BACKUP.md
+/docs/PHASE2-ISOLATED-RESTORE-PLAN.md
+/docs/PHASE2-LOCAL-REHEARSAL-REPORT.md
+/docs/PHASE2-PRE-BITLOCKER-CHECKLIST.md
+/docs/PHASE2-PRIVILEGE-REMEDIATION-REVIEW.md
+/docs/PHASE2-PROJECT-ARCHIVE.md
+/docs/PHASE2-STORAGE-*.md
+/docs/PHASE2-VERACRYPT-RETIREMENT.md
+
+# Machine-specific operational helpers and their local-evidence tests.
+# Keep the shared synthetic rehearsal and normal test dependencies.
+/scripts/phase2-*.ps1
+/scripts/phase2-age-*.mjs
+/scripts/phase2-create-recovery-*.mjs
+/scripts/phase2-db-*.mjs
+/scripts/phase2-encrypted-stream.mjs
+/scripts/phase2-recovery-metadata.mjs
+/tests/backup-*.test.mjs

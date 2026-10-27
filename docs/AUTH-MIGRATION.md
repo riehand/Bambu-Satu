@@ -14,8 +14,8 @@ Prisma validation/generation, TypeScript and the production build pass. Lint has
 zero errors and two existing landing-page image warnings. The owner reports that
 registration, login, email verification and participant dashboard access work.
 The agent did not create hosted test accounts or execute live signup/email flows.
-See [AUTH-RECOVERY.md](AUTH-RECOVERY.md) for the exact recovered state, verified 503
-causes, command results, file inventory, remaining limits and manual checks.
+See the [current handover](PHASE2-HANDOVER.md) for developer setup and integration limits.
+Detailed machine-specific recovery evidence is retained privately by the owner.
 
 The dated notes below preserve the earlier investigation. Missing configuration,
 IPv6 connectivity, unapplied-migration and test-count statements in those snapshots

@@ -1,6 +1,8 @@
 # API Contract — Coding Agent Specification
 ## Mental Well-Being Assessment Platform
 
+**Implementation boundary (27 October 2026):** the [handover API table](PHASE2-HANDOVER.md#f-assessment-api-contract) describes the seven delivered participant assessment endpoints, actual request/response shapes and errors. This broader specification also contains future Phase 3 APIs (consultations, report delivery, sharing and administration); their presence here does not mean they are implemented. Use the handover contract where older examples conflict.
+
 **Phase 2 implementation update — 24 October 2026:** the assessment routes retain the paths below, with these required request additions: start takes `{ processingConsent: true }`; answer saving takes `{ expectedRevision, answers }`; final submission takes `{ expectedRevision }`. Save responses include the new revision. A stale save or final review returns 409 `STALE_REVISION`; completed submission retries return the original result. Quota responses additionally include nullable `inProgress: { answered, total, updatedAt }` and content availability. These implemented contracts supersede the older assessment examples below. See [current Phase 2 report](PHASE2-COMPLETION.md) for the complete route/status matrix and integration limits.
 
 **Document Type:** Coding-Agent API Contract  
@@ -14,7 +16,7 @@
 
 The coding agent MUST:
 
-1. Treat this document as the canonical API behavior contract.
+1. Treat this document as the broader design contract; the implemented Phase 2 handover contract takes precedence for delivered assessment routes.
 2. Preserve all authorization, privacy, ownership, consent, quota, booking, and consultation rules.
 3. Perform sensitive validation server-side.
 4. Return stable machine-readable domain error codes.

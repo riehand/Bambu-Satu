@@ -1,6 +1,6 @@
 # Isolated PostgreSQL 17 / Prisma 5.22 rehearsal
 
-25 October 2026. **Explicitly approved and executed: seven real PostgreSQL integration tests passed.** See [executed report](PHASE2-LOCAL-REHEARSAL-REPORT.md) and [sanitized evidence](evidence/PHASE2-POSTGRES-20261025.json). The container and dedicated volume are retained; hosted integration and production recovery remain unverified.
+25 October 2026. **Explicitly approved and executed: seven real PostgreSQL integration tests passed.** The [handover review](PHASE2-HANDOVER-READINESS.md) records the historical acceptance boundary; detailed operational evidence stays with the owner. The container and dedicated volume are retained; hosted integration and production recovery remain unverified.
 
 ## Approved operation and retained environment
 
@@ -40,10 +40,10 @@ No arbitrary destination URL is accepted. No `migrate reset`, `db push` or hoste
 
 The existing 230 local tests also passed. They supplement the seven PostgreSQL tests with input ranges, invalid publication variants, inactive/forbidden roles and period rules. The read-only local catalog audit retained 20 constraint definitions, 16 index definitions, five enabled triggers, zero assessment policies, and effective browser table/column/function denials. Three distinct waiting PostgreSQL PIDs were observed in each contention scenario.
 
-The runner reports a fixed stage on failure and saves sanitized execution logs, operation statuses and structured test evidence in `.tmp/phase2-rehearsal-<UTC timestamp>`. A successful `result.json` records actual PostgreSQL/Prisma versions, image identity and migration hashes, and explicitly says no backup restore or hosted Auth verification occurred. Current full local artifacts are in `.tmp/phase2-rehearsal-2026-10-25T05-59-26.136Z/`; a sanitized durable copy is linked above. No automatic container/volume/evidence cleanup is included.
+The runner reports a fixed stage on failure and saves sanitized execution logs, operation statuses and structured test evidence in `.tmp/phase2-rehearsal-<UTC timestamp>`. A successful `result.json` records actual PostgreSQL/Prisma versions, image identity and migration hashes, and explicitly says no backup restore or hosted Auth verification occurred. Full execution artifacts are retained locally by the owner and excluded from Git. No automatic container/volume/evidence cleanup is included.
 
 ## Limits and release evidence
 
-This passed database concurrency test uses a synthetic Auth schema. It does not test Supabase GoTrue, PostgREST, Storage, email delivery, browser cookie refresh or the hosted Session pooler. Still require the compatible Supabase recovery test and separately authorized authenticated end-to-end journey. The production role/grant proposal must also be rehearsed under the intended least-privilege roles; testing as local `postgres` does not resolve that security blocker.
+This passed database concurrency test uses a synthetic Auth schema. It does not test Supabase GoTrue, PostgREST, Storage, email delivery, browser cookie refresh or the hosted Session pooler. Before hosted release, address compatible Supabase recovery validation and the separately authorized authenticated end-to-end journey. Neither is required to begin Phase 3 development. The production role/grant proposal must also be rehearsed under the intended least-privilege roles; testing as local `postgres` does not resolve that security blocker.
 
 The service uses READ COMMITTED, participant `FOR UPDATE`, period `FOR SHARE`, maxWait 5 seconds and transaction timeout 15 seconds. After approval, test the deployed connection/pooling topology as well. Record server/Prisma versions, image digest, pending migration checksum, actual passing test count and date; never infer success from the presence of this harness.
