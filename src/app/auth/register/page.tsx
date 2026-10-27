@@ -16,6 +16,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -45,9 +46,10 @@ export default function RegisterPage() {
         throw new Error(data.error?.message || "Terjadi kesalahan saat registrasi");
       }
 
+      setSuccessMessage(data.message);
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Periksa koneksi lalu coba lagi.");
     } finally {
       setLoading(false);
     }
@@ -57,8 +59,8 @@ export default function RegisterPage() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 py-12">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-          <h2 className="text-2xl font-bold text-brand-dark mb-4">Registrasi Berhasil!</h2>
-          <p className="text-gray-600 mb-6">Akun Anda telah berhasil dibuat. Silakan login untuk melanjutkan.</p>
+          <h2 className="text-2xl font-bold text-brand-dark mb-4">Periksa Pendaftaran Anda</h2>
+          <p role="status" className="text-gray-600 mb-6">{successMessage}</p>
           <Link href="/auth/login" className="block w-full py-3 px-4 bg-brand-dark hover:bg-brand-soft text-white font-medium rounded-lg transition-colors">
             Menuju Halaman Login
           </Link>
@@ -112,7 +114,7 @@ export default function RegisterPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input type="password" name="password" required value={formData.password} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-soft outline-none" placeholder="Minimal 6 karakter" />
+            <input type="password" name="password" autoComplete="new-password" minLength={8} maxLength={128} required value={formData.password} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-soft outline-none" placeholder="Minimal 8 karakter" />
           </div>
 
           <div>

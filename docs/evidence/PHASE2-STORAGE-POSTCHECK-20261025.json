@@ -1,0 +1,113 @@
+﻿{
+    "RecordedAtUtc":  "2026-10-25T12:23:12.9899091Z",
+    "RecordedAtAsiaJakarta":  "2026-10-25T19:23:12.9949454+07:00",
+    "Account":  "DESKTOP-0JBKJEC\\hp",
+    "AdministratorToken":  false,
+    "OrdinaryAccountWriteReadDeletePassed":  true,
+    "RestrictedSandboxProbe":  "Access denied before file creation; same approved probe outside workspace sandbox passed without administrator token or ACL changes",
+    "BackupFolderRemainingEntries":  0,
+    "AclReviews":  [
+                       {
+                           "Path":  "D:\\TELKOM UNIVERSITY\\SEMESTER 7\\Capstone\\WellBeingHub-Backup.hc",
+                           "Owner":  "DESKTOP-0JBKJEC\\hp",
+                           "InheritanceDisabled":  true,
+                           "Entries":  [
+                                           {
+                                               "Identity":  "NT AUTHORITY\\SYSTEM",
+                                               "Rights":  "FullControl",
+                                               "IsInherited":  false
+                                           },
+                                           {
+                                               "Identity":  "BUILTIN\\Administrators",
+                                               "Rights":  "FullControl",
+                                               "IsInherited":  false
+                                           },
+                                           {
+                                               "Identity":  "DESKTOP-0JBKJEC\\hp",
+                                               "Rights":  "Modify, Synchronize",
+                                               "IsInherited":  false
+                                           }
+                                       ]
+                       },
+                       {
+                           "Path":  "D:\\TELKOM UNIVERSITY\\SEMESTER 7\\Capstone\\WellBeingHub-Backup.hc\\WellBeingHub-Backup.hc",
+                           "Owner":  "DESKTOP-0JBKJEC\\hp",
+                           "InheritanceDisabled":  true,
+                           "Entries":  [
+                                           {
+                                               "Identity":  "NT AUTHORITY\\SYSTEM",
+                                               "Rights":  "FullControl",
+                                               "IsInherited":  false
+                                           },
+                                           {
+                                               "Identity":  "BUILTIN\\Administrators",
+                                               "Rights":  "FullControl",
+                                               "IsInherited":  false
+                                           },
+                                           {
+                                               "Identity":  "DESKTOP-0JBKJEC\\hp",
+                                               "Rights":  "Modify, Synchronize",
+                                               "IsInherited":  false
+                                           }
+                                       ]
+                       },
+                       {
+                           "Path":  "W:\\WellBeingHub-Backups",
+                           "Owner":  "DESKTOP-0JBKJEC\\hp",
+                           "InheritanceDisabled":  true,
+                           "Entries":  [
+                                           {
+                                               "Identity":  "NT AUTHORITY\\SYSTEM",
+                                               "Rights":  "FullControl",
+                                               "IsInherited":  false
+                                           },
+                                           {
+                                               "Identity":  "BUILTIN\\Administrators",
+                                               "Rights":  "FullControl",
+                                               "IsInherited":  false
+                                           },
+                                           {
+                                               "Identity":  "DESKTOP-0JBKJEC\\hp",
+                                               "Rights":  "Modify, Synchronize",
+                                               "IsInherited":  false
+                                           }
+                                       ]
+                       }
+                   ],
+    "Preparation":  {
+                        "Mode":  "PREPARATION_ONLY",
+                        "Storage":  {
+                                        "DirectoryExists":  true,
+                                        "ReviewedExistingDirectory":  "DESTINATION",
+                                        "EfsEncrypted":  false,
+                                        "EncryptionProvider":  "VeraCrypt",
+                                        "VeraCryptMountDetected":  true,
+                                        "ExpectedContainerMatched":  true,
+                                        "ContainerOutsideRepository":  true,
+                                        "ContainerAndParentAclRestricted":  true,
+                                        "ContainerPathHasReparsePoint":  false,
+                                        "OtherAllowEntries":  0,
+                                        "OwnerAllowed":  true,
+                                        "AclInheritanceDisabled":  true,
+                                        "ReparsePointInPath":  false,
+                                        "OutsideRepository":  true,
+                                        "FileSystem":  "NTFS",
+                                        "AvailableBytes":  10696134656,
+                                        "RequiredFreeGiB":  5.1,
+                                        "CapacityReviewedAndSufficient":  true,
+                                        "WithinDetectedSyncRoot":  false,
+                                        "OwnerConfirmedNoOtherSync":  true,
+                                        "SystemSpillProtectionConfirmed":  false,
+                                        "PlannedOutputRoot":  "W:\\WellBeingHub-Backups",
+                                        "PlannedTemporaryFiles":  "W:\\\u003cbackup-directory\u003e\\wellbeing-\u003cUTC\u003e\\tmp",
+                                        "ReadyForExport":  false
+                                    },
+                        "ToolsReady":  true,
+                        "Versions":  {
+                                         "pg_dump":  "pg_dump (PostgreSQL) 17.11",
+                                         "pg_dumpall":  "pg_dumpall (PostgreSQL) 17.11",
+                                         "pg_restore":  "pg_restore (PostgreSQL) 17.11",
+                                         "psql":  "psql (PostgreSQL) 17.11"
+                                     }
+                    }
+}

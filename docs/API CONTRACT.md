@@ -1,6 +1,8 @@
 # API Contract — Coding Agent Specification
 ## Mental Well-Being Assessment Platform
 
+**Phase 2 implementation update — 24 October 2026:** the assessment routes retain the paths below, with these required request additions: start takes `{ processingConsent: true }`; answer saving takes `{ expectedRevision, answers }`; final submission takes `{ expectedRevision }`. Save responses include the new revision. A stale save or final review returns 409 `STALE_REVISION`; completed submission retries return the original result. Quota responses additionally include nullable `inProgress: { answered, total, updatedAt }` and content availability. These implemented contracts supersede the older assessment examples below. See [current Phase 2 report](PHASE2-COMPLETION.md) for the complete route/status matrix and integration limits.
+
 **Document Type:** Coding-Agent API Contract  
 **Audience:** Codex, Claude Code / Opus, Gemini, backend/frontend implementation agents  
 **Status:** Synchronized with current Business Rules, FR/NFR, Use Cases, ERD, and System Architecture  

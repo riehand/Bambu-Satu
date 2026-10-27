@@ -1,0 +1,128 @@
+﻿{
+    "PreparedUtc":  "2026-10-25T18:40:31.2217995Z",
+    "PreparedJakarta":  "2026-10-26T01:40:31+07:00",
+    "Status":  "PREPARED_AWAITING_EXACT_SCOPE_AUTHORIZATION",
+    "Created":  false,
+    "Uploaded":  false,
+    "RestoreVerified":  false,
+    "Source":  "D:\\TELKOM UNIVERSITY\\SEMESTER 7\\Capstone\\Bambu-Satu",
+    "ProposedArchive":  "D:\\WellBeingHub-Backups\\Bambu-Satu-Phase2-Backup-20261025T184031Z.7z",
+    "ProposedDestinationExists":  false,
+    "DestinationInsideDetectedOneDrive":  false,
+    "OtherSyncServices":  "Owner confirmation required for exact proposed directory",
+    "DestinationAcl":  "Pending creation and scoped restriction after approval",
+    "SevenZip":  {
+                     "Version":  "26.05 x64",
+                     "InstalledDirectory":  "C:\\Program Files\\7-Zip",
+                     "AuthenticodeStatus":  "NotSigned",
+                     "OfficialDownloadPage":  "https://www.7-zip.org/download.html",
+                     "OfficialPackage":  "https://github.com/ip7z/7zip/releases/download/26.05/7z2605-x64.exe",
+                     "OfficialPackageSHA256":  "FD99E86F57D8F429EF5ED045BF98315AF962E2309B0F1BA87A147A44C71647D0",
+                     "PackageExecuted":  false,
+                     "Reinstalled":  false,
+                     "InstalledFiles":  [
+                                            {
+                                                "Name":  "7z.exe",
+                                                "SHA256":  "94205CFC054DD3BBEB978905BC619A65B3F04E9E73BB2717841110B6F46D962E",
+                                                "MatchesOfficialPackage":  true
+                                            },
+                                            {
+                                                "Name":  "7zFM.exe",
+                                                "SHA256":  "E036AB157806354F877BC33F45C1E11FF8BF4D0116D17301034D250E16C1EAEE",
+                                                "MatchesOfficialPackage":  true
+                                            },
+                                            {
+                                                "Name":  "7zG.exe",
+                                                "SHA256":  "A3E586BF82200EC9DBE0CBD09A78ABAE614B5E101568A454E227CA28DEC2C211",
+                                                "MatchesOfficialPackage":  true
+                                            },
+                                            {
+                                                "Name":  "7z.dll",
+                                                "SHA256":  "78BF6B668D75801E3AA180B4CCB16E6D8395FBA80DEC8A065055BB6F8DFABB82",
+                                                "MatchesOfficialPackage":  true
+                                            }
+                                        ],
+                     "Format":  "7z",
+                     "Compression":  "LZMA2",
+                     "Encryption":  "AES-256",
+                     "EncryptFilenames":  "Required; real archive not yet created"
+                 },
+    "InitialPhysicalInventory":  {
+                                     "Files":  1033,
+                                     "Bytes":  470505941,
+                                     "AliasCount":  20,
+                                     "AliasAdditionalFileEntries":  142,
+                                     "AliasAdditionalBytes":  602554
+                                 },
+    "InitialGit":  {
+                       "Tracked":  349,
+                       "ModifiedTracked":  24,
+                       "Untracked":  46,
+                       "Staged":  0,
+                       "ExternalObjectAlternates":  false,
+                       "ShallowMarker":  false,
+                       "Gitmodules":  false
+                   },
+    "InventoryPolicy":  "All files, including ignored/hidden data; only root node_modules and .next excluded. Materialize only exact reviewed internal aliases.",
+    "ManifestStatus":  "Helper prepared and synthetic-tested; no private project manifest written",
+    "ScopeManifest":  "Private relative paths/bytes/SHA256/directories; manifest self-hash omitted; aggregate output only",
+    "Capacity":  {
+                     "DFilesystem":  "NTFS",
+                     "DFreeBytes":  168258088960,
+                     "UncompressedPlanningMiB":  450,
+                     "ArchiveAllowanceMiB":  500,
+                     "WorkingReserveGiB":  2,
+                     "ActualArchiveBytes":  null
+                 },
+    "SyntheticChecks":  {
+                            "HiddenGitIncluded":  true,
+                            "JunctionMaterialized":  true,
+                            "AliasContentHashMatched":  true,
+                            "ManifestCapture":  true,
+                            "SourceComparison":  true,
+                            "CacheExclusions":  true,
+                            "MaterializedRestoreComparison":  true,
+                            "ChangedFileDetected":  true,
+                            "RealProjectDataUsed":  false
+                        },
+    "Network":  "Only public official 7-Zip and Google help/provenance retrieval; no hosted database or cloud account connection",
+    "Restrictions":  {
+                         "ProjectCredentialCopy":  false,
+                         "ProjectArchive":  false,
+                         "ProductionExport":  false,
+                         "HostedMigration":  false,
+                         "SystemEncryptionChange":  false,
+                         "CommitOrPush":  false,
+                         "CompletedPhase2TestsRepeated":  false,
+                         "DockerChanges":  false
+                     },
+    "Outstanding":  [
+                        "Exact source/destination approval including credentials",
+                        "Unsynced destination confirmation",
+                        "Scoped folder creation/ACL inspection",
+                        "Owner password entry/custody",
+                        "Source freeze and private manifest capture",
+                        "Archive encryption/test/ciphertext hash",
+                        "Protected restore target and exact inventory recovery",
+                        "Manual private Drive upload/download/hash comparison",
+                        "Downloaded archive protected restore verification"
+                    ],
+    "RefreshedLogicalInventory":  {
+                                      "Status":  "INVENTORIED",
+                                      "Files":  1178,
+                                      "Bytes":  471141416,
+                                      "Directories":  392,
+                                      "ReviewedAliases":  20,
+                                      "ExcludedRootDirectories":  [
+                                                                      "node_modules",
+                                                                      ".next"
+                                                                  ],
+                                      "ManifestSelfHashOmitted":  ".tmp\\phase2-project-backup\\manifest.json"
+                                  },
+    "RefreshedInventoryUtc":  "2026-10-25T18:41:52.1537193Z",
+    "RefreshedInventoryNote":  "Snapshot includes preparation files and materialized aliases. This evidence file changed after its measurement; final frozen manifest is authoritative.",
+    "LocalToolVersions":  {
+                              "Node":  "v22.17.0",
+                              "Git":  "2.50.1.windows.1"
+                          }
+}

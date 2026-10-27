@@ -5,7 +5,10 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
+
+// ─── Existing Enums ────────────────────────────────────────
 
 enum Role {
   PARTICIPANT
@@ -18,11 +21,52 @@ enum UserType {
   LECTURER
 }
 
+// ─── Phase 2 Enums ─────────────────────────────────────────
+
+enum AcademicPeriodStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum Instrument {
+  DASS21
+  WEMWBS
+}
+
+enum ScoringDimension {
+  DEPRESSION
+  ANXIETY
+  STRESS
+  WELLBEING
+}
+
+enum AssessmentSessionStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum DassCategory {
+  NORMAL
+  MILD
+  MODERATE
+  SEVERE
+  EXTREMELY_SEVERE
+}
+
+enum ReportStatus {
+  PENDING
+  GENERATED
+}
+
+// ─── Existing Models ───────────────────────────────────────
+
 model User {
-  id              String    @id @default(uuid()) @db.Uuid
+  // Assigned by auth.users only. Cross-schema FK/trigger/RLS are owned by SQL.
+  id              String    @id @db.Uuid
   fullName        String    @map("full_name")
   email           String    @unique
-  passwordHash    String    @map("password_hash")
+  // Transitional legacy data only; never selected or written by the app.
+  passwordHash    String?   @map("password_hash")
   phoneNumber     String    @map("phone_number")
   role            Role
   userType        UserType? @map("user_type")
@@ -31,5 +75,138 @@ model User {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
+  assessmentSessions AssessmentSession[]
+
   @@map("users")
+}
+
+// ─── Phase 2 Models ────────────────────────────────────────
+
+model AcademicPeriod {
+  id              String               @id @default(uuid()) @db.Uuid
+  name            String
+  startDate       DateTime             @map("start_date") @db.Date
+  endDate         DateTime             @map("end_date") @db.Date
+  assessmentLimit Int                  @default(3) @map("assessment_limit")
+  status          AcademicPeriodStatus
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  assessmentSessions AssessmentSession[]
+
+  @@map("academic_periods")
+}
+
+model Question {
+  id               String           @id @default(uuid()) @db.Uuid
+  instrument       Instrument
+  questionNumber   Int              @map("question_number")
+  questionText     String           @map("question_text")
+  scoringDimension ScoringDimension @map("scoring_dimension")
+  isActive         Boolean          @default(true) @map("is_active")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  questionSetId    String           @map("question_set_id") @db.Uuid
+  questionSet      AssessmentQuestionSet @relation(fields: [questionSetId], references: [id])
+
+  assessmentAnswers AssessmentAnswer[]
+
+  @@unique([questionSetId, instrument, questionNumber], name: "set_instrument_question_number")
+  @@map("questions")
+}
+
+model AssessmentSession {
+  id               String                  @id @default(uuid()) @db.Uuid
+  participantId    String                  @map("participant_id") @db.Uuid
+  academicPeriodId String                  @map("academic_period_id") @db.Uuid
+  status           AssessmentSessionStatus
+  startedAt        DateTime                @default(now()) @map("started_at")
+  completedAt      DateTime?               @map("completed_at")
+  createdAt        DateTime                @default(now()) @map("created_at")
+  updatedAt        DateTime                @updatedAt @map("updated_at")
+  revision         Int                     @default(0)
+  questionSetId    String                  @map("question_set_id") @db.Uuid
+  processingConsentAt DateTime            @map("processing_consent_at")
+  processingConsentVersion String         @map("processing_consent_version")
+  questionSet      AssessmentQuestionSet   @relation(fields: [questionSetId], references: [id])
+
+  participant    User           @relation(fields: [participantId], references: [id])
+  academicPeriod AcademicPeriod @relation(fields: [academicPeriodId], references: [id])
+
+  answers AssessmentAnswer[]
+  score   AssessmentScore?
+  report  Report?
+
+  @@index([participantId, academicPeriodId])
+  @@map("assessment_sessions")
+}
+
+// Approval evidence is supplied by the institution; never auto-populated.
+// Published content is immutable (SQL triggers). New content needs a new set.
+model AssessmentQuestionSet {
+  id              String   @id @default(uuid()) @db.Uuid
+  version         String   @unique
+  isPublished     Boolean  @default(false) @map("is_published")
+  approvedAt      DateTime? @map("approved_at")
+  approvedBy      String?  @map("approved_by")
+  dassSource      String?  @map("dass_source")
+  wemwbsLicenceReference String? @map("wemwbs_licence_reference")
+  translationReference String? @map("translation_reference")
+  presentationApprovalReference String? @map("presentation_approval_reference")
+  dassInstructions String @map("dass_instructions")
+  wemwbsInstructions String @map("wemwbs_instructions")
+  dassOptions     Json     @map("dass_options")
+  wemwbsOptions   Json     @map("wemwbs_options")
+  createdAt       DateTime @default(now()) @map("created_at")
+  questions       Question[]
+  sessions        AssessmentSession[]
+  @@map("assessment_question_sets")
+}
+
+model AssessmentAnswer {
+  id                  String   @id @default(uuid()) @db.Uuid
+  assessmentSessionId String   @map("assessment_session_id") @db.Uuid
+  questionId          String   @map("question_id") @db.Uuid
+  answerValue         Int      @map("answer_value")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  assessmentSession AssessmentSession @relation(fields: [assessmentSessionId], references: [id])
+  question          Question          @relation(fields: [questionId], references: [id])
+
+  @@unique([assessmentSessionId, questionId], name: "session_question")
+  @@map("assessment_answers")
+}
+
+model AssessmentScore {
+  id                  String       @id @default(uuid()) @db.Uuid
+  assessmentSessionId String       @unique @map("assessment_session_id") @db.Uuid
+  depressionScore     Int          @map("depression_score")
+  depressionCategory  DassCategory @map("depression_category")
+  anxietyScore        Int          @map("anxiety_score")
+  anxietyCategory     DassCategory @map("anxiety_category")
+  stressScore         Int          @map("stress_score")
+  stressCategory      DassCategory @map("stress_category")
+  wemwbsScore         Int          @map("wemwbs_score")
+  calculatedAt        DateTime     @default(now()) @map("calculated_at")
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+
+  assessmentSession AssessmentSession @relation(fields: [assessmentSessionId], references: [id])
+
+  @@map("assessment_scores")
+}
+
+model Report {
+  id                  String       @id @default(uuid()) @db.Uuid
+  assessmentSessionId String       @unique @map("assessment_session_id") @db.Uuid
+  status              ReportStatus @default(PENDING)
+  filePathOrObjectKey String?      @map("file_path_or_object_key")
+  generatedAt         DateTime?    @map("generated_at")
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+
+  assessmentSession AssessmentSession @relation(fields: [assessmentSessionId], references: [id])
+
+  @@map("reports")
 }

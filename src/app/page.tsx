@@ -55,8 +55,8 @@ export default function LandingPage() {
             <div className="absolute bottom-6 left-6 right-6 bg-white/95 backdrop-blur rounded-2xl p-5 shadow-sm flex items-start gap-4">
               <div className="text-[#2D6A4F] mt-1"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg></div>
               <div>
-                <h4 className="font-bold text-[#1B4332] text-sm mb-1">You don't have to figure it out alone.</h4>
-                <p className="text-xs text-gray-500">Reflection first. Support when you're ready.</p>
+                <h4 className="font-bold text-[#1B4332] text-sm mb-1">You don&apos;t have to figure it out alone.</h4>
+                <p className="text-xs text-gray-500">Reflection first. Support when you&apos;re ready.</p>
               </div>
             </div>
           </div>
@@ -134,7 +134,7 @@ export default function LandingPage() {
         {/* DARK BANNER */}
         <div className="bg-[#183625] rounded-3xl p-12 lg:p-16 grid lg:grid-cols-2 gap-12 items-center text-white">
           <div>
-            <h2 className="text-4xl font-bold mb-4 leading-tight">Understand how you've been feeling, not who you are.</h2>
+            <h2 className="text-4xl font-bold mb-4 leading-tight">Understand how you&apos;ve been feeling, not who you are.</h2>
             <p className="text-gray-300 text-sm">A questionnaire is a starting point for reflection—not a diagnosis or a label.</p>
           </div>
           <div className="space-y-8">
@@ -261,7 +261,7 @@ export default function LandingPage() {
         <h2 className="text-4xl lg:text-5xl font-bold text-[#1B4332] mb-6 max-w-3xl mx-auto leading-tight">
           A moment for yourself<br/>can be a meaningful beginning.
         </h2>
-        <p className="text-gray-500 mb-10 text-sm">Start with a private check-in. Choose your next step when you're ready.</p>
+        <p className="text-gray-500 mb-10 text-sm">Start with a private check-in. Choose your next step when you&apos;re ready.</p>
         <Link href="/auth/register" className="inline-flex px-8 py-3.5 bg-[#1B4332] text-white font-medium rounded-full hover:bg-[#2D6A4F] transition-colors items-center gap-2">
           &rarr; Start Assessment
         </Link>

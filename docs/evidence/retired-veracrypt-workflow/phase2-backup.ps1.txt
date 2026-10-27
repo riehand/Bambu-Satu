@@ -1,0 +1,188 @@
+# Inspection is the default. Export requires a NEW explicit owner authorization.
+[CmdletBinding()]
+param(
+  [string]$BackupDirectory = 'W:\WellBeingHub-Backups',
+  [string]$VeraCryptContainer = '',
+  [string]$PgBin = '',
+  [switch]$ExportApproved,
+  [switch]$RecoveryKeyCustodyConfirmed,
+  [switch]$SyncExclusionConfirmed,
+  [switch]$SystemSpillProtectionConfirmed,
+  [ValidateRange(0, 1048576)][double]$RequiredFreeGiB = 0
+)
+$ErrorActionPreference = 'Stop'
+$repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+if (-not $PgBin) { $PgBin = Join-Path $repository '.tmp\postgresql17-client-tools\pgsql\bin' }
+$PgBin = [IO.Path]::GetFullPath($PgBin)
+. (Join-Path $PSScriptRoot 'phase2-veracrypt.ps1')
+
+function Get-StorageReview {
+  param([string]$Directory)
+  $fullPath = [IO.Path]::GetFullPath($Directory)
+  if (-not [IO.Path]::IsPathRooted($Directory) -or $fullPath.StartsWith('\\')) {
+    throw 'An absolute local destination is required.'
+  }
+  if ([IO.Path]::GetPathRoot($fullPath) -ne 'W:\') { throw 'This workflow only permits the approved W: volume.' }
+  $exists = Test-Path -LiteralPath $fullPath -PathType Container
+  $candidate = if ($exists) { $fullPath } else { Split-Path -Parent $fullPath }
+  if (-not (Test-Path -LiteralPath $candidate -PathType Container)) { throw 'Destination parent does not exist.' }
+  $item = Get-Item -LiteralPath $candidate -Force
+  $acl = Get-Acl -LiteralPath $candidate
+  $operatorSid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+  $allowed = @($operatorSid, 'S-1-5-18', 'S-1-5-32-544')
+  $ownerAllowed = $acl.GetOwner([Security.Principal.SecurityIdentifier]).Value -in $allowed
+  $otherAccess = @($acl.Access | Where-Object {
+    $sid = $_.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
+    $_.AccessControlType -eq [Security.AccessControl.AccessControlType]::Allow -and $sid -notin $allowed
+  }).Count
+  $efs = (($item.Attributes -band [IO.FileAttributes]::Encrypted) -ne 0)
+  $reparse = $false
+  $gitAncestor = $false
+  $ancestor = $item
+  while ($null -ne $ancestor) {
+    if (($ancestor.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { $reparse = $true }
+    if (Test-Path -LiteralPath (Join-Path $ancestor.FullName '.git')) { $gitAncestor = $true }
+    $ancestor = $ancestor.Parent
+  }
+  $mountEvidence = $null
+  $containerVerified = $false
+  $containerOutsideRepository = $false
+  $containerRestricted = $false
+  $containerReparse = $true
+  $containerPath = $null
+  try {
+    $mountEvidence = Get-Phase2VeraCryptMount -Drive 'W:'
+    $containerPath = [IO.Path]::GetFullPath($mountEvidence.ContainerPath)
+    $containerItem = Get-Item -LiteralPath $containerPath -Force
+    $containerVerified = $VeraCryptContainer -and [IO.Path]::IsPathRooted($VeraCryptContainer) -and
+      $containerPath.Equals([IO.Path]::GetFullPath($VeraCryptContainer), [StringComparison]::OrdinalIgnoreCase) -and
+      -not $containerItem.PSIsContainer
+    $containerOutsideRepository = -not ($containerPath.Equals($repository, [StringComparison]::OrdinalIgnoreCase) -or
+      $containerPath.StartsWith($repository + '\', [StringComparison]::OrdinalIgnoreCase))
+    $containerRestricted = $true
+    foreach ($aclPath in @($containerPath, $containerItem.Directory.FullName)) {
+      $containerAcl = Get-Acl -LiteralPath $aclPath
+      if (-not $containerAcl.AreAccessRulesProtected -or $containerAcl.GetOwner([Security.Principal.SecurityIdentifier]).Value -notin $allowed) { $containerRestricted = $false }
+      foreach ($ace in $containerAcl.Access) {
+        if ($ace.AccessControlType -eq [Security.AccessControl.AccessControlType]::Allow -and
+          $ace.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value -notin $allowed) { $containerRestricted = $false }
+      }
+    }
+    $containerReparse = $false
+    $ancestor = $containerItem
+    while ($null -ne $ancestor) {
+      if (($ancestor.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { $containerReparse = $true }
+      if ($ancestor -is [IO.DirectoryInfo] -and (Test-Path -LiteralPath (Join-Path $ancestor.FullName '.git'))) { $containerOutsideRepository = $false }
+      if ($ancestor -is [IO.FileInfo]) { $ancestor = $ancestor.Directory } else { $ancestor = $ancestor.Parent }
+    }
+  } catch { $containerVerified = $false }
+  $outsideRepository = -not ($gitAncestor -or $fullPath.Equals($repository, [StringComparison]::OrdinalIgnoreCase) -or
+    $fullPath.StartsWith($repository + '\', [StringComparison]::OrdinalIgnoreCase))
+  $drive = [IO.DriveInfo]::new([IO.Path]::GetPathRoot($fullPath))
+  $spaceSufficient = $RequiredFreeGiB -gt 0 -and $drive.AvailableFreeSpace -ge ($RequiredFreeGiB * 1GB)
+  # Registered roots cannot reveal arbitrary third-party backup/sync jobs.
+  # Owner confirmation is required in addition to this read-only inventory.
+  $syncRoots = @($env:OneDrive, $env:OneDriveConsumer, $env:OneDriveCommercial)
+  if (Test-Path 'HKCU:\Software\Microsoft\OneDrive\Accounts') {
+    foreach ($account in Get-ChildItem 'HKCU:\Software\Microsoft\OneDrive\Accounts') {
+      $syncRoots += (Get-ItemProperty $account.PSPath).UserFolder
+    }
+  }
+  foreach ($key in @('HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\SyncRootManager', 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\SyncRootManager')) {
+    if (Test-Path $key) {
+      foreach ($provider in Get-ChildItem $key) {
+        $userRoots = Join-Path $provider.PSPath 'UserSyncRoots'
+        if (Test-Path $userRoots) {
+          $rootKey = Get-Item $userRoots
+          foreach ($name in $rootKey.GetValueNames()) { $syncRoots += $rootKey.GetValue($name) }
+        }
+      }
+    }
+  }
+  $withinSyncRoot = $false
+  foreach ($root in ($syncRoots | Where-Object { $_ -is [string] -and $_ } | Sort-Object -Unique)) {
+    $normalized = [IO.Path]::GetFullPath($root).TrimEnd('\')
+    foreach ($pathToCheck in @($fullPath, $containerPath) | Where-Object { $_ }) {
+      if ($pathToCheck.Equals($normalized, [StringComparison]::OrdinalIgnoreCase) -or
+          $pathToCheck.StartsWith($normalized + '\', [StringComparison]::OrdinalIgnoreCase)) { $withinSyncRoot = $true }
+    }
+  }
+  [pscustomobject]@{
+    DirectoryExists = $exists
+    ReviewedExistingDirectory = if ($exists) { 'DESTINATION' } else { 'PARENT_ONLY' }
+    EfsEncrypted = $efs
+    EncryptionProvider = 'VeraCrypt'
+    VeraCryptMountDetected = ($null -ne $mountEvidence)
+    ExpectedContainerMatched = [bool]$containerVerified
+    ContainerOutsideRepository = $containerOutsideRepository
+    ContainerAndParentAclRestricted = $containerRestricted
+    ContainerPathHasReparsePoint = $containerReparse
+    OtherAllowEntries = $otherAccess
+    OwnerAllowed = $ownerAllowed
+    AclInheritanceDisabled = $acl.AreAccessRulesProtected
+    ReparsePointInPath = $reparse
+    OutsideRepository = $outsideRepository
+    FileSystem = $drive.DriveFormat
+    AvailableBytes = $drive.AvailableFreeSpace
+    RequiredFreeGiB = $RequiredFreeGiB
+    CapacityReviewedAndSufficient = $spaceSufficient
+    WithinDetectedSyncRoot = $withinSyncRoot
+    OwnerConfirmedNoOtherSync = [bool]$SyncExclusionConfirmed
+    SystemSpillProtectionConfirmed = [bool]$SystemSpillProtectionConfirmed
+    PlannedOutputRoot = $fullPath
+    PlannedTemporaryFiles = 'W:\<backup-directory>\wellbeing-<UTC>\tmp'
+    ReadyForExport = ($exists -and $outsideRepository -and -not $reparse -and $ownerAllowed -and
+      $otherAccess -eq 0 -and $acl.AreAccessRulesProtected -and $drive.DriveFormat -eq 'NTFS' -and
+      $spaceSufficient -and -not $withinSyncRoot -and $SyncExclusionConfirmed -and
+      $containerVerified -and $containerOutsideRepository -and $containerRestricted -and -not $containerReparse -and
+      $SystemSpillProtectionConfirmed)
+  }
+}
+
+try {
+  $review = Get-StorageReview -Directory $BackupDirectory
+  $toolsReady = $true
+  $versions = [ordered]@{}
+  foreach ($name in @('pg_dump', 'pg_dumpall', 'pg_restore', 'psql')) {
+    $executable = Join-Path $PgBin ($name + '.exe')
+    if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
+      $toolsReady = $false; $versions[$name] = 'UNAVAILABLE'; continue
+    }
+    $version = (& $executable --version 2>$null | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0 -or $version -notmatch '^\w+ \(PostgreSQL\) 17\.\d+$') {
+      $toolsReady = $false; $versions[$name] = 'VERSION_CHECK_FAILED'
+    } else { $versions[$name] = $version }
+  }
+  [pscustomobject]@{ Mode = if ($ExportApproved) { 'EXPORT_REQUESTED' } else { 'PREPARATION_ONLY' }; Storage = $review; ToolsReady = $toolsReady; Versions = $versions } | ConvertTo-Json -Depth 5
+  if (-not $ExportApproved) { return }
+  if (-not $review.ReadyForExport -or -not $toolsReady -or -not $RecoveryKeyCustodyConfirmed) {
+    throw 'Export blocked: verified VeraCrypt/NTFS storage, restricted ACLs, sync exclusion, capacity, system spill protection, PG17 tools and recovery custody required.'
+  }
+  # User approval is required independently of these switches; never infer it.
+  $previousDirectory = Get-Location
+  $previousBin = $env:PHASE2_PG17_BIN
+  $previousDestination = $env:PHASE2_BACKUP_DIR
+  $previousStorageVerification = $env:PHASE2_BACKUP_STORAGE_VERIFIED
+  $previousContainer = $env:PHASE2_VERACRYPT_CONTAINER
+  $previousNodeOptions = $env:NODE_OPTIONS
+  try {
+    Set-Location -LiteralPath $repository
+    $env:PHASE2_PG17_BIN = $PgBin
+    $env:PHASE2_BACKUP_DIR = $BackupDirectory
+    $env:PHASE2_BACKUP_STORAGE_VERIFIED = 'encrypted-and-access-reviewed'
+    $env:PHASE2_VERACRYPT_CONTAINER = [IO.Path]::GetFullPath($VeraCryptContainer)
+    $env:NODE_OPTIONS = $null
+    & node (Join-Path $PSScriptRoot 'phase2-backup.mjs') --export-approved
+    if ($LASTEXITCODE -ne 0) { throw 'Export stopped; inspect the protected manifest privately.' }
+  } finally {
+    Set-Location -LiteralPath $previousDirectory.Path
+    $env:PHASE2_PG17_BIN = $previousBin
+    $env:PHASE2_BACKUP_DIR = $previousDestination
+    $env:PHASE2_BACKUP_STORAGE_VERIFIED = $previousStorageVerification
+    $env:PHASE2_VERACRYPT_CONTAINER = $previousContainer
+    $env:NODE_OPTIONS = $previousNodeOptions
+  }
+} catch {
+  Write-Error 'Backup inspection/export stopped. No raw diagnostics or credentials displayed. Verify tooling, storage and explicit authorization locally.'
+  exit 1
+}

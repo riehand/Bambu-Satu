@@ -1,0 +1,126 @@
+{
+  "status": "LOCALLY_VERIFIED_NOT_RESTORED_PACKAGE_INCOMPLETE",
+  "startedUtc": "2026-10-27T02:33:27.683Z",
+  "processResults": {
+    "ageDecryption": {
+      "exitCode": 0,
+      "stderrBytes": 0
+    },
+    "archiveList": {
+      "exitCode": 0,
+      "stderrBytes": 0
+    },
+    "fullArchiveParse": {
+      "exitCode": 0,
+      "stderrBytes": 0
+    },
+    "schemaParse": {
+      "exitCode": 0,
+      "stderrBytes": 0
+    }
+  },
+  "productionConnection": false,
+  "exportPerformed": false,
+  "restored": false,
+  "uploaded": false,
+  "recoveryCompanionCreated": false,
+  "plaintextDumpFilesCreated": false,
+  "input": {
+    "path": "D:\\WellBeingHub-Backups\\Supabase-Phase2-20261026-Retry01\\database.dump.age",
+    "bytes": 379522,
+    "sha256": "4F77589A80907C7F64B97353CFF55BCD1BC30D9FF8CA9FCBEE93DBD80214CEA5",
+    "unchanged": true
+  },
+  "updatedUtc": "2026-10-27T02:33:38.710Z",
+  "authenticatedDecryptionPassed": true,
+  "postgresqlCustomMagicPassed": true,
+  "coverage": {
+    "checks": {
+      "applicationTable": true,
+      "applicationData": true,
+      "authUsersTable": true,
+      "authUsersData": true,
+      "authIdentitiesTable": true,
+      "authIdentitiesData": true,
+      "prismaHistoryTable": true,
+      "prismaHistoryData": true,
+      "authCreateFunction": true,
+      "authEmailFunction": true,
+      "authCreateTrigger": true,
+      "authEmailTrigger": true,
+      "profileRls": true,
+      "profilePolicy": true,
+      "profilePrivileges": true,
+      "authCreateFunctionPrivileges": true,
+      "authEmailFunctionPrivileges": true,
+      "storageBuckets": true,
+      "storageObjects": true,
+      "vaultExtensionDependency": true
+    },
+    "missingRequiredChecks": [],
+    "counts": {
+      "TABLE DATA": 40,
+      "TABLE": 40,
+      "FUNCTION": 51,
+      "TRIGGER": 10,
+      "POLICY": 1,
+      "ROW SECURITY": 26,
+      "ACL": 146,
+      "DEFAULT ACL": 24,
+      "EXTENSION": 4,
+      "SCHEMA": 8
+    },
+    "knownSchemaCounts": {
+      "auth": {
+        "definitions": 27,
+        "dataEntries": 27
+      },
+      "public": {
+        "definitions": 2,
+        "dataEntries": 2
+      },
+      "realtime": {
+        "definitions": 3,
+        "dataEntries": 2
+      },
+      "storage": {
+        "definitions": 8,
+        "dataEntries": 8
+      },
+      "vault": {
+        "definitions": 0,
+        "dataEntries": 1
+      }
+    },
+    "entryCount": 591,
+    "liveCatalogCompared": false,
+    "archivedRowValuesVerified": false
+  },
+  "fullArchiveReadable": true,
+  "schemaSummary": {
+    "ownerStatements": 124,
+    "grantStatements": 350,
+    "revokeStatements": 58,
+    "policyStatements": 1,
+    "profileRlsEnabled": true,
+    "profilePolicyPresent": true
+  },
+  "inputAfterVerification": {
+    "path": "D:\\WellBeingHub-Backups\\Supabase-Phase2-20261026-Retry01\\database.dump.age",
+    "bytes": 379522,
+    "sha256": "4F77589A80907C7F64B97353CFF55BCD1BC30D9FF8CA9FCBEE93DBD80214CEA5",
+    "unchanged": true
+  },
+  "locallyVerified": true,
+  "workflowExitCode": 0,
+  "dedicatedConsoleExitCode": 0,
+  "syntheticVerificationTests": { "passed": 5, "failed": 0 },
+  "ownerReportedCompletionDialogClosed": true,
+  "limitations": [
+    "No fresh/live catalog comparison",
+    "Prisma history data entry present; row/checksum comparison not performed",
+    "Role definitions and database-level ownership/grants require recovery companion",
+    "Managed extension/service dependencies and actual restoration untested"
+  ],
+  "finishedUtc": "2026-10-27T02:33:38.711Z"
+}

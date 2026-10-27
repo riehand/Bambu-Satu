@@ -1,0 +1,87 @@
+﻿{
+    "StartedAtUtc":  "2026-10-25T12:21:24.3805339Z",
+    "StartedAtAsiaJakarta":  "2026-10-25T19:21:24.3815334+07:00",
+    "Status":  "CONVERSION_AND_SCOPED_ACLS_VERIFIED",
+    "Stage":  "COMPLETE",
+    "ConversionInvoked":  true,
+    "CompletedAclTargets":  [
+                                "D:\\TELKOM UNIVERSITY\\SEMESTER 7\\Capstone\\WellBeingHub-Backup.hc",
+                                "D:\\TELKOM UNIVERSITY\\SEMESTER 7\\Capstone\\WellBeingHub-Backup.hc\\WellBeingHub-Backup.hc",
+                                "W:\\WellBeingHub-Backups"
+                            ],
+    "BackupDirectoryCreated":  true,
+    "ProbePassed":  true,
+    "HostedConnectionPerformed":  false,
+    "WindowsMemorySettingsChanged":  false,
+    "ExportReady":  false,
+    "Mount":  {
+                  "DeviceTarget":  "\\Device\\VeraCryptVolumeW",
+                  "ContainerPath":  "D:\\TELKOM UNIVERSITY\\SEMESTER 7\\Capstone\\WellBeingHub-Backup.hc\\WellBeingHub-Backup.hc",
+                  "DriverInterface":  "0x0126"
+              },
+    "FileSystem":  "NTFS",
+    "AvailableBytes":  10696135168,
+    "InventoryBefore":  [
+                            {
+                                "FullName":  "W:\\System Volume Information",
+                                "PSIsContainer":  true,
+                                "Length":  null
+                            },
+                            {
+                                "FullName":  "W:\\System Volume Information\\WPSettings.dat",
+                                "PSIsContainer":  false,
+                                "Length":  12
+                            }
+                        ],
+    "AclBefore":  [
+                      {
+                          "Path":  "D:\\TELKOM UNIVERSITY\\SEMESTER 7\\Capstone\\WellBeingHub-Backup.hc",
+                          "Owner":  "DESKTOP-0JBKJEC\\hp",
+                          "Sddl":  "O:S-1-5-21-2570765986-3811889225-1166221960-1001G:S-1-5-21-2570765986-3811889225-1166221960-513D:(A;ID;FA;;;BA)(A;OICIIOID;GA;;;BA)(A;ID;FA;;;SY)(A;OICIIOID;GA;;;SY)(A;ID;0x1301bf;;;AU)(A;OICIIOID;SDGXGWGR;;;AU)(A;ID;0x1200a9;;;BU)(A;OICIIOID;GXGR;;;BU)"
+                      },
+                      {
+                          "Path":  "D:\\TELKOM UNIVERSITY\\SEMESTER 7\\Capstone\\WellBeingHub-Backup.hc\\WellBeingHub-Backup.hc",
+                          "Owner":  "DESKTOP-0JBKJEC\\hp",
+                          "Sddl":  "O:S-1-5-21-2570765986-3811889225-1166221960-1001G:S-1-5-21-2570765986-3811889225-1166221960-513D:(A;ID;FA;;;BA)(A;ID;FA;;;SY)(A;ID;0x1301bf;;;AU)(A;ID;0x1200a9;;;BU)"
+                      }
+                  ],
+    "NativeProcessId":  13796,
+    "ChkdskBefore":  {
+                         "Command":  "chkdsk.exe W:",
+                         "ExitCode":  0,
+                         "Output":  "The type of the file system is FAT32.\r\nThe shadow copy provider had an unexpected error while trying to process the specified operation.\r\n\r\nVolume Serial Number is B26F-2D5E\r\nWindows is verifying files and folders...\r\n0 percent completed.                  \r33 percent completed..                 \r66 percent completed...                \r100 percent completed....               \rFile and folder verification is complete.\r\n\r\nWindows has scanned the file system and found no problems.\r\nNo further action is required.\r\n   10.465.008 KB total disk space.\r\n            4 KB in 1 hidden files.\r\n            4 KB in 1 files.\r\n   10.464.996 KB are available.\r\n\r\n        4.096 bytes in each allocation unit.\r\n    2.616.252 total allocation units on disk.\r\n    2.616.249 allocation units available on disk.\r\n",
+                         "Error":  ""
+                     },
+    "Conversion":  {
+                       "Command":  "convert.exe W: /FS:NTFS /V",
+                       "ExitCode":  0,
+                       "Output":  "The type of the file system is FAT32.\r\nVolume Serial Number is B26F-2D5E\r\nWindows is verifying files and folders...\r\n0 percent completed.                  \r\r\n\\System Volume Information\r\n33 percent completed.                  \r\r\n\\System Volume Information\\WPSettings.dat\r\n66 percent completed.                  \r\r\n100 percent completed.                  \r\r\nFile and folder verification is complete.\r\n\r\nWindows has scanned the file system and found no problems.\r\nNo further action is required.\r\n   10.465.008 KB total disk space.\r\n            4 KB in 1 hidden files.\r\n            4 KB in 1 files.\r\n   10.464.996 KB are available.\r\n\r\n        4.096 bytes in each allocation unit.\r\n    2.616.252 total allocation units on disk.\r\n    2.616.249 allocation units available on disk.\r\n\r\nDetermining disk space required for file system conversion...\r\nTotal disk space:              10485504 KB\r\nFree space on volume:          10464996 KB\r\nSpace required for conversion:    30481 KB\r\nConverting file system\r\nSystem Volume Information.\r\n    WPSettings.dat.\r\nConversion complete\r\n",
+                       "Error":  ""
+                   },
+    "ChkdskAfter":  {
+                        "Command":  "chkdsk.exe W:",
+                        "ExitCode":  0,
+                        "Output":  "The type of the file system is NTFS.\r\nThe shadow copy provider had an unexpected error while trying to process the specified operation.\r\n\r\n\r\nWARNING!  /F parameter not specified.\r\nRunning CHKDSK in read-only mode.\r\n\r\nStage 1: Examining basic file system structure ...\r\nProgress: 0 of 38 done; Stage:  0%; Total:  5%; ETA:   0:00:02    \rProgress: 38 of 38 done; Stage: 100%; Total:  7%; ETA:   0:00:02 .  \r                                                                                       \r                                                                                       \r  38 file records processed.                                                        \r\r\nFile verification completed.\r\n Phase duration (File record verification): 0.84 milliseconds.\r\nProgress: 0 of 0 done; Stage: 99%; Total: 22%; ETA:   0:00:02 .. \r                                                                                       \r                                                                                       \r  0 large file records processed.                                   \r\r\n Phase duration (Orphan file record recovery): 0.05 milliseconds.\r\nProgress: 0 of 0 done; Stage: 99%; Total: 22%; ETA:   0:00:01 ...\r                                                                                       \r                                                                                       \r  0 bad file records processed.                                     \r\r\n Phase duration (Bad file record checking): 0.04 milliseconds.\r\n\r\nStage 2: Examining file name linkage ...\r\nProgress: 60 of 60 done; Stage: 100%; Total: 36%; ETA:   0:00:01    \r                                                                                       \r                                                                                       \r  60 index entries processed.                                                       \r\r\nIndex verification completed.\r\n Phase duration (Index verification): 2.79 milliseconds.\r\nProgress: 0 of 0 done; Stage: 99%; Total: 36%; ETA:   0:00:01 .  \r                                                                                       \r                                                                                       \r  0 unindexed files scanned.                                        \r\r\n Phase duration (Orphan reconnection): 0.08 milliseconds.\r\nProgress: 0 of 0 done; Stage: 99%; Total: 36%; ETA:   0:00:01 .. \r                                                                                       \r                                                                                       \r  0 unindexed files recovered to lost and found.                    \r\r\n Phase duration (Orphan recovery to lost and found): 0.04 milliseconds.\r\nProgress: 0 of 0 done; Stage: 99%; Total: 36%; ETA:   0:00:01 ...\r                                                                                       \r                                                                                       \r  0 reparse records processed.                                      \r\r\nProgress: 0 of 0 done; Stage: 99%; Total: 37%; ETA:   0:00:01    \r                                                                                       \r                                                                                       \r  0 reparse records processed.                                      \r\r\n Phase duration (Reparse point and Object ID verification): 0.13 milliseconds.\r\n\r\nStage 3: Examining security descriptors ...\r\nSecurity descriptor verification completed.\r\n Phase duration (Security descriptor verification): 3.49 milliseconds.\r\nProgress: 0 of 0 done; Stage: 100%; Total: 99%; ETA:   0:00:00 .  \r                                                                                       \r                                                                                       \r  11 data files processed.                                           \r\r\n Phase duration (Data attribute verification): 0.04 milliseconds.\r\n\r\nWindows has scanned the file system and found no problems.\r\nNo further action is required.\r\n\r\n  10485503 KB total disk space.\r\n     16180 KB in 6 files.\r\n        76 KB in 13 indexes.\r\n         0 KB in bad sectors.\r\n     19702 KB in use by the system.\r\n     16704 KB occupied by the log file.\r\n  10449545 KB available on disk.\r\n\r\n       512 bytes in each allocation unit.\r\n  20971007 total allocation units on disk.\r\n  20899090 allocation units available on disk.\r\nTotal duration: 7.61 milliseconds (7 ms).\r\n",
+                        "Error":  ""
+                    },
+    "AclAfter":  [
+                     {
+                         "Path":  "D:\\TELKOM UNIVERSITY\\SEMESTER 7\\Capstone\\WellBeingHub-Backup.hc",
+                         "Owner":  "DESKTOP-0JBKJEC\\hp",
+                         "Sddl":  "O:S-1-5-21-2570765986-3811889225-1166221960-1001G:S-1-5-21-2570765986-3811889225-1166221960-513D:PAI(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;0x1301bf;;;S-1-5-21-2570765986-3811889225-1166221960-1001)"
+                     },
+                     {
+                         "Path":  "D:\\TELKOM UNIVERSITY\\SEMESTER 7\\Capstone\\WellBeingHub-Backup.hc\\WellBeingHub-Backup.hc",
+                         "Owner":  "DESKTOP-0JBKJEC\\hp",
+                         "Sddl":  "O:S-1-5-21-2570765986-3811889225-1166221960-1001G:S-1-5-21-2570765986-3811889225-1166221960-513D:PAI(A;;FA;;;SY)(A;;FA;;;BA)(A;;0x1301bf;;;S-1-5-21-2570765986-3811889225-1166221960-1001)"
+                     },
+                     {
+                         "Path":  "W:\\WellBeingHub-Backups",
+                         "Owner":  "DESKTOP-0JBKJEC\\hp",
+                         "Sddl":  "O:S-1-5-21-2570765986-3811889225-1166221960-1001G:S-1-5-21-2570765986-3811889225-1166221960-513D:PAI(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;0x1301bf;;;S-1-5-21-2570765986-3811889225-1166221960-1001)"
+                     }
+                 ],
+    "ProbePath":  "W:\\WellBeingHub-Backups\\storage-probe-5e51b1037b264e30a269e6cb090997b7.txt",
+    "RemainingBlocker":  "Windows memory-spill protection and recovery custody still need verification; production export remains unapproved.",
+    "FinishedAtUtc":  "2026-10-25T12:21:27.0570799Z"
+}

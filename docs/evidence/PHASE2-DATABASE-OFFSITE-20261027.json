@@ -1,0 +1,18 @@
+{
+  "status": "ENCRYPTED_OFF_DEVICE_DATABASE_PACKAGE_VERIFIED_BY_OWNER_CONFIRMED_HASH_ROUND_TRIP",
+  "ownerConfirmationDateAsiaJakarta": "2026-10-27",
+  "upload": { "completed": true, "destination": "Owner's private Google Drive", "evidenceSource": "OWNER_CONFIRMATION" },
+  "independentDownload": { "completed": true, "evidenceSource": "OWNER_CONFIRMATION" },
+  "files": [
+    { "name": "database.dump.age", "sha256": "4F77589A80907C7F64B97353CFF55BCD1BC30D9FF8CA9FCBEE93DBD80214CEA5", "downloadedHashMatchesVerifiedOriginal": true, "localAuthenticatedVerificationPassed": true },
+    { "name": "recovery.json.age", "sha256": "F981978AAA4F425A710171CEFE7CC11D76B6AB3D9980F1CEEDCA2CF13FA47233", "downloadedHashMatchesVerifiedOriginal": true, "localAuthenticatedVerificationPassed": true }
+  ],
+  "downloadedCopiesDirectlyInspectedThisTurn": false,
+  "downloadedCopiesSeparatelyDecrypted": false,
+  "cloudAccessControlsIndependentlyAudited": false,
+  "fullIsolatedDatabaseRestoration": "NOT_YET_TESTED",
+  "exactOriginalGlobalRoleAndDatabasePrivilegeParity": "UNVERIFIED_METADATA_NOT_CAPTURED",
+  "productionConnectionThisTask": false,
+  "decryptionThisTask": false,
+  "hostedMigrationApplied": false
+}

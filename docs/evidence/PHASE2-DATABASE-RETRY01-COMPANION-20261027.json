@@ -1,0 +1,61 @@
+{
+  "status": "COMPANION_LOCALLY_VERIFIED_PACKAGE_READY_FOR_MANUAL_UPLOAD_NOT_RESTORED",
+  "startedUtc": "2026-10-27T03:01:34.942Z",
+  "processResults": {
+    "destinationCheck": {
+      "exitCode": 0,
+      "stderrBytes": 0
+    },
+    "ageEncryption": {
+      "exitCode": 0,
+      "stderrBytes": 0
+    },
+    "ageDecryption": {
+      "exitCode": 0,
+      "stderrBytes": 0
+    }
+  },
+  "productionConnection": false,
+  "newDatabaseExport": false,
+  "plaintextRecoveryFileCreated": false,
+  "restored": false,
+  "uploaded": false,
+  "dumpBefore": {
+    "filename": "database.dump.age",
+    "bytes": 379522,
+    "sha256": "4F77589A80907C7F64B97353CFF55BCD1BC30D9FF8CA9FCBEE93DBD80214CEA5",
+    "unchanged": true
+  },
+  "updatedUtc": "2026-10-27T03:02:29.091Z",
+  "dumpAfter": {
+    "filename": "database.dump.age",
+    "bytes": 379522,
+    "sha256": "4F77589A80907C7F64B97353CFF55BCD1BC30D9FF8CA9FCBEE93DBD80214CEA5",
+    "unchanged": true
+  },
+  "companion": {
+    "path": "D:\\WellBeingHub-Backups\\Supabase-Phase2-20261026-Retry01\\recovery.json.age",
+    "bytes": 7538,
+    "sha256": "F981978AAA4F425A710171CEFE7CC11D76B6AB3D9980F1CEEDCA2CF13FA47233"
+  },
+  "authenticatedDecryptionPassed": true,
+  "structureAndDumpReferencePassed": true,
+  "coverage": {
+    "roleReconstructionGuidance": true,
+    "exactRoleDefinitionsCaptured": false,
+    "exactDatabaseOwnerAndGrantsCaptured": false,
+    "permissionsNotes": true,
+    "versionsAndExtensionDependencies": true,
+    "verifiedDumpReference": true,
+    "archiveCoverageAndLimitations": true,
+    "isolatedRestoreInstructions": true,
+    "managedPlatformRecreationNotes": true
+  },
+  "readyForManualUploadWithDocumentedDependencies": true,
+  "workflowExitCode": 0,
+  "dedicatedConsoleExitCode": 0,
+  "syntheticPreparationTests": { "passed": 4, "failed": 0 },
+  "ownerConfirmedExistingRetry01PassphraseUsed": true,
+  "independentCiphertextHashChecksPassed": true,
+  "finishedUtc": "2026-10-27T03:02:29.091Z"
+}

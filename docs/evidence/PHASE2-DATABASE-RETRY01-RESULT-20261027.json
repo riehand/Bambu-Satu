@@ -1,0 +1,50 @@
+{
+  "status": "STOPPED_UNVERIFIED_NOT_READY_FOR_UPLOAD",
+  "attemptsThisAuthorization": 1,
+  "startedUtc": "2026-10-27T02:06:59.451Z",
+  "stoppedUtc": "2026-10-27T02:09:00.960Z",
+  "stoppedAsiaJakarta": "2026-10-27T09:09:00.960+07:00",
+  "executorFailureExitCode": 1,
+  "dedicatedWorkflowExitCode": 1,
+  "dedicatedWorkflowExited": true,
+  "failedStage": "AWAITING_PRIVATE_DUMP_VERIFICATION",
+  "failureReason": "PROCESS_FAILED_OR_WARNED",
+  "processResults": {
+    "privateCatalogRead": { "exitCode": 0, "stderrBytes": 0 },
+    "pgDump": { "exitCode": 0, "stderrBytes": 0 },
+    "dumpEncryption": { "exitCode": 0, "stderrBytes": 0 },
+    "dumpDecryption": { "exitCode": 1, "stderrBytes": 109, "failureReason": "PROCESS_FAILED_OR_WARNED" }
+  },
+  "sourcePreflightAndDestinationGuards": "PASSED_IN_EXECUTOR_BEFORE_EXPORT",
+  "source": "bofoowyzlnfhwcstlmgp/postgres",
+  "files": [
+    {
+      "path": "D:\\WellBeingHub-Backups\\Supabase-Phase2-20261026-Retry01\\database.dump.age",
+      "exists": true,
+      "bytes": 379522,
+      "sha256": "4F77589A80907C7F64B97353CFF55BCD1BC30D9FF8CA9FCBEE93DBD80214CEA5",
+      "status": "ENCRYPTION_PROCESS_COMPLETED_DECRYPTION_UNVERIFIED"
+    },
+    {
+      "path": "D:\\WellBeingHub-Backups\\Supabase-Phase2-20261026-Retry01\\recovery.json.age",
+      "exists": false,
+      "bytes": null,
+      "sha256": null
+    }
+  ],
+  "archiveCoverageVerification": "NOT_REACHED",
+  "missingArchiveObjects": "UNKNOWN_NOT_INSPECTED",
+  "roleExportAndRecoveryCompanion": "NOT_REACHED",
+  "plaintextDumpFilesCreated": false,
+  "rawDiagnosticsCapturedInEvidence": false,
+  "passphraseObservedOrRecorded": false,
+  "causeLimitation": "Exit 1 and stderr byte count do not distinguish input, terminal interaction, ciphertext authentication or other age error; no raw stderr was retained",
+  "ownerReported": "Stopped or prompt unavailable",
+  "originalFailedRunPreserved": true,
+  "automaticRetryPerformed": false,
+  "readyForManualGoogleDriveUpload": false,
+  "uploaded": false,
+  "restored": false,
+  "hostedMigrationApplied": false,
+  "residualRisks": ["Windows memory/pagefile/crash exposure", "Previously observed non-TLS managed pooler/backend leg", "Supabase-managed restore dependencies remain untested"]
+}

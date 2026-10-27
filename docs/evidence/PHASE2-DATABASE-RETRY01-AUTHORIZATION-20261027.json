@@ -1,0 +1,17 @@
+{
+  "status": "ONE_EXPORT_RETRY_AUTHORIZED_EXECUTION_PENDING",
+  "ownerApprovalDateAsiaJakarta": "2026-10-27",
+  "source": "bofoowyzlnfhwcstlmgp/postgres",
+  "outputs": [
+    "D:\\WellBeingHub-Backups\\Supabase-Phase2-20261026-Retry01\\database.dump.age",
+    "D:\\WellBeingHub-Backups\\Supabase-Phase2-20261026-Retry01\\recovery.json.age"
+  ],
+  "scope": "One read-only logical export and authenticated non-restoring in-memory verification",
+  "destinationPreflight": { "unused": true, "parentRestricted": true, "noReparseRedirect": true, "freeBytes": 166844522496 },
+  "newNonemptyPrivatePassphraseRequired": true,
+  "originalFailedRunPreserved": true,
+  "automaticRetryAuthorized": false,
+  "uploadAuthorized": false,
+  "restoreAuthorized": false,
+  "hostedModificationAuthorized": false
+}
