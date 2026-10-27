@@ -1,12 +1,10 @@
 # WellBeing Hub / Bambu-Satu — Phase 2 team handover
 
-25 October 2026. Start here, then read the [approved local rehearsal report](PHASE2-LOCAL-REHEARSAL-REPORT.md) and [earlier finalization snapshot](PHASE2-FINALIZATION.md). **The implementation is available locally; Phase 2 is not operational in production.** The real PostgreSQL concurrency rehearsal passed seven tests; the 230-test baseline is preserved. Hosted migration, recoverable backup, privilege remediation and approved instrument/period activation remain gated. Do not implement Phase 3 by weakening Phase 2 ownership, scoring or immutability rules.
+Updated 27 October 2026. **Development implementation complete; hosted deployment pending.** Commit `8a76603` is already published on `origin/riehand_branch`. See the [handover readiness review](PHASE2-HANDOVER-READINESS.md) for the exact repository-hygiene follow-up. The prior 230-test baseline and seven real PostgreSQL tests passed; no rerun was performed for this review. Preserve Phase 2 ownership, scoring and immutability rules while developing Phase 3.
 
 ## A. Project overview
 
-The [Retry01 database package](PHASE2-DATABASE-RETRY01-PACKAGE.md) is VERIFIED OFF-DEVICE by owner-confirmed private Google Drive upload, independent download and both hashes matching locally authenticated originals. Full database restoration is NOT YET TESTED. The companion documents missing exact role definitions/memberships and database-level owner/grants. The [prepared isolated restore](PHASE2-ISOLATED-RESTORE-PLAN.md) uses a new network-disabled target and requires separate authorization; installed Docker's Linux engine is currently unreachable. No preparation-time production connection, decryption or environment creation occurred. The preserved synthetic rehearsal is not the proposed production-data restore target.
-
-Current backup status: the [encrypted Google Drive project backup](PHASE2-PROJECT-ARCHIVE.md) is **VERIFIED OFF-DEVICE**. Stable source hashes and local archive checks passed; the owner confirmed upload/download and downloaded 7-Zip integrity, and the downloaded SHA-256 was independently matched. Full extraction-based restoration remains **UNTESTED**, with no external hardware prerequisite. [Completion evidence](evidence/PHASE2-PROJECT-BACKUP-OFFSITE-20261026.json). Database off-device hash verification is owner-confirmed complete; separately authorized isolated database restore and hosted migration remain future steps. GitHub remains source-code version control; BitLocker activation is CANCELLED BY PROJECT OWNER and VeraCrypt is RETIRED / CLEANUP COMPLETED. The 230-test baseline and seven PostgreSQL rehearsal results remain prior verified evidence. Chatbot integration is future-team responsibility under the retained [shared database contract](CHATBOT-DATABASE-CONTRACT.md).
+Encrypted source and database backups are verified off-device on private Google Drive; upload/download and matching checksums are owner-confirmed. Local archive verification passed. Full project extraction and database restoration remain untested. Those deployment/recovery tasks are deferred and do not block Phase 3 development. No backup, restore or Windows security work is requested by this handover. Chatbot remains a separate application under the [shared database contract](CHATBOT-DATABASE-CONTRACT.md).
 
 The website supports Supabase email/password signup, confirmation, login/logout, trusted profile synchronization and role-based access. Participant pages implement a backend-derived dashboard, unified DASS-21 + WEMWBS session, processing consent, autosave/resume, review/edit, revision-aware confirmation/submission, deterministic scores and owner-specific history. Missing database/content/period dependencies produce unavailable states, not fabricated participant results.
 
@@ -49,9 +47,10 @@ Resolved from `package-lock.json` on this checkout; use `npm ci` to preserve it:
 | `tests/*.test.ts` | Unit/service/API mocks, actual isolated PGlite SQL, environment and safety checks |
 | `tests/browser/`, `tests/visual/`, `tests/fixtures/` | Synthetic Playwright/Vite presentation harness; no production questionnaire text |
 | `tests/rehearsal/`, `vitest.rehearsal.config.ts` | Approval-gated real PostgreSQL service/concurrency suite, excluded from normal tests |
-| `scripts/*preflight.mjs` | Read-only hosted Auth, collision and privilege inventories |
-| `scripts/phase2-backup.mjs`, `phase2-rehearsal.mjs`, `phase2-safety.mjs` | Guarded recovery/rehearsal preparation |
-| `docs/PHASE2-*.md`, `docs/CHATBOT-DATABASE-CONTRACT.md` | Migration, activation, evidence, recovery and ownership contracts |
+| `scripts/*preflight.mjs` | Explicitly invoked read-only Auth, collision and privilege checks against an approved target |
+| `scripts/phase2-rehearsal.mjs`, `phase2-safety.mjs` | Guarded synthetic rehearsal; do not rerun the retained environment |
+| `scripts/phase2-backup.mjs`, `phase2-backup-layout.mjs` | Inert historical preparation helpers retained for existing safety/layout tests; not an export workflow |
+| Shared `docs/PHASE2-*.md`, `docs/CHATBOT-DATABASE-CONTRACT.md` | Migration, activation, implementation and ownership contracts; owner operational records are excluded by the cleanup plan |
 
 ## D. Authentication contract
 
@@ -59,7 +58,7 @@ Supabase owns credentials and canonical identity. `getCurrentProfile()` verifies
 
 `auth.users.id = public.users.id` is enforced by SQL FK and trigger-created profiles. Required signup metadata: `full_name`, `institutional_id`, `phone_number`, `user_type` (`STUDENT`/`LECTURER`). New profiles are always active participants regardless of metadata escalation attempts. Email changes synchronize through the existing trigger. `password_hash` is transitional nullable legacy data, not read or written for authentication. Auth deletion is restricted; no automatic account deletion workflow exists.
 
-Public configuration is Supabase URL + publishable key. Database credentials stay server-side. The website does not need a Supabase service-role API key. See [Auth migration](AUTH-MIGRATION.md) and [Auth recovery evidence](AUTH-RECOVERY.md); these historical reports are not a new hosted signup test.
+Public configuration is Supabase URL + publishable key. Database credentials stay server-side. The website does not need a Supabase service-role API key. See [Auth migration](AUTH-MIGRATION.md); its historical results are not a new hosted signup test.
 
 ## E. Database schema and migration ownership
 
@@ -82,7 +81,7 @@ Migrations in order:
 2. `20261023000000_supabase_auth` — applied hosted; needs the Supabase Auth baseline.
 3. `20261023010000_phase2_assessment` — **pending hosted**, additive, no production seed data. SHA-256: `6befc228490a50bcc3fb411905fa7c5e0790066f2118a6de94a22bfdb77d3823`.
 
-The pending publication correction was already present at the start of finalization and is preserved. No migration/schema or application behavior was changed during this handover task; the participant privacy label and logout comment now use Chatbot's current name. The prior working tree contains uncommitted application and migration work; do not discard it. Do not run either Auth migration blindly against a different shared project. Website owns its ledger and all listed public names; Chatbot needs a separately coordinated schema/history.
+The pending publication correction is committed in `8a76603`. This review changes documentation and Git hygiene only; application source, Prisma schema and migration bytes are unchanged. Do not run either Auth migration blindly against a different shared project. Website owns its ledger and all listed public names; Chatbot needs a separately coordinated schema/history.
 
 ## F. Assessment API contract
 
@@ -139,23 +138,25 @@ All seven assessment tables are intended backend-only. Current `_prisma_migratio
 
 ## J. Secure local development and team workflow
 
-1. Clone the agreed branch/commit. This task did not commit or push; the owner must review and commit the complete existing working tree before teammates can clone these changes. Do not assume untracked handover files are already remote.
+1. Clone `riehand_branch` at the agreed commit (`8a76603` is already published). Publish the reviewed hygiene/documentation follow-up after owner approval using the explicit file list in the readiness review, never the entire working tree. Confirm teammates have repository access.
 2. Install the tested Node/npm family; run `npm ci`, then `npx prisma generate`. This generates local client artifacts, not database tables.
 3. Copy `.env.example` to ignored local configuration and obtain approved development credentials privately. Required names: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SITE_URL`, `DATABASE_URL`, `DIRECT_URL`. Never put real secrets in examples or Git.
 4. Keep `DATABASE_URL` and `DIRECT_URL` on the same approved project. Next runtime prefers `.env.local`; Prisma CLI reads `.env`/process environment. Avoid contradictory values; set explicit approved shell targets for migration work. Session pooler port 5432 is used where direct IPv6 is unavailable. No service-role API key is needed.
 5. Run `npm run dev`, then open the configured `SITE_URL`. Signup callback/redirect settings must match in the approved Supabase project. Without an activated assessment database/content, truthful unavailable states are expected.
-6. Run `npm test`, `npx tsc --noEmit`, `npm run lint`, `npx prisma validate`, `npm run build`. `npm run test:browser` uses local synthetic Vite fixtures and an installed Chrome channel; it is not a hosted database test. Read-only checks: `npm run auth:preflight`, `node scripts/assessment-preflight.mjs`, `node scripts/phase2-privilege-preflight.mjs` against the configured project.
-7. For database work, obtain an isolated destination and follow [the approval-gated rehearsal](PHASE2-REHEARSAL.md). The two Auth migrations require an Auth baseline; plain empty Postgres is insufficient. Never use production reset/db push/dev migrations. New Phase 3 migrations must be additive, reviewed with the shared team, tested on an approved isolated baseline, and deployed only after separate hosted approval.
+6. Run `npm test`, `npx tsc --noEmit`, `npm run lint`, `npx prisma validate`, `npm run build`. `npm run test:browser` uses local synthetic Vite fixtures and an installed Chrome channel; it is not a hosted database test. For approved database integration work only, optional read-only checks are `npm run auth:preflight`, `node scripts/assessment-preflight.mjs`, and `node scripts/phase2-privilege-preflight.mjs`. Verify an approved development target first; these commands are not needed to start UI/service development.
+7. For database integration work, obtain an approved development destination; [the completed synthetic rehearsal](PHASE2-REHEARSAL.md) documents the tested baseline. Do not rerun or replace the retained rehearsal merely for handover. The two Auth migrations require an Auth baseline; plain empty Postgres is insufficient. Never use production reset/db push/dev migrations. New Phase 3 migrations must be additive, reviewed with the shared team, tested on an approved isolated baseline, and deployed only after separate hosted approval.
 8. Before merging, run regression tests, review object names/roles/API shapes, confirm unchanged scoring and require migration checksums/recovery evidence. Never overwrite applied migrations or the shared ledger. No automatic commit/push is part of this handover.
 
 ## K. Evidence and acceptance boundaries
 
-The original **220 tests passed again** before additions. Ten operation-boundary tests bring the normal suite to **230 passing**, rerun successfully after the approved local rehearsal. Its separate real PostgreSQL suite passed **seven tests** and remains excluded from ordinary `npm test`. TypeScript passed; lint has zero errors and two existing landing-page image warnings. Previous schema/browser/build results are in [finalization](PHASE2-FINALIZATION.md); actual isolated evidence is in the [follow-up report](PHASE2-LOCAL-REHEARSAL-REPORT.md).
+Historical acceptance: the original 220 tests plus ten operation-boundary tests passed as the **230-test baseline**; the separate real PostgreSQL suite passed **seven tests** and remains excluded from ordinary `npm test`. TypeScript passed; lint had zero errors and two existing landing-page image warnings. Later backup-layout tests are also retained, so 230 is a dated baseline, not a freshly measured current suite total. See the [rehearsal summary](PHASE2-REHEARSAL.md). This handover review performs static documentation/repository checks only.
 
-Hosted **read-only** checks confirmed both Auth migrations applied, zero identity/profile mismatches or normalized-email duplicates, no Phase 2 objects/history/name collisions, and the privilege findings. They do not establish login/email delivery or authenticated assessment persistence. No hosted account, period, questionnaire, assessment, backup or migration was created.
+Hosted **read-only** checks confirmed both Auth migrations applied, zero identity/profile mismatches or normalized-email duplicates, no Phase 2 objects/history/name collisions, and the privilege findings. They do not establish login/email delivery or authenticated assessment persistence. Those checks made no hosted writes. A subsequently authorized read-only database export was completed and verified off-device; the Phase 2 migration and content activation remain unapplied.
 
 ## L. Outstanding work and release gates
 
-The approved isolated PostgreSQL rehearsal is complete. Operational completion still requires the selected encrypted-archive workflow to be verified, separately authorized export and compatible recovery, role remediation, both-team database-boundary coordination, approved/licensed instrument content and academic period, then separately authorized migration/activation and authenticated acceptance. No BitLocker activation or VeraCrypt setup is required. See [activation](PHASE2-ACTIVATION.md) and [backup/recovery](PHASE2-BACKUP-RECOVERY.md).
+**Development:** no missing implementation files were found; the code is already published. Finish the explicit Git hygiene/documentation follow-up and share the branch with teammates. Approved development credentials are needed only for live Auth/database integration; fixture-based development can start now. Joint contract acceptance is needed before changing shared database objects or integrating Chatbot.
+
+**Hosted deployment:** keep recovery validation, privilege remediation, shared-database agreement, approved/licensed instruments and period, separately authorized migration/activation, and authenticated acceptance as deployment tasks. Backups and the synthetic PostgreSQL rehearsal are already complete. Full restore testing is pending, not a new handover prerequisite. See [activation](PHASE2-ACTIVATION.md), [security review](PHASE2-SECURITY-REVIEW.md), and the [readiness checklist](PHASE2-HANDOVER-READINESS.md).
 
 Phase 3/later intentionally includes PDF generation/private delivery, consultations, authorized psychologist access, explicit sharing/revocation/audit, institution/content administration, retention/deletion and optional authorized Chatbot integration. None is implemented by this task. Preserve the existing Phase 2 foundation and its scoring/API behavior while extending it.

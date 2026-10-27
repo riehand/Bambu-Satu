@@ -1,5 +1,7 @@
 # Pending Phase 2 migration — approval required
 
+**Handover status, 27 October 2026:** the implementation and pending SQL are published in `8a76603`; Phase 3 development can start without applying this migration to hosted Supabase. The historical synthetic PostgreSQL rehearsal passed all seven tests and all three checksum checks. Encrypted source/database backups are verified off-device; full restoration remains untested. The dated prerequisites below are deployment guidance, not a request to repeat completed work. See [development versus deployment readiness](PHASE2-HANDOVER-READINESS.md).
+
 Exact file: `prisma/migrations/20261023010000_phase2_assessment/migration.sql`.
 
 **Not applied to Supabase.** SQL was generated from the tracked baseline schema and the completed local schema using `prisma migrate diff --from-schema-datamodel ... --to-schema-datamodel ... --script`; custom constraints, triggers and grants were then added. Generation did not inspect or modify the hosted database. The complete SQL is the reviewable change, not a proposal to run `db push`.
