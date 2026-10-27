@@ -1,5 +1,7 @@
 # Phase 2 implementation and verification report
 
+**Historical report (23 October).** The current recovery, implementation changes, test results, read-only database findings and remaining release gates are in [PHASE2-COMPLETION.md](PHASE2-COMPLETION.md), verified 24 October 2026. In particular, final submission now requires the reviewed `expectedRevision`.
+
 Date: 23 October 2026. Work completed locally in the existing Bambu-Satu repository. **Application code and local verification are complete; live assessment release is blocked by pending migration approval and approved instrument materials.** No hosted migration, hosted test record, deployment, commit or push was performed.
 
 ## A. Recovery summary

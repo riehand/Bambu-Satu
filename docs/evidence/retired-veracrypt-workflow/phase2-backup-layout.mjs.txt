@@ -1,0 +1,21 @@
+import { win32 } from "node:path";
+
+// Pure path planning: no configuration reads, connections, file creation or fallback.
+export function backupLayout(parent, stamp) {
+  if (typeof parent !== "string" || !/^W:\\/i.test(parent) || /[:]/.test(parent.slice(2))) {
+    throw new Error("Backup output must be an absolute path on W:.");
+  }
+  const normalized = win32.resolve(parent);
+  if (win32.parse(normalized).root.toUpperCase() !== "W:\\" || !/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.\d{3}Z$/.test(stamp)) {
+    throw new Error("Invalid protected backup layout.");
+  }
+  const directory = win32.join(normalized, `wellbeing-${stamp}`);
+  return { directory, temporaryDirectory: win32.join(directory, "tmp"),
+    files: Object.fromEntries(["database.dump", "roles.sql", "archive-index.txt", "manifest.json", "SHA256SUMS.txt", "restore-verification.md"]
+      .map(name => [name, win32.join(directory, name)])) };
+}
+
+export function backupTemporaryEnvironment(directory) {
+  if (!/^W:\\/i.test(directory) || /:/.test(directory.slice(2)) || win32.parse(win32.resolve(directory)).root.toUpperCase() !== "W:\\") throw new Error("Temporary files require W:.");
+  return { TEMP: directory, TMP: directory, TMPDIR: directory, PSQL_HISTORY: win32.join(directory, "psql-history-disabled") };
+}

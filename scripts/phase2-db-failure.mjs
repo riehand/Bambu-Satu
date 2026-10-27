@@ -1,0 +1,17 @@
+// Only fixed classifications can cross the diagnostic boundary. Never log an
+// arbitrary exception message: database/library errors may contain private data.
+const reasons = new Set([
+  'PROCESS_TIMEOUT', 'PROCESS_START_FAILED', 'PROCESS_FAILED_OR_WARNED',
+  'MEMORY_LIMIT_EXCEEDED', 'NO_ENCRYPTION_HEADER', 'TOOL_OR_CA_CHANGED',
+  'PG_VERSION_CHANGED', 'SOURCE_CHANGED', 'AUDIT_FAILED', 'SOURCE_PREREQUISITES_CHANGED',
+  'REQUIRED_COVERAGE_MISSING', 'TABLE_DEFINITION_MISSING', 'TABLE_DATA_MISSING',
+  'TRIGGER_MISSING', 'DESTINATION_CHECK_FAILED', 'UNSUPPORTED_MODE', 'WINDOWS_REQUIRED',
+  'DUMP_VERIFY_MISMATCH', 'ROLE_PASSWORD_UNEXPECTED', 'ROLE_COVERAGE_MISSING',
+  'CATALOG_CHANGED_DURING_EXPORT', 'COMPANION_VERIFY_MISMATCH', 'SYNTHETIC_VERIFY_MISMATCH',
+]);
+export function safeFailure(error) {
+  if (reasons.has(error?.message)) return error.message;
+  if (['EPIPE', 'ERR_STREAM_PREMATURE_CLOSE', 'ERR_STREAM_DESTROYED'].includes(error?.code)) return 'BINARY_PIPE_FAILED';
+  if (error?.code === 'EEXIST') return 'OUTPUT_ALREADY_EXISTS';
+  return 'UNCLASSIFIED_FAILURE_REQUIRES_LOCAL_REVIEW';
+}

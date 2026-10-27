@@ -6,7 +6,7 @@ import { calculateWemwbs } from "./scoring/wemwbs";
 import { AssessmentError } from "./errors";
 import { validateQuestionSet } from "./content";
 import { PROCESSING_CONSENT_VERSION } from "./consent";
-import { saveAnswersSchema } from "@/lib/validations/assessment";
+import { saveAnswersSchema, submitAssessmentSchema } from "@/lib/validations/assessment";
 export { AssessmentError } from "./errors";
 
 type DB = Prisma.TransactionClient;
@@ -56,15 +56,19 @@ export async function getQuota(participantId: string) {
   if (!period) throw new AssessmentError("NO_ACTIVE_ACADEMIC_PERIOD", "Belum ada periode akademik aktif. Asesmen belum tersedia.", 404);
   const [completed, inProgress] = await Promise.all([
     completedCount(prisma, participantId, period.id),
-    prisma.assessmentSession.findFirst({ where: { participantId, academicPeriodId: period.id, status: "IN_PROGRESS" }, select: { id: true } }),
+    prisma.assessmentSession.findFirst({ where: { participantId, academicPeriodId: period.id, status: "IN_PROGRESS" },
+      select: { id: true, questionSetId: true, updatedAt: true, _count: { select: { answers: true } } } }),
   ]);
   let availability: { code: string; message: string } | null = null;
-  try { await approvedContent(prisma); } catch (error) {
+  // Resume uses the session's immutable content version, not a newer release.
+  try { await approvedContent(prisma, inProgress?.questionSetId); } catch (error) {
     if (!(error instanceof AssessmentError)) throw error;
     availability = { code: error.code, message: error.message };
   }
   return { academicPeriod: { id: period.id, name: period.name }, limit: period.assessmentLimit,
-    completed, remaining: Math.max(0, period.assessmentLimit - completed), inProgressSessionId: inProgress?.id ?? null, availability };
+    completed, remaining: Math.max(0, period.assessmentLimit - completed), inProgressSessionId: inProgress?.id ?? null,
+    inProgress: inProgress ? { answered: inProgress._count.answers, total: 35, updatedAt: inProgress.updatedAt.toISOString() } : null,
+    availability };
 }
 export async function startAssessmentSession(participantId: string, processingConsent: boolean) {
   if (processingConsent !== true) throw new AssessmentError("PROCESSING_CONSENT_REQUIRED", "Persetujuan pemrosesan diperlukan.", 422);
@@ -134,10 +138,15 @@ function submissionResult(session: Awaited<ReturnType<typeof ownedSession>>) {
     scores: { depression: { score: s.depressionScore, category: s.depressionCategory }, anxiety: { score: s.anxietyScore, category: s.anxietyCategory },
       stress: { score: s.stressScore, category: s.stressCategory }, wemwbs: { score: s.wemwbsScore } }, reportId: session.report.id };
 }
-export async function submitAssessment(sessionId: string, participantId: string) {
+export async function submitAssessment(sessionId: string, participantId: string, input: unknown) {
+  const parsed = submitAssessmentSchema.safeParse(input);
+  if (!parsed.success) throw new AssessmentError("VALIDATION_ERROR", "Versi jawaban diperlukan sebelum mengirim asesmen.", 422);
   return participantTransaction(participantId, async tx => {
     const session = await ownedSession(tx, sessionId, participantId);
+    // A retry after a lost completion response returns the original result.
     if (session.status === "COMPLETED") return submissionResult(session);
+    if (session.revision !== parsed.data.expectedRevision)
+      throw new AssessmentError("STALE_REVISION", "Jawaban berubah di tab lain. Muat ulang dan tinjau kembali sebelum mengirim.", 409);
     const period = await requirePeriod(tx, session.academicPeriodId);
     if (await completedCount(tx, participantId, period.id) >= period.assessmentLimit)
       throw new AssessmentError("ASSESSMENT_QUOTA_EXCEEDED", "Kuota asesmen telah habis.", 409);

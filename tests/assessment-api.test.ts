@@ -46,3 +46,14 @@ it("preserves safe domain errors without exposing database details",async()=>{
   mocks.getQuota.mockRejectedValue(new Error("password and private connection string"));let response=await quota();expect(response.status).toBe(503);expect(await response.text()).not.toContain("password");
   mocks.getSession.mockRejectedValue(new AssessmentError("RESOURCE_NOT_FOUND","Tidak ditemukan",404));response=await session(request(),context);expect(response.status).toBe(404);
 });
+it("requires a reviewed revision and rejects client-supplied scores at submission",async()=>{
+  expect((await submit(request("POST",{}),context)).status).toBe(422);
+  expect((await submit(request("POST",{expectedRevision:4,scores:{wemwbs:70}}),context)).status).toBe(422);
+  expect(mocks.submitAssessment).not.toHaveBeenCalled();
+  expect((await submit(request("POST",{expectedRevision:4}),context)).status).toBe(200);
+  expect(mocks.submitAssessment).toHaveBeenCalledWith(id,id,{expectedRevision:4});
+});
+it.each(["SUPERADMIN","INACTIVE"])("all assessment endpoints reject %s",async role=>{
+  mocks.findUnique.mockResolvedValue({id,role:role==="INACTIVE"?"PARTICIPANT":role,isActive:role!=="INACTIVE"});
+  for(const fn of handlers) expect((await fn()).status).toBe(403);
+});

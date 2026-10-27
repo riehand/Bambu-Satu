@@ -1,0 +1,123 @@
+﻿{
+    "RecordedAtUtc":  "2026-10-25T07:22:50.2492140Z",
+    "RecordedAtAsiaJakarta":  "2026-10-25T14:22:50.2550508+07:00",
+    "Mode":  "READ_ONLY_INSPECTION_AND_PREPARATION",
+    "Mount":  {
+                  "DeviceTarget":  "\\Device\\VeraCryptVolumeW",
+                  "ContainerPath":  "D:\\TELKOM UNIVERSITY\\SEMESTER 7\\Capstone\\WellBeingHub-Backup.hc\\WellBeingHub-Backup.hc",
+                  "DriverInterface":  "0x0126"
+              },
+    "FileSystem":  "FAT32",
+    "TotalBytes":  10716168192,
+    "AvailableBytes":  10716155904,
+    "Inventory":  [
+                      {
+                          "FullName":  "W:\\System Volume Information",
+                          "PSIsContainer":  true,
+                          "Length":  null
+                      },
+                      {
+                          "FullName":  "W:\\System Volume Information\\WPSettings.dat",
+                          "PSIsContainer":  false,
+                          "Length":  12
+                      }
+                  ],
+    "InventoryAccessErrors":  0,
+    "BackupDirectoryExists":  false,
+    "HealthCheck":  "ADMINISTRATOR_REQUIRED_NOT_VERIFIED",
+    "BitLockerC":  "UNKNOWN_ADMINISTRATOR_REQUIRED",
+    "StorageChangesPerformed":  false,
+    "HostedConnectionPerformed":  false,
+    "ExportReady":  false,
+    "FollowUps":  [
+                      {
+                          "RecordedAtUtc":  "2026-10-25T07:42:34.4700121Z",
+                          "RecordedAtAsiaJakarta":  "2026-10-25T14:42:34.4753070+07:00",
+                          "CheckSource":  "Owner-reported elevated chkdsk W:; not rerun by agent",
+                          "HealthCheck":  "PASS_OWNER_REPORTED",
+                          "FileSystem":  "FAT32",
+                          "Result":  "Windows has scanned the file system and found no problems. No further action is required.",
+                          "TotalSpaceReportedKB":  10465008,
+                          "AvailableSpaceReportedKB":  10464996,
+                          "ReportedSizesMatchLiveBytes":  true,
+                          "Warning":  "Shadow Copy Provider warning before completed verification",
+                          "LocalVssEvidence":  [
+                                                   {
+                                                       "EventId":  12293,
+                                                       "RecordId":  143936,
+                                                       "TimeUtc":  "2026-10-25T07:38:26.0590087Z",
+                                                       "Volume":  "W:\\",
+                                                       "Routine":  "IVssSnapshotProvider::IsVolumeSupported()",
+                                                       "HResult":  "0x8000ffff"
+                                                   },
+                                                   {
+                                                       "EventId":  12293,
+                                                       "RecordId":  143937,
+                                                       "TimeUtc":  "2026-10-25T07:38:26.0635666Z",
+                                                       "Volume":  "W:\\",
+                                                       "Routine":  "Provider volume support query",
+                                                       "HResult":  "0x8000ffff"
+                                                   }
+                                               ],
+                          "WarningAssessment":  "Consistent with documented unsupported VSS on file-hosted VeraCrypt volume; not evidence of filesystem corruption and not independently a conversion blocker; exact causal link to owner run inferred from volume/timing",
+                          "MountReconfirmed":  true,
+                          "InventoryReconfirmed":  true,
+                          "UserFilesFound":  0,
+                          "InventoryAccessErrors":  0,
+                          "HiddenVolumeAbsence":  "NOT_ESTABLISHED_OWNER_CONFIRMATION_REQUIRED",
+                          "ConversionAndAclApproval":  "EXPLICIT_CONFIRMATION_REQUIRED",
+                          "ConversionPerformed":  false,
+                          "AclChangesPerformed":  false,
+                          "FormattingPermitted":  false,
+                          "HostedConnectionPerformed":  false,
+                          "ExportReady":  false
+                      },
+                      {
+                          "RecordedAtUtc":  "2026-10-25T11:54:02.5131052Z",
+                          "RecordedAtAsiaJakarta":  "2026-10-25T18:54:02.5235295+07:00",
+                          "Mode":  "APPROVED_CORRECTION_PREFLIGHT_STOPPED",
+                          "OwnerConfirmation":  "Standard VeraCrypt Volume; no hidden volume or hidden-volume data",
+                          "Approval":  "Explicit approval received for W: FAT32-to-NTFS conversion, three-object scoped ACL changes and non-sensitive verification",
+                          "ExpectedContainer":  "D:\\TELKOM UNIVERSITY\\SEMESTER 7\\Capstone\\WellBeingHub-Backup.hc\\WellBeingHub-Backup.hc",
+                          "ExpectedDrive":  "W:",
+                          "MountCheck":  "FAILED: Drive is not mapped to VeraCrypt",
+                          "InventoryCheck":  "FAILED: W: drive not available in tool session",
+                          "HealthCheck":  "Earlier owner-reported clean CHKDSK retained; cannot revalidate current volume while unavailable",
+                          "StopReason":  "Changed mount/accessibility prerequisite; no mutation attempted",
+                          "ConversionCommandInvoked":  false,
+                          "AclChangesPerformed":  false,
+                          "BackupDirectoryCreated":  false,
+                          "WriteProbePerformed":  false,
+                          "FormattingPerformed":  false,
+                          "WindowsSettingsChanged":  false,
+                          "HostedConnectionPerformed":  false,
+                          "ExportReady":  false,
+                          "NextAction":  "Owner remounts same intended container as W: and confirms availability; existing limited approval remains recorded, with all prerequisites revalidated before execution"
+                      },
+                      {
+                          "RecordedAtUtc":  "2026-10-25T12:24:04.8439808Z",
+                          "RecordedAtAsiaJakarta":  "2026-10-25T19:24:04.8491343+07:00",
+                          "Status":  "CONVERSION_AND_SCOPED_ACLS_VERIFIED",
+                          "ExecutionEvidence":  "PHASE2-STORAGE-EXECUTION-20261025T122124368Z.json",
+                          "PostcheckEvidence":  "PHASE2-STORAGE-POSTCHECK-20261025.json",
+                          "ConversionExitCode":  0,
+                          "ChkdskBeforeExitCode":  0,
+                          "ChkdskAfterExitCode":  0,
+                          "FileSystem":  "NTFS",
+                          "ScopedAclTargets":  [
+                                                   "D:\\TELKOM UNIVERSITY\\SEMESTER 7\\Capstone\\WellBeingHub-Backup.hc",
+                                                   "D:\\TELKOM UNIVERSITY\\SEMESTER 7\\Capstone\\WellBeingHub-Backup.hc\\WellBeingHub-Backup.hc",
+                                                   "W:\\WellBeingHub-Backups"
+                                               ],
+                          "ElevatedProbePassed":  true,
+                          "OrdinaryAccountProbePassed":  true,
+                          "OrdinaryTokenAdministrator":  false,
+                          "AvailableBytes":  10696134656,
+                          "ExportReady":  false,
+                          "RemainingSecurityGate":  "System memory-spill protection and recovery custody not confirmed",
+                          "ProductionExportAuthorized":  false,
+                          "HostedConnectionPerformed":  false,
+                          "WindowsSettingsChanged":  false
+                      }
+                  ]
+}

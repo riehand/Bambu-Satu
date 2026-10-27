@@ -1,8 +1,25 @@
 # Phase 1A: Supabase Auth migration
 
-Prepared on 2026-10-23. Application implementation is ready for configuration and
-staging verification; **this is not evidence that the live database has migrated**.
-No database migration, account import, hash cleanup, or Dashboard change was run.
+## Current status — verified 2026-10-24
+
+The interrupted authentication work has been recovered and verified. Both approved
+local configuration corrections were already complete: SITE_URL is configured and
+the runtime DATABASE_URL matches the working CLI connection. Both auth migrations
+are recorded as successfully applied in hosted Supabase. The read-only audit found
+two profiles, zero legacy hashes and no identity/profile mismatches. No migration
+or hosted write was performed during recovery.
+
+All 185 current automated tests pass, including 25 registration diagnostics tests;
+Prisma validation/generation, TypeScript and the production build pass. Lint has
+zero errors and two existing landing-page image warnings. The owner reports that
+registration, login, email verification and participant dashboard access work.
+The agent did not create hosted test accounts or execute live signup/email flows.
+See [AUTH-RECOVERY.md](AUTH-RECOVERY.md) for the exact recovered state, verified 503
+causes, command results, file inventory, remaining limits and manual checks.
+
+The dated notes below preserve the earlier investigation. Missing configuration,
+IPv6 connectivity, unapplied-migration and test-count statements in those snapshots
+describe their historical state, not the current status above.
 
 ## Configuration follow-up (2026-10-23)
 
@@ -289,7 +306,7 @@ table requires its own RLS/grants and independently authorized Prisma operations
 | `prisma/manual/clear-legacy-passwords.sql` | Separately approved post-cutover cleanup |
 | `scripts/auth-preflight.mjs` | Safe read-only inventory |
 | `src/lib/supabase/{config,client,server}.ts` | Public config and SSR client factories |
-| `src/lib/prisma.ts`, `src/lib/auth/{roles,session,http}.ts` | Server-only DB/authorization and response/origin helpers |
+| `src/lib/prisma.ts`, `src/lib/auth/{roles,session,http,registration-diagnostics}.ts`, `src/lib/configuration-error.ts` | Server-only DB/authorization, safe configuration errors, stage-based diagnostics and response/origin helpers |
 | `src/lib/validations/auth.ts` | Normalized email, bounded profile inputs, password matching |
 | `src/proxy.ts` | Next 16 verified session refresh and coarse route protection |
 | `src/app/api/auth/{register,login,logout,resend}/route.ts` | Auth-only mutations with CSRF/error handling |
@@ -300,7 +317,7 @@ table requires its own RLS/grants and independently authorized Prisma operations
 | `src/app/{psychologist,admin}/dashboard/page.tsx` | Role-protected placeholders |
 | `src/components/{logout-button,role-placeholder}.tsx` | Shared minimal auth UI |
 | `src/app/page.tsx` | Four JSX apostrophe escapes; no rendered/design change |
-| `tests/{auth,database,proxy,environment,preflight}.test.ts`, `tests/server-only.ts`, `vitest.config.ts` | Isolated authorization, PostgreSQL, placeholder safety and database-target checks |
+| `tests/{auth,database,proxy,environment,preflight,registration-diagnostics}.test.ts`, `tests/server-only.ts`, `vitest.config.ts` | Isolated authorization, PostgreSQL, placeholder safety, database-target and registration diagnostic checks |
 | `docs/AUTH-MIGRATION.md` | Audit, rollout, configuration, testing and limitations |
 | Removed `src/lib/authOptions.ts`, `src/middleware.ts`, `src/app/api/auth/[...nextauth]/route.ts` | Replaced legacy auth |
 

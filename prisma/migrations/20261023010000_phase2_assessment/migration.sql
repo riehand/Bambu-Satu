@@ -201,6 +201,11 @@ ALTER TABLE assessment_question_sets ADD CONSTRAINT published_question_set_appro
 
 CREATE FUNCTION public.phase2_freeze_question_set() RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
 BEGIN
+  -- Questions reference an existing set: create a draft first, then publish.
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.is_published THEN RAISE EXCEPTION 'Question sets must be inserted as unpublished drafts'; END IF;
+    RETURN NEW;
+  END IF;
   IF OLD.is_published THEN RAISE EXCEPTION 'Published question set is immutable'; END IF;
   IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
   IF NEW.is_published AND (SELECT count(*) FROM questions WHERE question_set_id = NEW.id AND is_active) <> 35 THEN
@@ -208,7 +213,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END $$;
-CREATE TRIGGER phase2_freeze_question_set BEFORE UPDATE OR DELETE ON assessment_question_sets FOR EACH ROW EXECUTE FUNCTION public.phase2_freeze_question_set();
+CREATE TRIGGER phase2_freeze_question_set BEFORE INSERT OR UPDATE OR DELETE ON assessment_question_sets FOR EACH ROW EXECUTE FUNCTION public.phase2_freeze_question_set();
 
 CREATE FUNCTION public.phase2_freeze_question() RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
 DECLARE published boolean;

@@ -1,0 +1,214 @@
+﻿{
+    "RecordedAtUtc":  "2026-10-25T13:06:24.6467825Z",
+    "Scope":  "Read-only BitLocker readiness metadata; no recovery key retrieval",
+    "AdministratorToken":  true,
+    "SettingsChanged":  false,
+    "Checks":  {
+                   "BitLockerC":  {
+                                      "Status":  "OK",
+                                      "Result":  [
+                                                     {
+                                                         "MountPoint":  "C:",
+                                                         "VolumeStatus":  "FullyDecrypted",
+                                                         "ProtectionStatus":  "Off",
+                                                         "EncryptionPercentage":  0,
+                                                         "EncryptionMethod":  "None",
+                                                         "LockStatus":  "Unlocked"
+                                                     }
+                                                 ]
+                                  },
+                   "BitLockerD":  {
+                                      "Status":  "OK",
+                                      "Result":  [
+                                                     {
+                                                         "MountPoint":  "D:",
+                                                         "VolumeStatus":  "FullyDecrypted",
+                                                         "ProtectionStatus":  "Off",
+                                                         "EncryptionPercentage":  0,
+                                                         "EncryptionMethod":  "None",
+                                                         "LockStatus":  "Unlocked"
+                                                     }
+                                                 ]
+                                  },
+                   "Tpm":  {
+                               "Status":  "OK",
+                               "Result":  [
+                                              {
+                                                  "TpmPresent":  true,
+                                                  "TpmReady":  true,
+                                                  "TpmEnabled":  true,
+                                                  "TpmActivated":  true,
+                                                  "LockedOut":  false
+                                              }
+                                          ]
+                           },
+                   "TpmSpecification":  {
+                                            "Status":  "OK",
+                                            "Result":  [
+                                                           {
+                                                               "SpecVersion":  "2.0, 0, 1.38",
+                                                               "IsEnabled_InitialValue":  true,
+                                                               "IsActivated_InitialValue":  true
+                                                           }
+                                                       ]
+                                        },
+                   "SecureBoot":  {
+                                      "Status":  "OK",
+                                      "Result":  [
+                                                     true
+                                                 ]
+                                  },
+                   "WinRE":  {
+                                 "Status":  "OK",
+                                 "Result":  [
+                                                "Windows Recovery Environment (Windows RE) and system reset configuration\r\nInformation:\r\n\r\n    Windows RE status:         Enabled\r\n    Windows RE location:       \\\\?\\GLOBALROOT\\device\\harddisk1\\partition4\\Recovery\\WindowsRE\r\n    Boot Configuration Data (BCD) identifier: 0d490de5-557a-11f0-a50c-e070eac5cbec\r\n    Recovery image location:   \r\n    Recovery image index:      0\r\n    Custom image location:     \r\n    Custom image index:        0\r\n    Windows RE Version:        10.0.26100.9711\r\n\r\nREAGENTC.EXE: Operation Successful.\r\n    \r\n"
+                                            ]
+                             },
+                   "OSPartitionAndBootVolumes":  {
+                                                     "Status":  "OK",
+                                                     "Result":  [
+                                                                    {
+                                                                        "DiskNumber":  1,
+                                                                        "PartitionNumber":  1,
+                                                                        "Type":  "System",
+                                                                        "Size":  104857600,
+                                                                        "IsBoot":  false,
+                                                                        "IsSystem":  true,
+                                                                        "FileSystemType":  "FAT32",
+                                                                        "VolumeSize":  100663296,
+                                                                        "FreeBytes":  64324608,
+                                                                        "VolumeQuery":  "Queried"
+                                                                    },
+                                                                    {
+                                                                        "DiskNumber":  1,
+                                                                        "PartitionNumber":  2,
+                                                                        "Type":  "Reserved",
+                                                                        "Size":  16777216,
+                                                                        "IsBoot":  false,
+                                                                        "IsSystem":  false,
+                                                                        "FileSystemType":  null,
+                                                                        "VolumeSize":  null,
+                                                                        "FreeBytes":  null,
+                                                                        "VolumeQuery":  "Not inspected: reserved/non-filesystem partition"
+                                                                    },
+                                                                    {
+                                                                        "DiskNumber":  1,
+                                                                        "PartitionNumber":  3,
+                                                                        "Type":  "Basic",
+                                                                        "Size":  511036096512,
+                                                                        "IsBoot":  true,
+                                                                        "IsSystem":  false,
+                                                                        "FileSystemType":  "NTFS",
+                                                                        "VolumeSize":  511036092416,
+                                                                        "FreeBytes":  135336869888,
+                                                                        "VolumeQuery":  "Queried"
+                                                                    },
+                                                                    {
+                                                                        "DiskNumber":  1,
+                                                                        "PartitionNumber":  4,
+                                                                        "Type":  "Recovery",
+                                                                        "Size":  950009856,
+                                                                        "IsBoot":  false,
+                                                                        "IsSystem":  false,
+                                                                        "FileSystemType":  "NTFS",
+                                                                        "VolumeSize":  950005760,
+                                                                        "FreeBytes":  90656768,
+                                                                        "VolumeQuery":  "Queried"
+                                                                    }
+                                                                ]
+                                                 },
+                   "Disks":  {
+                                 "Status":  "OK",
+                                 "Result":  [
+                                                {
+                                                    "Number":  1,
+                                                    "PartitionStyle":  "GPT",
+                                                    "HealthStatus":  "Healthy",
+                                                    "IsBoot":  true,
+                                                    "IsSystem":  true,
+                                                    "Size":  512110190592
+                                                },
+                                                {
+                                                    "Number":  0,
+                                                    "PartitionStyle":  "GPT",
+                                                    "HealthStatus":  "Healthy",
+                                                    "IsBoot":  false,
+                                                    "IsSystem":  false,
+                                                    "Size":  512110190592
+                                                }
+                                            ]
+                             },
+                   "PhysicalDiskHealth":  {
+                                              "Status":  "OK",
+                                              "Result":  [
+                                                             {
+                                                                 "MediaType":  "SSD",
+                                                                 "HealthStatus":  "Healthy",
+                                                                 "Size":  512110190592
+                                                             },
+                                                             {
+                                                                 "MediaType":  "SSD",
+                                                                 "HealthStatus":  "Healthy",
+                                                                 "Size":  512110190592
+                                                             }
+                                                         ]
+                                          },
+                   "Pagefile":  {
+                                    "Status":  "OK",
+                                    "Result":  [
+                                                   {
+                                                       "Name":  "C:\\pagefile.sys",
+                                                       "AllocatedBaseSize":  15360,
+                                                       "CurrentUsage":  1569,
+                                                       "PeakUsage":  1767
+                                                   }
+                                               ]
+                                },
+                   "GroupPolicyBitLocker":  {
+                                                "Status":  "OK",
+                                                "Result":  [
+                                                               "Registry key absent"
+                                                           ]
+                                            },
+                   "MdmBitLocker":  {
+                                        "Status":  "OK",
+                                        "Result":  [
+                                                       "Registry key absent"
+                                                   ]
+                                    },
+                   "AutomaticEncryptionPrevention":  {
+                                                         "Status":  "OK",
+                                                         "Result":  [
+                                                                        {
+                                                                            "PreventDeviceEncryption":  1
+                                                                        }
+                                                                    ]
+                                                     },
+                   "Services":  {
+                                    "Status":  "OK",
+                                    "Result":  [
+                                                   {
+                                                       "Name":  "BDESVC",
+                                                       "Status":  "Stopped",
+                                                       "StartType":  "Manual"
+                                                   },
+                                                   {
+                                                       "Name":  "ShellHWDetection",
+                                                       "Status":  "Running",
+                                                       "StartType":  "Automatic"
+                                                   }
+                                               ]
+                                },
+                   "PendingRebootIndicators":  {
+                                                   "Status":  "OK",
+                                                   "Result":  [
+                                                                  {
+                                                                      "CBS":  false,
+                                                                      "WindowsUpdate":  false,
+                                                                      "PendingFileRenameOperationsPresent":  false
+                                                                  }
+                                                              ]
+                                               }
+               },
+    "CompletedAtUtc":  "2026-10-25T13:06:27.9808983Z"
+}

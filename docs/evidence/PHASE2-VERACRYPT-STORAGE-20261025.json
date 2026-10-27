@@ -1,0 +1,42 @@
+﻿{
+    "Mode":  "PREPARATION_ONLY",
+    "Storage":  {
+                    "DirectoryExists":  false,
+                    "ReviewedExistingDirectory":  "PARENT_ONLY",
+                    "EfsEncrypted":  false,
+                    "EncryptionProvider":  "VeraCrypt",
+                    "VeraCryptMountDetected":  true,
+                    "ExpectedContainerMatched":  true,
+                    "ContainerOutsideRepository":  true,
+                    "ContainerAndParentAclRestricted":  false,
+                    "ContainerPathHasReparsePoint":  false,
+                    "OtherAllowEntries":  1,
+                    "OwnerAllowed":  false,
+                    "AclInheritanceDisabled":  false,
+                    "ReparsePointInPath":  false,
+                    "OutsideRepository":  true,
+                    "FileSystem":  "FAT32",
+                    "AvailableBytes":  10716155904,
+                    "RequiredFreeGiB":  5.1,
+                    "CapacityReviewedAndSufficient":  true,
+                    "WithinDetectedSyncRoot":  false,
+                    "OwnerConfirmedNoOtherSync":  true,
+                    "SystemSpillProtectionConfirmed":  false,
+                    "PlannedOutputRoot":  "W:\\WellBeingHub-Backups",
+                    "PlannedTemporaryFiles":  "W:\\\u003cbackup-directory\u003e\\wellbeing-\u003cUTC\u003e\\tmp",
+                    "ReadyForExport":  false
+                },
+    "ToolsReady":  true,
+    "Versions":  {
+                     "pg_dump":  "pg_dump (PostgreSQL) 17.11",
+                     "pg_dumpall":  "pg_dumpall (PostgreSQL) 17.11",
+                     "pg_restore":  "pg_restore (PostgreSQL) 17.11",
+                     "psql":  "psql (PostgreSQL) 17.11"
+                 },
+    "SourceSizeEvidence":  {
+                               "Bytes":  11335347,
+                               "MeasuredAt":  "2026-10-25T13:49:58+07:00",
+                               "Source":  "Owner-provided hosted database size; no new hosted query",
+                               "RequiredFreeGiB":  5.1
+                           }
+}

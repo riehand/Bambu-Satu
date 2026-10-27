@@ -1,5 +1,7 @@
 # Phase 2 visual reference map
 
+Re-inspected all 17 original JPGs on 24 October 2026. Updated rendered comparisons and screenshot paths are recorded in [PHASE2-COMPLETION.md](PHASE2-COMPLETION.md). Added explicit completed/remaining quota statistics, persisted session progress, selected-answer review, per-instrument saved counts and final confirmation in the same visual system.
+
 All 17 JPGs in `docs/mockups/` were opened at original resolution before UI edits. The five primary images are 1440 px wide. Observed system: 234 px sidebar, 84 px header, 36 px content gutters, approximately #f3faf6 background, #e5f5ec emphasis, #193f35 headings, #227c55 actions, #dce8e1 borders, 20–26 px card radii, Inter typography, restrained shadows. Questionnaire: 94 px header, 820 px centered column, 32 px card padding, 54 px minimum answer rows.
 
 | Reference (Desktop · … .jpg) | Implementation | Target |

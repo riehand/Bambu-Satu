@@ -1,0 +1,9 @@
+# Minimal migration-history privilege review — preparation only
+
+**NOT AUTHORIZED / NOT EXECUTED.** The read-only 26 October audit reconfirmed that `anon` and `authenticated` can SELECT and mutate `public._prisma_migrations`; RLS is disabled. This is separate from backup export. Preserve the current state in the backup before any remediation. Do not fix it by broad public-schema revokes or by enabling RLS blindly.
+
+Proposed scope for later approval: revoke only migration-history table privileges from `PUBLIC`, `anon` and `authenticated`, plus any explicit column-level SELECT/INSERT/UPDATE/REFERENCES grants on that same table. Keep the legitimate migration owner/deployment role's access. Recheck inheritance and effective privileges, because a table-level revoke alone does not eliminate separate column grants or access inherited through other roles. Stop for review if indirect access would require changing shared role memberships.
+
+The future exact transaction must first inventory column grants/default-grant provenance privately, then revoke the reviewed grants only on `public._prisma_migrations`, verify browser-role denial and deploy-role access, and commit only if those assertions pass. It must leave `public.users`, Auth tables/triggers, other roles and unrelated policies unchanged. Any future default-privilege change is a separate scope; do not revoke schema-wide defaults merely to repair this existing table.
+
+The export connection is not superuser but has BYPASSRLS/CREATEROLE. Runtime-role separation and Chatbot shared-database boundaries require a distinct design/approval; this review does not reset credentials or remove role attributes. Hosted Phase 2 migration stays separately gated on backup/recovery, the reviewed privilege correction and existing content/team/deployment prerequisites.

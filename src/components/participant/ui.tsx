@@ -10,7 +10,7 @@ export function EmptyState({ title, children }: { title: string; children: React
 }
 export function DataError({ message }: { message: string }) { return <div className="wb-notice wb-warning" role="status"><Icon name="clock"/><div><strong>Asesmen belum tersedia</strong><p>{message}</p></div></div>; }
 export function EmergencyNote() { return <p className="wb-footnote">Layanan ini bukan layanan darurat. Jika Anda berada dalam bahaya langsung, hubungi layanan darurat setempat atau datangi IGD terdekat.</p>; }
-export function PrivacyNote() { return <Notice title="Hasil Anda bersifat pribadi">Jawaban dan hasil asesmen tidak dibagikan secara otomatis kepada psikolog atau Nani. Persetujuan berbagi merupakan izin yang terpisah.</Notice>; }
+export function PrivacyNote() { return <Notice title="Hasil Anda bersifat pribadi">Jawaban dan hasil asesmen tidak dibagikan secara otomatis kepada psikolog atau Chatbot. Persetujuan berbagi merupakan izin yang terpisah.</Notice>; }
 export function dateLabel(value: string | Date) { return new Intl.DateTimeFormat("id-ID", { dateStyle: "long", timeStyle: "short", timeZone: "Asia/Jakarta" }).format(new Date(value)) + " WIB"; }
 export const categoryLabels: Record<DassCategory, string> = { NORMAL: "Normal", MILD: "Ringan", MODERATE: "Sedang", SEVERE: "Berat", EXTREMELY_SEVERE: "Sangat berat" };
 export type Scores = { depressionScore: number; depressionCategory: DassCategory; anxietyScore: number; anxietyCategory: DassCategory; stressScore: number; stressCategory: DassCategory; wemwbsScore: number };

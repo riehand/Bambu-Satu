@@ -1,0 +1,123 @@
+// PREPARED ONLY. Requires explicit owner approval; never invoked by npm test/build.
+import nextEnv from "@next/env";
+import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { createReadStream, mkdirSync, readFileSync, writeFileSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { configuredSource, externalDirectory } from "./phase2-safety.mjs";
+import { backupLayout, backupTemporaryEnvironment } from "./phase2-backup-layout.mjs";
+
+if (!process.argv.includes("--export-approved")) {
+  console.log("Preparation only. See docs/PHASE2-BACKUP-RECOVERY.md. No connection or export performed.");
+  if (process.argv.includes("--dry-run")) {
+    const layout = backupLayout(process.env.PHASE2_BACKUP_DIR || "W:\\WellBeingHub-Backups", new Date().toISOString().replaceAll(":", "-"));
+    console.log(JSON.stringify({ mode: "PATH_PLAN_ONLY", ...layout, temporaryEnvironment: backupTemporaryEnvironment(layout.temporaryDirectory),
+      writesPerformed: false, storageReadinessEstablished: false }, null, 2));
+  }
+} else {
+  let destination;
+  try {
+    if (process.argv.includes("--dry-run") || process.platform !== "win32" || process.env.PHASE2_BACKUP_STORAGE_VERIFIED !== "encrypted-and-access-reviewed") throw 0;
+    const repository = process.cwd();
+    const expectedContainer = process.env.PHASE2_VERACRYPT_CONTAINER;
+    if (!expectedContainer) throw 0;
+    function verifyMount() {
+      const check = spawnSync(join(process.env.SystemRoot || "C:\\Windows", "System32/WindowsPowerShell/v1.0/powershell.exe"),
+        ["-NoProfile", "-NonInteractive", "-File", join(repository, "scripts/phase2-veracrypt.ps1"), "-VerifyMount", "-ExpectedContainer", expectedContainer],
+        { windowsHide: true, encoding: "utf8", cwd: destination || repository,
+          env: { SystemRoot: process.env.SystemRoot, PATH: process.env.PATH,
+            ...(destination ? backupTemporaryEnvironment(join(destination, "tmp")) : {}) } });
+      if (check.status !== 0) throw 0;
+    }
+    verifyMount();
+    nextEnv.loadEnvConfig(process.cwd());
+    const db = configuredSource(process.env.DIRECT_URL, process.env.NEXT_PUBLIC_SUPABASE_URL);
+    const parent = externalDirectory(process.env.PHASE2_BACKUP_DIR);
+    const bin = process.env.PHASE2_PG17_BIN;
+    if (!bin) throw 0;
+    const executable = name => join(bin, name + (process.platform === "win32" ? ".exe" : ""));
+    const clientVersions = {};
+    for (const name of ["pg_dump", "pg_dumpall", "pg_restore", "psql"]) {
+      const version = spawnSync(executable(name), ["--version"], { encoding: "utf8", windowsHide: true });
+      if (version.status !== 0 || !/\(PostgreSQL\) 17\./.test(version.stdout)) throw 0;
+      clientVersions[name] = version.stdout.trim();
+    }
+    const timestamps = () => {
+      const now = new Date();
+      return { utc: now.toISOString(), asiaJakarta: new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "+07:00"), timeZone: "Asia/Jakarta" };
+    };
+    const startedAt = timestamps();
+    const stamp = startedAt.utc.replaceAll(":", "-");
+    const layout = backupLayout(parent, stamp);
+    verifyMount();
+    destination = layout.directory;
+    mkdirSync(destination, { mode: 0o700 });
+    if (process.platform === "win32") {
+      const identity = spawnSync("whoami", [], { encoding: "utf8", windowsHide: true });
+      if (identity.status !== 0) throw 0;
+      const acl = spawnSync("icacls", [destination, "/inheritance:r", "/grant:r", `${identity.stdout.trim()}:(OI)(CI)F`, "SYSTEM:(OI)(CI)F"], { windowsHide: true });
+      if (acl.status !== 0) throw 0;
+    }
+    mkdirSync(layout.temporaryDirectory, { mode: 0o700 });
+    Object.assign(process.env, backupTemporaryEnvironment(layout.temporaryDirectory));
+    process.chdir(destination);
+    // Disable application diagnostic dumps; Windows paging/crash policy is a separate storage gate.
+    process.report.reportOnFatalError = false;
+    process.report.reportOnSignal = false;
+    process.report.reportOnUncaughtException = false;
+    process.report.directory = layout.temporaryDirectory;
+    // URL is parsed; credentials never appear in process arguments or console output.
+    const env = { ...process.env, PGHOST: db.hostname, PGPORT: db.port || "5432",
+      PGUSER: decodeURIComponent(db.username), PGPASSWORD: decodeURIComponent(db.password),
+      PGDATABASE: "postgres", PGSSLMODE: "require", PGCONNECT_TIMEOUT: "15",
+      PGSERVICE: "", PGSERVICEFILE: "", PGHOSTADDR: "", PGOPTIONS: "-c default_transaction_read_only=on", NODE_OPTIONS: "",
+      ...backupTemporaryEnvironment(layout.temporaryDirectory) };
+    function run(name, args) {
+      verifyMount();
+      const result = spawnSync(executable(name), args, { env, cwd: destination, encoding: "utf8", windowsHide: true, maxBuffer: 16 * 1024 * 1024 });
+      // Even errors can contain SQL/data. Do not print or persist raw diagnostics.
+      if (result.status !== 0 || result.stderr.trim()) throw 0;
+      return result.stdout;
+    }
+    function writeProtected(name, contents) {
+      verifyMount();
+      if (!Object.hasOwn(layout.files, name)) throw 0;
+      writeFileSync(layout.files[name], contents, { mode: 0o600 });
+    }
+    const serverVersion = run("psql", ["-X", "-w", "-At", "-c", "SHOW server_version_num"]).trim();
+    if (!/^17\d{4}$/.test(serverVersion)) throw 0;
+    writeProtected("manifest.json", JSON.stringify({ status: "INCOMPLETE", startedAt, recoveryVerified: false }));
+    run("pg_dump", ["-w", "--format=custom", "--file", layout.files["database.dump"]]);
+    run("pg_dumpall", ["-w", "--roles-only", "--no-role-passwords", "--file", layout.files["roles.sql"]]);
+    const toc = run("pg_restore", ["--list", layout.files["database.dump"]]);
+    for (const required of ["TABLE auth users", "TABLE auth identities", "TABLE public users", "TABLE public _prisma_migrations",
+      "wellbeing_auth_user_created", "wellbeing_auth_email_changed", "handle_auth_user_created", "handle_auth_email_changed"]) {
+      if (!toc.includes(required)) throw 0;
+    }
+    writeProtected("archive-index.txt", toc);
+    writeProtected("restore-verification.md", readFileSync(join(repository, "docs/PHASE2-BACKUP-RECOVERY.md")));
+    const files = [];
+    for (const name of ["database.dump", "roles.sql", "archive-index.txt", "restore-verification.md"]) {
+      const path = join(destination, name), hash = createHash("sha256");
+      for await (const chunk of createReadStream(path)) hash.update(chunk);
+      files.push({ name, bytes: statSync(path).size, sha256: hash.digest("hex") });
+    }
+    const localMigrationChecksums = ["20261021144827_init_users", "20261023000000_supabase_auth", "20261023010000_phase2_assessment"].map(name => ({
+      name, sha256: createHash("sha256").update(readFileSync(join(repository, `prisma/migrations/${name}/migration.sql`))).digest("hex"),
+    }));
+    writeProtected("manifest.json", JSON.stringify({
+      status: "EXPORTED_NOT_RESTORE_VERIFIED", startedAt, finishedAt: timestamps(),
+      source: "configured Supabase project (DIRECT_URL)", serverVersion, clientMajor: 17, clientVersions,
+      coverage: "Full database archive with owners/ACLs; roles without role passwords. No schema exclusions.",
+      exclusions: ["Storage file bytes", "dashboard/Auth provider configuration", "Edge Function source/secrets", "role passwords"],
+      recoveryVerified: false, files, localMigrationChecksums,
+      migrationNote: "Local reference hashes only; compare archived _prisma_migrations on separately approved restore. Phase 2 must remain unapplied in the predeployment source.",
+    }, null, 2));
+    const manifestHash = createHash("sha256").update(readFileSync(join(destination, "manifest.json"))).digest("hex");
+    writeProtected("SHA256SUMS.txt", [...files.map(file => `${file.sha256}  ${file.name}`), `${manifestHash}  manifest.json`].join("\n") + "\n");
+    console.log("Export complete in the approved protected directory. Recovery is NOT yet verified.");
+  } catch {
+    console.error("Backup stopped. No recovery claim. Check tools, protected destination and source permissions privately. Any partial directory must remain protected.");
+    process.exitCode = 1;
+  }
+}

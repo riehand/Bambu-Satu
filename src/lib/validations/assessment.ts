@@ -17,6 +17,7 @@ export const saveAnswersSchema = z.strictObject({
   "Satu soal hanya boleh dijawab sekali dalam satu permintaan");
 
 export const startAssessmentSchema = z.strictObject({ processingConsent: z.literal(true) });
+export const submitAssessmentSchema = z.strictObject({ expectedRevision: z.number().int().nonnegative() });
 export const sessionIdSchema = z.string().uuid();
 export const questionsQuerySchema = z.strictObject({
   instrument: z.enum(["DASS21", "WEMWBS"]).optional(),

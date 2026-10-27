@@ -1,0 +1,59 @@
+﻿{
+    "Status":  "ENCRYPTED_OFF_DEVICE_PROJECT_BACKUP_VERIFIED",
+    "RecordedUtc":  "2026-10-26T07:18:04.5204652Z",
+    "RecordedAsiaJakarta":  "2026-10-26T14:18:04+07:00",
+    "TimestampMeaning":  "Evidence recording time; exact upload/download/test completion times were not supplied",
+    "ArchiveName":  "Bambu-Satu-Phase2-Final-20261026T064154Z.7z",
+    "ArchiveBytes":  410223461,
+    "ArchiveSHA256":  "4382A7CD5688A4797554CA39D3A037607BE066E695B66192EC0E1F67EB07A6C1",
+    "GoogleDriveUpload":  {
+                              "Status":  "COMPLETED",
+                              "Basis":  "Owner confirmation",
+                              "AutomatedUpload":  false
+                          },
+    "IndependentDownload":  {
+                                "Status":  "COMPLETED",
+                                "Basis":  "Owner confirmation; separate downloaded local file independently checked"
+                            },
+    "DownloadedSHA256":  {
+                             "Status":  "PASSED",
+                             "Basis":  "Independent local Get-FileHash SHA256 comparison and byte-size check"
+                         },
+    "DownloadedIntegrity":  {
+                                "Status":  "PASSED",
+                                "Basis":  "Owner confirmation of 7-Zip Test",
+                                "ReportedResult":  "Everything is Ok",
+                                "RepeatedByAgent":  false
+                            },
+    "LocalIntegrity":  {
+                           "Status":  "PASSED",
+                           "ExitCode":  0
+                       },
+    "SourceStability":  {
+                            "Status":  "PASSED",
+                            "BeforeAfterIdentical":  true,
+                            "ContentAndPathSHA256":  "6C3FED09351E942BC4F0CD58B0E990E1FEC7A529A1A781B710792C5F250FF052",
+                            "ContentChanges":  0,
+                            "MetadataChanges":  0,
+                            "Files":  1188,
+                            "Directories":  389,
+                            "Bytes":  471192162,
+                            "ReviewedAliases":  20
+                        },
+    "Completeness":  "Source and archive aggregate SHA256 for data and data plus names match; detailed inventories retained only in memory",
+    "Exclusions":  [
+                       "root node_modules",
+                       "root .next"
+                   ],
+    "Encryption":  "AES-256 encrypted header coder parsed; encrypted member filenames verified",
+    "FullExtractionBasedRestoration":  "UNTESTED",
+    "PerFileRestoredComparison":  "NOT_PERFORMED",
+    "JunctionTopologyRestoration":  "UNTESTED; alias contents covered",
+    "CloudPermissionsAndAccountRecovery":  "OWNER RESPONSIBILITY; not independently inspected",
+    "PasswordCustody":  "No secrets requested or recorded; independent custody remains owner responsibility",
+    "OriginalAndFinalArchives":  "PRESERVED",
+    "SnapshotScope":  "The verified frozen source snapshot; subsequent documentation/evidence changes are not included and do not invalidate that snapshot",
+    "ProductionDatabaseExport":  "NOT_AUTHORIZED; NOT_EXECUTED",
+    "ProductionDatabaseRestore":  "NOT_AUTHORIZED; NOT_EXECUTED",
+    "HostedPhase2Migration":  "NOT_AUTHORIZED; NOT_EXECUTED"
+}

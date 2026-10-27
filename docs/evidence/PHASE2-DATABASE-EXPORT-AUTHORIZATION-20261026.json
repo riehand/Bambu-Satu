@@ -1,0 +1,27 @@
+﻿{
+    "Status":  "AUTHORIZED_EXPORT_ONLY_AWAITING_PRIVATE_OWNER_PASSPHRASE",
+    "RecordedUtc":  "2026-10-26T12:34:50.4136430Z",
+    "SourceProject":  "bofoowyzlnfhwcstlmgp",
+    "Database":  "postgres",
+    "Outputs":  [
+                    "D:\\WellBeingHub-Backups\\Supabase-Phase2-20261026T120516Z\\database.dump.age",
+                    "D:\\WellBeingHub-Backups\\Supabase-Phase2-20261026T120516Z\\recovery.json.age"
+                ],
+    "SourceReverifiedUtc":  "2026-10-26T12:33:49.354Z",
+    "ReadOnly":  true,
+    "ClientTls":  "verify-full; official public CA",
+    "DestinationRestricted":  true,
+    "DestinationUnused":  true,
+    "Scope":  "Logical schema/data export; password-free roles; direct age encryption; non-restoring in-memory verification; sanitized evidence",
+    "PrivatePassphrase":  "Owner terminal only; not requested in chat or passed as arguments/environment",
+    "ProcessExitEvidence":  "To be recorded in session.json and verification.json",
+    "ArchiveCoverage":  "Fresh private catalog compared with actual archive; only aggregate coverage counts saved plaintext",
+    "ResidualRisksAcceptedByOwner":  [
+                                         "Unencrypted Windows memory/pagefile/crash exposure",
+                                         "Observed non-TLS pooler/backend leg"
+                                     ],
+    "UploadAuthorized":  false,
+    "RestoreAuthorized":  false,
+    "HostedMigrationAuthorized":  false,
+    "PrivilegeChangesAuthorized":  false
+}

@@ -26,7 +26,7 @@ test("mobile drawer keeps keyboard focus inside and closes with Escape",async({p
 });
 
 for(const width of [1440,768,390]) {
-  for(const [view,state] of [["dashboard","empty"],["dashboard","populated"],["dashboard","unavailable"],["introduction","empty"],["questionnaire","empty"],["questionnaire","wemwbs"],["results","populated"],["history","empty"]]) {
+  for(const [view,state] of [["dashboard","empty"],["dashboard","populated"],["dashboard","unavailable"],["dashboard","in-progress"],["dashboard","exhausted"],["introduction","content-unavailable"],["introduction","empty"],["questionnaire","empty"],["questionnaire","wemwbs"],["results","populated"],["history","empty"]]) {
     test(`${view} ${state} at ${width}px has no horizontal overflow`,async({page})=>{
       await page.setViewportSize({width,height:1024});await page.goto(`/?view=${view}&state=${state}`);
       await expect(page.locator(".wb-app")).toBeVisible();
@@ -59,8 +59,8 @@ test("keyboard answers, same-session instrument transition, review and final sub
   const errors:string[]=[];page.on("pageerror",error=>errors.push(error.message));
   const sessionIds=new Set<string>();let revision=0;
   await page.route("**/answers",route=>{sessionIds.add(route.request().url().split("/").at(-2)!);const body=route.request().postDataJSON();expect(body.expectedRevision).toBe(revision);return route.fulfill({json:{success:true,data:{saved:1,revision:++revision}}});});
-  await page.route("**/submit",route=>route.fulfill({json:{success:true,data:{status:"COMPLETED"}}}));
+  await page.route("**/submit",route=>{expect(route.request().postDataJSON()).toEqual({expectedRevision:14});return route.fulfill({json:{success:true,data:{status:"COMPLETED"}}});});
   await page.goto("/?view=questionnaire&state=wemwbs");await page.getByRole("button",{name:"Sebelumnya"}).click();await expect(page.locator(".wb-progress-labels")).toContainText("Pertanyaan 21 dari 21");await page.getByRole("button",{name:"Lanjut ke WEMWBS"}).click();
   for(let i=0;i<14;i++){const radio=page.getByRole("radio").first();await radio.focus();await page.keyboard.press("Space");await expect(page.getByRole("status")).toContainText("Jawaban tersimpan");await page.getByRole("button",{name:i===13?"Tinjau jawaban":"Selanjutnya"}).click();}
-  await expect(page.getByRole("heading",{name:"Siap menyelesaikan check-in?"})).toBeVisible();await expect(page.locator(".wb-review-list button")).toHaveCount(35);expect(sessionIds.size).toBe(1);await page.getByRole("button",{name:"Kirim & lihat hasil"}).click();await expect(page).toHaveURL(/\/results$/);expect(errors).toEqual([]);
+  await expect(page.getByRole("heading",{name:"Siap menyelesaikan check-in?"})).toBeVisible();await expect(page.locator(".wb-review-list button")).toHaveCount(35);expect(sessionIds.size).toBe(1);await page.getByRole("button",{name:"Kirim & lihat hasil"}).click();await page.getByRole("button",{name:"Ya, kirim asesmen"}).click();await expect(page).toHaveURL(/\/results$/);expect(errors).toEqual([]);
 });

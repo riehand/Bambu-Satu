@@ -1,0 +1,110 @@
+﻿{
+    "RecordedAt":  "2026-10-26T00:00:40.8201964+07:00",
+    "Decision":  "Google Drive encrypted archives SELECTED; BitLocker CANCELLED BY PROJECT OWNER; VeraCrypt RETIRED / PENDING CLEANUP",
+    "Mount":  {
+                  "Visible":  true,
+                  "Device":  "\\Device\\VeraCryptVolumeW",
+                  "Container":  "D:\\TELKOM UNIVERSITY\\SEMESTER 7\\Capstone\\WellBeingHub-Backup.hc\\WellBeingHub-Backup.hc",
+                  "ContainerBytes":  10737418240,
+                  "FileSystem":  "NTFS",
+                  "FreeBytes":  10696134656
+              },
+    "Inventory":  [
+                      {
+                          "Path":  "W:\\System Volume Information",
+                          "Type":  "Directory"
+                      },
+                      {
+                          "Path":  "W:\\System Volume Information\\WPSettings.dat",
+                          "Type":  "Windows metadata",
+                          "Bytes":  12
+                      },
+                      {
+                          "Path":  "W:\\WellBeingHub-Backups",
+                          "Type":  "Empty directory"
+                      }
+                  ],
+    "RecursiveInventoryErrors":  0,
+    "ValuableFilesFound":  false,
+    "FileContentsRead":  false,
+    "OriginalAclSnapshots":  [
+                                 {
+                                     "Path":  "D:\\TELKOM UNIVERSITY\\SEMESTER 7\\Capstone\\WellBeingHub-Backup.hc",
+                                     "Owner":  "DESKTOP-0JBKJEC\\hp",
+                                     "Sddl":  "O:S-1-5-21-2570765986-3811889225-1166221960-1001G:S-1-5-21-2570765986-3811889225-1166221960-513D:(A;ID;FA;;;BA)(A;OICIIOID;GA;;;BA)(A;ID;FA;;;SY)(A;OICIIOID;GA;;;SY)(A;ID;0x1301bf;;;AU)(A;OICIIOID;SDGXGWGR;;;AU)(A;ID;0x1200a9;;;BU)(A;OICIIOID;GXGR;;;BU)"
+                                 },
+                                 {
+                                     "Path":  "D:\\TELKOM UNIVERSITY\\SEMESTER 7\\Capstone\\WellBeingHub-Backup.hc\\WellBeingHub-Backup.hc",
+                                     "Owner":  "DESKTOP-0JBKJEC\\hp",
+                                     "Sddl":  "O:S-1-5-21-2570765986-3811889225-1166221960-1001G:S-1-5-21-2570765986-3811889225-1166221960-513D:(A;ID;FA;;;BA)(A;ID;FA;;;SY)(A;ID;0x1301bf;;;AU)(A;ID;0x1200a9;;;BU)"
+                                 }
+                             ],
+    "AclRecommendation":  "Retain current restricted ACLs; original broader inherited ACLs do not need restoration for planned deletion",
+    "ProcessCheck":  {
+                         "Method":  "Visible Win32_Process executable and command-line references; no command lines recorded",
+                         "Matches":  [
+
+                                     ],
+                         "CompleteHandleAudit":  false,
+                         "HandleToolsFound":  false
+                     },
+    "SevenZip":  {
+                     "FoundOnPath":  false,
+                     "FoundInStandardProgramFiles":  false,
+                     "InstalledOrDownloaded":  false
+                 },
+    "HistoricalScripts":  [
+                              {
+                                  "Path":  "docs/evidence/retired-veracrypt-workflow/phase2-backup-layout.mjs.txt",
+                                  "SHA256":  "1FCFDCD97C3B4AF8866CF06D5F56715106BF2EF09CA764C10D90FFE3FE7E5586"
+                              },
+                              {
+                                  "Path":  "docs/evidence/retired-veracrypt-workflow/phase2-backup.mjs.txt",
+                                  "SHA256":  "035F181C4DCE42CA98E452AB38930281F8B5F7122621AFB2F53579F34EBF7AFC"
+                              },
+                              {
+                                  "Path":  "docs/evidence/retired-veracrypt-workflow/phase2-backup.ps1.txt",
+                                  "SHA256":  "F0EA30DD5301717F874DD8976F0849E569B41AAB15055C4A8DA786B54175822E"
+                              }
+                          ],
+    "CleanupApproved":  false,
+    "DismountPerformed":  false,
+    "DeletedAnything":  false,
+    "AclsChanged":  false,
+    "HostedExportPerformed":  false,
+    "UploadPerformed":  false,
+    "FilesChanged":  [
+                         "README.md",
+                         "scripts/phase2-backup.ps1",
+                         "scripts/phase2-backup.mjs",
+                         "scripts/phase2-backup-layout.mjs",
+                         "tests/phase2-backup-layout.test.ts",
+                         "docs/PHASE2-GOOGLE-DRIVE-BACKUP.md",
+                         "docs/PHASE2-VERACRYPT-RETIREMENT.md",
+                         "docs/PHASE2-FINALIZATION.md",
+                         "docs/PHASE2-HANDOVER.md",
+                         "docs/PHASE2-BACKUP-RECOVERY.md",
+                         "docs/PHASE2-BITLOCKER-ACTIVATION-PLAN.md",
+                         "docs/PHASE2-PRE-BITLOCKER-CHECKLIST.md",
+                         "docs/PHASE2-BACKUP-SECURITY-REVIEW.md",
+                         "docs/PHASE2-BACKUP-STORAGE-REVIEW.md",
+                         "docs/PHASE2-STORAGE-CORRECTION-PLAN.md",
+                         "docs/evidence/PHASE2-BACKUP-STRATEGY-CHANGE-20261025.json",
+                         "docs/evidence/retired-veracrypt-workflow/phase2-backup.ps1.txt",
+                         "docs/evidence/retired-veracrypt-workflow/phase2-backup.mjs.txt",
+                         "docs/evidence/retired-veracrypt-workflow/phase2-backup-layout.mjs.txt"
+                     ],
+    "Validation":  {
+                       "ChangedBackupPlanningTestsPassed":  14,
+                       "BaselineAndPostgresRehearsalRepeated":  false,
+                       "NodeAndPowerShellSyntax":  "PASS",
+                       "LocalPreparation":  "PASS",
+                       "Pg17Clients":  "17.11",
+                       "ExportFlagsBlocked":  "PASS",
+                       "ActiveScriptsHaveRetiredDependencies":  false,
+                       "HistoricalScriptHashes":  "MATCH",
+                       "ChangedDocumentLinks":  "PASS",
+                       "NewDocumentCommandSyntax":  "PASS",
+                       "GitDiffWhitespace":  "PASS"
+                   }
+}

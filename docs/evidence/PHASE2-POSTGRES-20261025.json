@@ -1,0 +1,689 @@
+{
+  "capturedAt": "2026-10-25T06:05:00.992Z",
+  "scope": "Approved synthetic local rehearsal and backup preparation only",
+  "result": {
+    "status": "PASS_SYNTHETIC_POSTGRESQL_ONLY",
+    "completedAt": "2026-10-25T05:59:38.052Z",
+    "imageId": "sha256:b8faeff7712663c2773a190181e1246e37e364b887611c04658c28b44e2408fe",
+    "imageDigests": [
+      "postgres@sha256:b8faeff7712663c2773a190181e1246e37e364b887611c04658c28b44e2408fe"
+    ],
+    "postgresVersion": "postgres (PostgreSQL) 17.11 (Debian 17.11-1.pgdg13+2)",
+    "prisma": "5.22.0",
+    "migrations": [
+      {
+        "name": "20261021144827_init_users",
+        "sha256": "1847814270d05a8411a3c63de8121639e8bc8b4ea4436635c451ee1cb6d15b59"
+      },
+      {
+        "name": "20261023000000_supabase_auth",
+        "sha256": "c5272ddb6fdd9624848d69bbeeb05fa5a4912d9a077264b21aaf20451b16622b"
+      },
+      {
+        "name": "20261023010000_phase2_assessment",
+        "sha256": "6befc228490a50bcc3fb411905fa7c5e0790066f2118a6de94a22bfdb77d3823"
+      }
+    ],
+    "container": "wellbeing-phase2-rehearsal",
+    "volume": "wellbeing-phase2-rehearsal-data",
+    "hostedAuthVerified": false,
+    "backupRestored": false
+  },
+  "isolation": {
+    "dockerVersion": "28.5.1",
+    "localDockerEndpoint": "npipe:////./pipe/dockerDesktopLinuxEngine",
+    "container": "wellbeing-phase2-rehearsal",
+    "volume": "wellbeing-phase2-rehearsal-data",
+    "imageId": "sha256:b8faeff7712663c2773a190181e1246e37e364b887611c04658c28b44e2408fe",
+    "imageDigests": [
+      "postgres@sha256:b8faeff7712663c2773a190181e1246e37e364b887611c04658c28b44e2408fe"
+    ],
+    "publishedAddress": "127.0.0.1:55432",
+    "database": "wellbeing_phase2_rehearsal",
+    "targetsOverridden": true,
+    "hostedCredentialsExcludedFromChildEnvironment": true,
+    "productionDataCopied": false
+  },
+  "checks": [
+    {
+      "check": "connected_isolated_target",
+      "database": "wellbeing_phase2_rehearsal",
+      "address": "172.17.0.2/32",
+      "port": 5432,
+      "pid": 152,
+      "serverVersionNumber": "170011",
+      "markerMatched": true
+    },
+    {
+      "check": "migration_history",
+      "migrations": [
+        {
+          "migration_name": "20261021144827_init_users",
+          "checksum": "1847814270d05a8411a3c63de8121639e8bc8b4ea4436635c451ee1cb6d15b59",
+          "applied": true
+        },
+        {
+          "migration_name": "20261023000000_supabase_auth",
+          "checksum": "c5272ddb6fdd9624848d69bbeeb05fa5a4912d9a077264b21aaf20451b16622b",
+          "applied": true
+        },
+        {
+          "migration_name": "20261023010000_phase2_assessment",
+          "checksum": "6befc228490a50bcc3fb411905fa7c5e0790066f2118a6de94a22bfdb77d3823",
+          "applied": true
+        }
+      ],
+      "allChecksumsMatched": true
+    },
+    {
+      "check": "assessment_catalog",
+      "tables": 7,
+      "rlsEnabled": true,
+      "foreignKeys": 8,
+      "enabledTriggers": 5
+    },
+    {
+      "check": "auth_regression",
+      "baselinePreserved": true,
+      "triggerDefinitionsPreserved": true,
+      "profileCreation": true,
+      "metadataEscalationDenied": true,
+      "emailSynchronization": true
+    },
+    {
+      "check": "question_publication",
+      "directPublishedInsertDenied": true,
+      "emptyPublicationDenied": true,
+      "syntheticDassItems": 21,
+      "syntheticWemwbsItems": 14,
+      "publishedMutationDenied": true
+    },
+    {
+      "check": "concurrency",
+      "operation": "session_start",
+      "waitingBackendPids": [
+        152,
+        153,
+        155
+      ],
+      "distinctWaitingConnections": 3,
+      "fulfilled": 3,
+      "rejections": []
+    },
+    {
+      "check": "concurrency",
+      "operation": "autosave",
+      "waitingBackendPids": [
+        152,
+        153,
+        155
+      ],
+      "distinctWaitingConnections": 3,
+      "fulfilled": 1,
+      "rejections": [
+        "STALE_REVISION",
+        "STALE_REVISION"
+      ]
+    },
+    {
+      "check": "concurrency",
+      "operation": "final_submission",
+      "waitingBackendPids": [
+        152,
+        153,
+        155
+      ],
+      "distinctWaitingConnections": 3,
+      "fulfilled": 3,
+      "rejections": []
+    },
+    {
+      "check": "completion_and_ownership",
+      "sessions": 1,
+      "answers": 35,
+      "scores": 1,
+      "reports": 1,
+      "completedQuota": 1,
+      "staleSubmitDenied": true,
+      "retriesIdentical": true,
+      "completedDataImmutable": true,
+      "crossUserReadSaveSubmitDenied": true
+    },
+    {
+      "check": "transaction_rollback",
+      "injectedFailureAfterScoreInsert": true,
+      "scores": 0,
+      "reports": 0,
+      "status": "IN_PROGRESS",
+      "revision": 1
+    },
+    {
+      "check": "concurrency",
+      "operation": "last_quota_submission",
+      "waitingBackendPids": [
+        152,
+        153,
+        155
+      ],
+      "distinctWaitingConnections": 3,
+      "fulfilled": 3,
+      "rejections": []
+    },
+    {
+      "check": "concurrency",
+      "operation": "quota_exhausted_start",
+      "waitingBackendPids": [
+        152,
+        153,
+        155
+      ],
+      "distinctWaitingConnections": 3,
+      "fulfilled": 0,
+      "rejections": [
+        "ASSESSMENT_QUOTA_EXCEEDED",
+        "ASSESSMENT_QUOTA_EXCEEDED",
+        "ASSESSMENT_QUOTA_EXCEEDED"
+      ]
+    },
+    {
+      "check": "quota",
+      "completed": 3,
+      "remaining": 0,
+      "excessConcurrentStartsRejected": 3
+    },
+    {
+      "check": "browser_access",
+      "deniedTableReads": 14,
+      "testedRoles": [
+        "anon",
+        "authenticated"
+      ],
+      "ownProfileOnly": true
+    },
+    {
+      "check": "constraints",
+      "invalidPeriodDatesRejected": true,
+      "secondActivePeriodRejected": true,
+      "orphanParticipantRejected": true
+    }
+  ],
+  "catalog": {
+    "constraints": [
+      {
+        "table_name": "academic_periods",
+        "conname": "academic_period_valid_range",
+        "contype": "c",
+        "convalidated": true,
+        "definition": "CHECK (((start_date <= end_date) AND (assessment_limit >= 0)))"
+      },
+      {
+        "table_name": "academic_periods",
+        "conname": "academic_periods_pkey",
+        "contype": "p",
+        "convalidated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "assessment_answers",
+        "conname": "assessment_answers_assessment_session_id_fkey",
+        "contype": "f",
+        "convalidated": true,
+        "definition": "FOREIGN KEY (assessment_session_id) REFERENCES assessment_sessions(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_answers",
+        "conname": "assessment_answers_pkey",
+        "contype": "p",
+        "convalidated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "assessment_answers",
+        "conname": "assessment_answers_question_id_fkey",
+        "contype": "f",
+        "convalidated": true,
+        "definition": "FOREIGN KEY (question_id) REFERENCES questions(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_question_sets",
+        "conname": "assessment_question_sets_pkey",
+        "contype": "p",
+        "convalidated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "assessment_question_sets",
+        "conname": "published_question_set_approval",
+        "contype": "c",
+        "convalidated": true,
+        "definition": "CHECK (((NOT is_published) OR ((approved_at IS NOT NULL) AND (COALESCE(length(TRIM(BOTH FROM approved_by)), 0) > 0) AND (COALESCE(length(TRIM(BOTH FROM dass_source)), 0) > 0) AND (COALESCE(length(TRIM(BOTH FROM wemwbs_licence_reference)), 0) > 0) AND (COALESCE(length(TRIM(BOTH FROM translation_reference)), 0) > 0) AND (COALESCE(length(TRIM(BOTH FROM presentation_approval_reference)), 0) > 0))))"
+      },
+      {
+        "table_name": "assessment_scores",
+        "conname": "assessment_score_ranges",
+        "contype": "c",
+        "convalidated": true,
+        "definition": "CHECK ((((depression_score >= 0) AND (depression_score <= 42)) AND ((depression_score % 2) = 0) AND ((anxiety_score >= 0) AND (anxiety_score <= 42)) AND ((anxiety_score % 2) = 0) AND ((stress_score >= 0) AND (stress_score <= 42)) AND ((stress_score % 2) = 0) AND ((wemwbs_score >= 14) AND (wemwbs_score <= 70))))"
+      },
+      {
+        "table_name": "assessment_scores",
+        "conname": "assessment_scores_assessment_session_id_fkey",
+        "contype": "f",
+        "convalidated": true,
+        "definition": "FOREIGN KEY (assessment_session_id) REFERENCES assessment_sessions(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_scores",
+        "conname": "assessment_scores_pkey",
+        "contype": "p",
+        "convalidated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "assessment_sessions",
+        "conname": "assessment_session_state",
+        "contype": "c",
+        "convalidated": true,
+        "definition": "CHECK (((revision >= 0) AND (length(TRIM(BOTH FROM processing_consent_version)) > 0) AND (((status = 'IN_PROGRESS'::\"AssessmentSessionStatus\") AND (completed_at IS NULL)) OR ((status = 'COMPLETED'::\"AssessmentSessionStatus\") AND (completed_at IS NOT NULL)))))"
+      },
+      {
+        "table_name": "assessment_sessions",
+        "conname": "assessment_sessions_academic_period_id_fkey",
+        "contype": "f",
+        "convalidated": true,
+        "definition": "FOREIGN KEY (academic_period_id) REFERENCES academic_periods(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_sessions",
+        "conname": "assessment_sessions_participant_id_fkey",
+        "contype": "f",
+        "convalidated": true,
+        "definition": "FOREIGN KEY (participant_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "assessment_sessions",
+        "conname": "assessment_sessions_pkey",
+        "contype": "p",
+        "convalidated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "assessment_sessions",
+        "conname": "assessment_sessions_question_set_id_fkey",
+        "contype": "f",
+        "convalidated": true,
+        "definition": "FOREIGN KEY (question_set_id) REFERENCES assessment_question_sets(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "questions",
+        "conname": "question_valid_number_dimension",
+        "contype": "c",
+        "convalidated": true,
+        "definition": "CHECK ((((instrument = 'WEMWBS'::\"Instrument\") AND ((question_number >= 1) AND (question_number <= 14)) AND (scoring_dimension = 'WELLBEING'::\"ScoringDimension\")) OR ((instrument = 'DASS21'::\"Instrument\") AND (((question_number = ANY (ARRAY[3, 5, 10, 13, 16, 17, 21])) AND (scoring_dimension = 'DEPRESSION'::\"ScoringDimension\")) OR ((question_number = ANY (ARRAY[2, 4, 7, 9, 15, 19, 20])) AND (scoring_dimension = 'ANXIETY'::\"ScoringDimension\")) OR ((question_number = ANY (ARRAY[1, 6, 8, 11, 12, 14, 18])) AND (scoring_dimension = 'STRESS'::\"ScoringDimension\"))))))"
+      },
+      {
+        "table_name": "questions",
+        "conname": "questions_pkey",
+        "contype": "p",
+        "convalidated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "questions",
+        "conname": "questions_question_set_id_fkey",
+        "contype": "f",
+        "convalidated": true,
+        "definition": "FOREIGN KEY (question_set_id) REFERENCES assessment_question_sets(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "reports",
+        "conname": "reports_assessment_session_id_fkey",
+        "contype": "f",
+        "convalidated": true,
+        "definition": "FOREIGN KEY (assessment_session_id) REFERENCES assessment_sessions(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "table_name": "reports",
+        "conname": "reports_pkey",
+        "contype": "p",
+        "convalidated": true,
+        "definition": "PRIMARY KEY (id)"
+      }
+    ],
+    "indexes": [
+      {
+        "tablename": "academic_periods",
+        "indexname": "academic_periods_one_active",
+        "indexdef": "CREATE UNIQUE INDEX academic_periods_one_active ON public.academic_periods USING btree (status) WHERE (status = 'ACTIVE'::\"AcademicPeriodStatus\")"
+      },
+      {
+        "tablename": "academic_periods",
+        "indexname": "academic_periods_pkey",
+        "indexdef": "CREATE UNIQUE INDEX academic_periods_pkey ON public.academic_periods USING btree (id)"
+      },
+      {
+        "tablename": "assessment_answers",
+        "indexname": "assessment_answers_assessment_session_id_question_id_key",
+        "indexdef": "CREATE UNIQUE INDEX assessment_answers_assessment_session_id_question_id_key ON public.assessment_answers USING btree (assessment_session_id, question_id)"
+      },
+      {
+        "tablename": "assessment_answers",
+        "indexname": "assessment_answers_pkey",
+        "indexdef": "CREATE UNIQUE INDEX assessment_answers_pkey ON public.assessment_answers USING btree (id)"
+      },
+      {
+        "tablename": "assessment_question_sets",
+        "indexname": "assessment_question_sets_pkey",
+        "indexdef": "CREATE UNIQUE INDEX assessment_question_sets_pkey ON public.assessment_question_sets USING btree (id)"
+      },
+      {
+        "tablename": "assessment_question_sets",
+        "indexname": "assessment_question_sets_version_key",
+        "indexdef": "CREATE UNIQUE INDEX assessment_question_sets_version_key ON public.assessment_question_sets USING btree (version)"
+      },
+      {
+        "tablename": "assessment_scores",
+        "indexname": "assessment_scores_assessment_session_id_key",
+        "indexdef": "CREATE UNIQUE INDEX assessment_scores_assessment_session_id_key ON public.assessment_scores USING btree (assessment_session_id)"
+      },
+      {
+        "tablename": "assessment_scores",
+        "indexname": "assessment_scores_pkey",
+        "indexdef": "CREATE UNIQUE INDEX assessment_scores_pkey ON public.assessment_scores USING btree (id)"
+      },
+      {
+        "tablename": "assessment_sessions",
+        "indexname": "assessment_sessions_history",
+        "indexdef": "CREATE INDEX assessment_sessions_history ON public.assessment_sessions USING btree (participant_id, status, completed_at DESC)"
+      },
+      {
+        "tablename": "assessment_sessions",
+        "indexname": "assessment_sessions_one_in_progress",
+        "indexdef": "CREATE UNIQUE INDEX assessment_sessions_one_in_progress ON public.assessment_sessions USING btree (participant_id, academic_period_id) WHERE (status = 'IN_PROGRESS'::\"AssessmentSessionStatus\")"
+      },
+      {
+        "tablename": "assessment_sessions",
+        "indexname": "assessment_sessions_participant_id_academic_period_id_idx",
+        "indexdef": "CREATE INDEX assessment_sessions_participant_id_academic_period_id_idx ON public.assessment_sessions USING btree (participant_id, academic_period_id)"
+      },
+      {
+        "tablename": "assessment_sessions",
+        "indexname": "assessment_sessions_pkey",
+        "indexdef": "CREATE UNIQUE INDEX assessment_sessions_pkey ON public.assessment_sessions USING btree (id)"
+      },
+      {
+        "tablename": "questions",
+        "indexname": "questions_pkey",
+        "indexdef": "CREATE UNIQUE INDEX questions_pkey ON public.questions USING btree (id)"
+      },
+      {
+        "tablename": "questions",
+        "indexname": "questions_question_set_id_instrument_question_number_key",
+        "indexdef": "CREATE UNIQUE INDEX questions_question_set_id_instrument_question_number_key ON public.questions USING btree (question_set_id, instrument, question_number)"
+      },
+      {
+        "tablename": "reports",
+        "indexname": "reports_assessment_session_id_key",
+        "indexdef": "CREATE UNIQUE INDEX reports_assessment_session_id_key ON public.reports USING btree (assessment_session_id)"
+      },
+      {
+        "tablename": "reports",
+        "indexname": "reports_pkey",
+        "indexdef": "CREATE UNIQUE INDEX reports_pkey ON public.reports USING btree (id)"
+      }
+    ],
+    "triggers": [
+      {
+        "table_name": "assessment_answers",
+        "tgname": "phase2_guard_answer",
+        "tgenabled": "O",
+        "definition": "CREATE TRIGGER phase2_guard_answer BEFORE INSERT OR DELETE OR UPDATE ON public.assessment_answers FOR EACH ROW EXECUTE FUNCTION phase2_guard_answer()"
+      },
+      {
+        "table_name": "assessment_question_sets",
+        "tgname": "phase2_freeze_question_set",
+        "tgenabled": "O",
+        "definition": "CREATE TRIGGER phase2_freeze_question_set BEFORE INSERT OR DELETE OR UPDATE ON public.assessment_question_sets FOR EACH ROW EXECUTE FUNCTION phase2_freeze_question_set()"
+      },
+      {
+        "table_name": "assessment_scores",
+        "tgname": "phase2_freeze_score",
+        "tgenabled": "O",
+        "definition": "CREATE TRIGGER phase2_freeze_score BEFORE DELETE OR UPDATE ON public.assessment_scores FOR EACH ROW EXECUTE FUNCTION phase2_freeze_score()"
+      },
+      {
+        "table_name": "assessment_sessions",
+        "tgname": "phase2_guard_session",
+        "tgenabled": "O",
+        "definition": "CREATE TRIGGER phase2_guard_session BEFORE INSERT OR DELETE OR UPDATE ON public.assessment_sessions FOR EACH ROW EXECUTE FUNCTION phase2_guard_session()"
+      },
+      {
+        "table_name": "questions",
+        "tgname": "phase2_freeze_question",
+        "tgenabled": "O",
+        "definition": "CREATE TRIGGER phase2_freeze_question BEFORE INSERT OR DELETE OR UPDATE ON public.questions FOR EACH ROW EXECUTE FUNCTION phase2_freeze_question()"
+      }
+    ],
+    "browser_privileges": [
+      {
+        "rolname": "anon",
+        "relname": "academic_periods",
+        "relrowsecurity": true,
+        "any_table_access": false,
+        "any_column_access": false
+      },
+      {
+        "rolname": "anon",
+        "relname": "assessment_answers",
+        "relrowsecurity": true,
+        "any_table_access": false,
+        "any_column_access": false
+      },
+      {
+        "rolname": "anon",
+        "relname": "assessment_question_sets",
+        "relrowsecurity": true,
+        "any_table_access": false,
+        "any_column_access": false
+      },
+      {
+        "rolname": "anon",
+        "relname": "assessment_scores",
+        "relrowsecurity": true,
+        "any_table_access": false,
+        "any_column_access": false
+      },
+      {
+        "rolname": "anon",
+        "relname": "assessment_sessions",
+        "relrowsecurity": true,
+        "any_table_access": false,
+        "any_column_access": false
+      },
+      {
+        "rolname": "anon",
+        "relname": "questions",
+        "relrowsecurity": true,
+        "any_table_access": false,
+        "any_column_access": false
+      },
+      {
+        "rolname": "anon",
+        "relname": "reports",
+        "relrowsecurity": true,
+        "any_table_access": false,
+        "any_column_access": false
+      },
+      {
+        "rolname": "authenticated",
+        "relname": "academic_periods",
+        "relrowsecurity": true,
+        "any_table_access": false,
+        "any_column_access": false
+      },
+      {
+        "rolname": "authenticated",
+        "relname": "assessment_answers",
+        "relrowsecurity": true,
+        "any_table_access": false,
+        "any_column_access": false
+      },
+      {
+        "rolname": "authenticated",
+        "relname": "assessment_question_sets",
+        "relrowsecurity": true,
+        "any_table_access": false,
+        "any_column_access": false
+      },
+      {
+        "rolname": "authenticated",
+        "relname": "assessment_scores",
+        "relrowsecurity": true,
+        "any_table_access": false,
+        "any_column_access": false
+      },
+      {
+        "rolname": "authenticated",
+        "relname": "assessment_sessions",
+        "relrowsecurity": true,
+        "any_table_access": false,
+        "any_column_access": false
+      },
+      {
+        "rolname": "authenticated",
+        "relname": "questions",
+        "relrowsecurity": true,
+        "any_table_access": false,
+        "any_column_access": false
+      },
+      {
+        "rolname": "authenticated",
+        "relname": "reports",
+        "relrowsecurity": true,
+        "any_table_access": false,
+        "any_column_access": false
+      }
+    ],
+    "assessment_policies": 0,
+    "trigger_functions": [
+      {
+        "proname": "phase2_freeze_question",
+        "anon_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "proname": "phase2_freeze_question_set",
+        "anon_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "proname": "phase2_freeze_score",
+        "anon_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "proname": "phase2_guard_answer",
+        "anon_execute": false,
+        "authenticated_execute": false
+      },
+      {
+        "proname": "phase2_guard_session",
+        "anon_execute": false,
+        "authenticated_execute": false
+      }
+    ]
+  },
+  "backupStorageReview": {
+    "Mode": "PREPARATION_ONLY",
+    "Storage": {
+      "DirectoryExists": false,
+      "ReviewedExistingDirectory": "PARENT_ONLY",
+      "EfsEncrypted": false,
+      "BitLocker": "UNKNOWN_OR_ACCESS_DENIED",
+      "OtherAllowEntries": 1,
+      "ReparsePointInPath": false,
+      "OutsideRepository": true,
+      "ReadyForExport": false
+    },
+    "ToolsReady": true,
+    "Versions": {
+      "pg_dump": "pg_dump (PostgreSQL) 17.11",
+      "pg_dumpall": "pg_dumpall (PostgreSQL) 17.11",
+      "pg_restore": "pg_restore (PostgreSQL) 17.11",
+      "psql": "psql (PostgreSQL) 17.11"
+    }
+  },
+  "backupTools": {
+    "source": "https://get.enterprisedb.com/postgresql/postgresql-17.11-5-windows-x64-binaries.zip",
+    "sourceSelection": "PostgreSQL.org Windows page -> EDB binaries -> fileid 1260616",
+    "publisherChecksumUrl": "https://get.enterprisedb.com/postgresql/postgresql-17.11-5-windows-x64-binaries.zip.sha256",
+    "archiveSha256": "80379b2c04d51c30225532e0ae04509899141e9957ed096fe749d7fd9df8f82f",
+    "publisherChecksumMatched": true,
+    "nativeVersion": "17.11",
+    "installation": "Portable client executables and runtime DLLs only; no server service or PATH change",
+    "authenticodeStatus": "NotSigned",
+    "binaries": [
+      {
+        "name": "pg_dump",
+        "sha256": "eaa2d00935e0dd55a6ad7aa2f106d013dcb4e793b7e7d2c6df64bf5b60fbdcd7"
+      },
+      {
+        "name": "pg_dumpall",
+        "sha256": "7405bb55cef85b5f5fcb891c1f762d91f5995f013d470e6c1cb6e6d13ddd3fa7"
+      },
+      {
+        "name": "pg_restore",
+        "sha256": "b91271bd574183dadd17b7dc996dd793805de3eab676e7f9991a067360edf4ce"
+      },
+      {
+        "name": "psql",
+        "sha256": "c290c7f0a3335f290f8c18011a1e5afa03ee3cdd628697a5f3e767e5f1d3d10d"
+      }
+    ]
+  },
+  "evidenceFiles": [
+    {
+      "path": ".tmp/phase2-rehearsal-2026-10-25T05-59-26.136Z/result.json",
+      "sha256": "45e7bceefdce2c927a6008b18bccce879b6c7d7eb952b1a69e748949e1769d10"
+    },
+    {
+      "path": ".tmp/phase2-rehearsal-2026-10-25T05-59-26.136Z/isolation.json",
+      "sha256": "833fa27268050993527f6991b2d341d5e2168a26b3a91a0cac87dd738af7044d"
+    },
+    {
+      "path": ".tmp/phase2-rehearsal-2026-10-25T05-59-26.136Z/checks.jsonl",
+      "sha256": "056e692bec3ebe2b32a6ee3b320476871c94f7f1353b304729ba0d02cd6915cb"
+    },
+    {
+      "path": ".tmp/phase2-rehearsal-2026-10-25T05-59-26.136Z/catalog.json",
+      "sha256": "88ce3ba7ec041ac1e3750b1b2b19b48b6192fdd138589846173746483faf1882"
+    },
+    {
+      "path": ".tmp/phase2-rehearsal-2026-10-25T05-59-26.136Z/execution.log",
+      "sha256": "8a144f473a813a8461401fccafa4b9e7f02504eaaeaf5d6bea315ea509578cbc"
+    },
+    {
+      "path": ".tmp/phase2-rehearsal-2026-10-25T05-59-26.136Z/postgresql.log",
+      "sha256": "5f67ab0e9847867b72d2d4219312ae44aa5fdae716582c9e301bfd6d6bda436b"
+    },
+    {
+      "path": ".tmp/phase2-rehearsal-2026-10-25T05-59-26.136Z/operations.jsonl",
+      "sha256": "fe1acfcb7c71a45d843f697a315b8cb91cbcb0da57f8277b1d8aeb0949264d42"
+    }
+  ],
+  "tests": {
+    "realPostgresql": {
+      "passed": 7,
+      "failed": 0
+    },
+    "existingLocalRegression": {
+      "passed": 230,
+      "failed": 0
+    }
+  },
+  "hostedConnectionsThisRun": false,
+  "productionExported": false,
+  "productionRestored": false,
+  "hostedPrivilegesChanged": false,
+  "containerAndVolumeRetained": true
+}

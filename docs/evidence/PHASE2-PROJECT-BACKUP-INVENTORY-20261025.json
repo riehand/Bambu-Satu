@@ -1,0 +1,241 @@
+﻿{
+    "RecordedAt":  "2026-10-25T20:32:10.3303857+07:00",
+    "Scope":  "Names, Git status and filesystem metadata only; no environment contents or credentials read",
+    "Branch":  "riehand_branch",
+    "Head":  "9f9c136e59979dc92dc3bf2860f82782557a5ca9",
+    "TrackedCount":  349,
+    "Status":  [
+                   " M README.md",
+                   " M \"docs/API CONTRACT.md\"",
+                   " M docs/AUTH-MIGRATION.md",
+                   " M docs/PHASE2-INSTRUMENTS.md",
+                   " M docs/PHASE2-MIGRATION.md",
+                   " M docs/PHASE2-MOCKUP-MAPPING.md",
+                   " M docs/PHASE2-REPORT.md",
+                   " M prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+                   " M scripts/assessment-smoke.mjs",
+                   " M src/app/api/assessment/sessions/[sessionId]/submit/route.ts",
+                   " M src/app/api/auth/logout/route.ts",
+                   " M src/app/participant/participant.css",
+                   " M src/components/participant/dashboard.tsx",
+                   " M src/components/participant/questionnaire.tsx",
+                   " M src/components/participant/ui.tsx",
+                   " M src/lib/assessment/service.ts",
+                   " M src/lib/validations/assessment.ts",
+                   " M tests/assessment-api.test.ts",
+                   " M tests/assessment-database.test.ts",
+                   " M tests/assessment-service.test.ts",
+                   " M tests/browser/assessment.spec.ts",
+                   " M tests/database.test.ts",
+                   " M tests/preflight.test.ts",
+                   " M tests/visual/main.tsx",
+                   "?? docs/AUTH-RECOVERY.md",
+                   "?? docs/CHATBOT-DATABASE-CONTRACT.md",
+                   "?? docs/PHASE2-ACTIVATION.md",
+                   "?? docs/PHASE2-BACKUP-RECOVERY.md",
+                   "?? docs/PHASE2-BACKUP-SECURITY-REVIEW.md",
+                   "?? docs/PHASE2-BACKUP-STORAGE-REVIEW.md",
+                   "?? docs/PHASE2-BITLOCKER-ACTIVATION-PLAN.md",
+                   "?? docs/PHASE2-COMPLETION.md",
+                   "?? docs/PHASE2-FINALIZATION.md",
+                   "?? docs/PHASE2-HANDOVER.md",
+                   "?? docs/PHASE2-LOCAL-REHEARSAL-REPORT.md",
+                   "?? docs/PHASE2-REHEARSAL.md",
+                   "?? docs/PHASE2-SECURITY-REVIEW.md",
+                   "?? docs/PHASE2-STORAGE-CORRECTION-PLAN.md",
+                   "?? docs/PHASE2-STORAGE-CORRECTION-RESULT.md",
+                   "?? docs/evidence/PHASE2-BITLOCKER-ADMIN-20261025.json",
+                   "?? docs/evidence/PHASE2-MEMORY-SECURITY-20261025.json",
+                   "?? docs/evidence/PHASE2-POSTGRES-20261025.json",
+                   "?? docs/evidence/PHASE2-STORAGE-CORRECTION-20261025.json",
+                   "?? docs/evidence/PHASE2-STORAGE-EXECUTION-20261025T122124368Z.json",
+                   "?? docs/evidence/PHASE2-STORAGE-POSTCHECK-20261025.json",
+                   "?? docs/evidence/PHASE2-VERACRYPT-STORAGE-20261025.json",
+                   "?? scripts/assessment-preflight.mjs",
+                   "?? scripts/phase2-backup-layout.mjs",
+                   "?? scripts/phase2-backup.mjs",
+                   "?? scripts/phase2-backup.ps1",
+                   "?? scripts/phase2-bitlocker-readiness.ps1",
+                   "?? scripts/phase2-privilege-preflight.mjs",
+                   "?? scripts/phase2-rehearsal.mjs",
+                   "?? scripts/phase2-safety.mjs",
+                   "?? scripts/phase2-storage-correction.ps1",
+                   "?? scripts/phase2-veracrypt.ps1",
+                   "?? tests/browser/assessment-review.spec.ts",
+                   "?? tests/phase2-backup-layout.test.ts",
+                   "?? tests/phase2-safety.test.ts",
+                   "?? tests/rehearsal/phase2.rehearsal.ts",
+                   "?? vitest.rehearsal.config.ts"
+               ],
+    "Untracked":  [
+                      "docs/AUTH-RECOVERY.md",
+                      "docs/CHATBOT-DATABASE-CONTRACT.md",
+                      "docs/PHASE2-ACTIVATION.md",
+                      "docs/PHASE2-BACKUP-RECOVERY.md",
+                      "docs/PHASE2-BACKUP-SECURITY-REVIEW.md",
+                      "docs/PHASE2-BACKUP-STORAGE-REVIEW.md",
+                      "docs/PHASE2-BITLOCKER-ACTIVATION-PLAN.md",
+                      "docs/PHASE2-COMPLETION.md",
+                      "docs/PHASE2-FINALIZATION.md",
+                      "docs/PHASE2-HANDOVER.md",
+                      "docs/PHASE2-LOCAL-REHEARSAL-REPORT.md",
+                      "docs/PHASE2-REHEARSAL.md",
+                      "docs/PHASE2-SECURITY-REVIEW.md",
+                      "docs/PHASE2-STORAGE-CORRECTION-PLAN.md",
+                      "docs/PHASE2-STORAGE-CORRECTION-RESULT.md",
+                      "docs/evidence/PHASE2-BITLOCKER-ADMIN-20261025.json",
+                      "docs/evidence/PHASE2-MEMORY-SECURITY-20261025.json",
+                      "docs/evidence/PHASE2-POSTGRES-20261025.json",
+                      "docs/evidence/PHASE2-STORAGE-CORRECTION-20261025.json",
+                      "docs/evidence/PHASE2-STORAGE-EXECUTION-20261025T122124368Z.json",
+                      "docs/evidence/PHASE2-STORAGE-POSTCHECK-20261025.json",
+                      "docs/evidence/PHASE2-VERACRYPT-STORAGE-20261025.json",
+                      "scripts/assessment-preflight.mjs",
+                      "scripts/phase2-backup-layout.mjs",
+                      "scripts/phase2-backup.mjs",
+                      "scripts/phase2-backup.ps1",
+                      "scripts/phase2-bitlocker-readiness.ps1",
+                      "scripts/phase2-privilege-preflight.mjs",
+                      "scripts/phase2-rehearsal.mjs",
+                      "scripts/phase2-safety.mjs",
+                      "scripts/phase2-storage-correction.ps1",
+                      "scripts/phase2-veracrypt.ps1",
+                      "tests/browser/assessment-review.spec.ts",
+                      "tests/phase2-backup-layout.test.ts",
+                      "tests/phase2-safety.test.ts",
+                      "tests/rehearsal/phase2.rehearsal.ts",
+                      "vitest.rehearsal.config.ts"
+                  ],
+    "IgnoredRootEntries":  [
+                               ".env",
+                               ".env.local",
+                               ".next/",
+                               ".tmp/",
+                               "next-env.d.ts",
+                               "node_modules/",
+                               "test-results/",
+                               "tsconfig.tsbuildinfo"
+                           ],
+    "StagedChangedCount":  0,
+    "FilesystemSnapshot":  {
+                               "MeasuredAt":  "2026-10-25T20:29:35.7460047+07:00",
+                               "RegularFiles":  27297,
+                               "RegularBytes":  1577015143,
+                               "NodeModulesBytes":  677136449,
+                               "NextCacheBytes":  429675976,
+                               "RetainedRegularBytesExcludingThoseCaches":  470202718,
+                               "ReparsePoints":  22,
+                               "Traversal":  "No reparse traversal; logical skill aliases are additional duplicated files in backup"
+                           },
+    "GitMetadataDirectory":  ".git",
+    "GitObjectsAlternatesPresent":  false,
+    "GitModulesFilePresent":  false,
+    "LocalOrUserNpmrcPresent":  false,
+    "SkillAliases":  [
+                         {
+                             "Path":  ".claude/skills/prisma-cli",
+                             "Target":  ".agents/skills/prisma-cli",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".claude/skills/prisma-client-api",
+                             "Target":  ".agents/skills/prisma-client-api",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".claude/skills/prisma-compute",
+                             "Target":  ".agents/skills/prisma-compute",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".claude/skills/prisma-database-setup",
+                             "Target":  ".agents/skills/prisma-database-setup",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".claude/skills/prisma-driver-adapter-implementation",
+                             "Target":  ".agents/skills/prisma-driver-adapter-implementation",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".claude/skills/prisma-mongodb-upgrade",
+                             "Target":  ".agents/skills/prisma-mongodb-upgrade",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".claude/skills/prisma-orm-setup",
+                             "Target":  ".agents/skills/prisma-orm-setup",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".claude/skills/prisma-postgres",
+                             "Target":  ".agents/skills/prisma-postgres",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".claude/skills/prisma-postgres-setup",
+                             "Target":  ".agents/skills/prisma-postgres-setup",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".claude/skills/prisma-upgrade-v7",
+                             "Target":  ".agents/skills/prisma-upgrade-v7",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".windsurf/skills/prisma-cli",
+                             "Target":  ".agents/skills/prisma-cli",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".windsurf/skills/prisma-client-api",
+                             "Target":  ".agents/skills/prisma-client-api",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".windsurf/skills/prisma-compute",
+                             "Target":  ".agents/skills/prisma-compute",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".windsurf/skills/prisma-database-setup",
+                             "Target":  ".agents/skills/prisma-database-setup",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".windsurf/skills/prisma-driver-adapter-implementation",
+                             "Target":  ".agents/skills/prisma-driver-adapter-implementation",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".windsurf/skills/prisma-mongodb-upgrade",
+                             "Target":  ".agents/skills/prisma-mongodb-upgrade",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".windsurf/skills/prisma-orm-setup",
+                             "Target":  ".agents/skills/prisma-orm-setup",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".windsurf/skills/prisma-postgres",
+                             "Target":  ".agents/skills/prisma-postgres",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".windsurf/skills/prisma-postgres-setup",
+                             "Target":  ".agents/skills/prisma-postgres-setup",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         },
+                         {
+                             "Path":  ".windsurf/skills/prisma-upgrade-v7",
+                             "Target":  ".agents/skills/prisma-upgrade-v7",
+                             "BackupHandling":  "Materialize files at alias path; do not retain absolute source junction"
+                         }
+                     ],
+    "ExternalDestinationSelected":  false,
+    "BackupCreated":  false,
+    "BackupVerified":  false,
+    "BitLockerEnabled":  false,
+    "ProductionExportPerformed":  false
+}

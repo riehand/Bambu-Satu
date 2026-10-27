@@ -107,6 +107,46 @@ describe.sequential("actual PostgreSQL registration trigger and RLS", () => {
 });
 
 describe("migration safeguards on existing data", () => {
+  it("adds Phase 2 without changing existing Auth/profile data, definitions, policies or grants", async () => {
+    const instance = await baseDatabase();
+    try {
+      await instance.exec(migration);
+      await instance.query("INSERT INTO auth.users (id,email,raw_user_meta_data) VALUES ($1,$2,$3::jsonb)",
+        [firstId, "preserved@example.test", JSON.stringify(meta)]);
+      const snapshot = async () => ({
+        identities: (await instance.query("SELECT * FROM auth.users ORDER BY id")).rows,
+        profiles: (await instance.query("SELECT * FROM public.users ORDER BY id")).rows,
+        columns: (await instance.query(`SELECT table_schema, column_name, data_type, is_nullable, column_default
+          FROM information_schema.columns WHERE table_name='users' AND table_schema IN ('auth','public')
+          ORDER BY table_schema, ordinal_position`)).rows,
+        tables: (await instance.query(`SELECT oid::regclass::text AS name, relrowsecurity, relforcerowsecurity, relacl::text
+          FROM pg_class WHERE oid IN ('auth.users'::regclass,'public.users'::regclass) ORDER BY name`)).rows,
+        triggers: (await instance.query(`SELECT tgname, tgenabled, pg_get_triggerdef(oid) AS definition
+          FROM pg_trigger WHERE tgrelid IN ('auth.users'::regclass,'public.users'::regclass) AND NOT tgisinternal
+          ORDER BY tgname`)).rows,
+        functions: (await instance.query(`SELECT proname, pg_get_functiondef(oid) AS definition, proacl::text
+          FROM pg_proc WHERE oid IN ('auth.uid()'::regprocedure,
+            'public.handle_auth_user_created()'::regprocedure,'public.handle_auth_email_changed()'::regprocedure)
+          ORDER BY proname`)).rows,
+        policies: (await instance.query(`SELECT * FROM pg_policies WHERE tablename='users'
+          AND schemaname IN ('auth','public') ORDER BY schemaname, policyname`)).rows,
+        grants: (await instance.query(`SELECT table_schema, column_name, grantee, privilege_type, is_grantable
+          FROM information_schema.column_privileges WHERE table_name='users' AND table_schema IN ('auth','public')
+          ORDER BY table_schema, column_name, grantee, privilege_type`)).rows,
+        constraints: (await instance.query(`SELECT conname, pg_get_constraintdef(oid) AS definition
+          FROM pg_constraint WHERE conrelid IN ('auth.users'::regclass,'public.users'::regclass) ORDER BY conname`)).rows,
+      });
+      const before = await snapshot();
+      await instance.exec(readFileSync("prisma/migrations/20261023010000_phase2_assessment/migration.sql", "utf8"));
+      expect(await snapshot()).toEqual(before);
+      // The existing registration and email-sync triggers still execute after migration.
+      await instance.query("INSERT INTO auth.users (id,email,raw_user_meta_data) VALUES ($1,$2,$3::jsonb)",
+        [secondId, "after@example.test", JSON.stringify({ ...meta, institutional_id: "87654321" })]);
+      await instance.query("UPDATE auth.users SET email='changed@example.test' WHERE id=$1", [secondId]);
+      expect((await instance.query("SELECT id,email,role FROM public.users WHERE id=$1", [secondId])).rows)
+        .toEqual([{ id: secondId, email: "changed@example.test", role: "PARTICIPANT" }]);
+    } finally { await instance.close(); }
+  });
   it("aborts without changing an unmatched legacy profile or hash", async () => {
     const legacy = await baseDatabase();
     try {

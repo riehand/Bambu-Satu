@@ -1,5 +1,7 @@
 # Instrument release requirements
 
+Rechecked 24 October 2026: [Warwick's current scoring guidance](https://warwick.ac.uk/services/innovations/wemwbs/how/) confirms the 14-item sum, values 1–5 and range 14–70; [current licence guidance](https://warwick.ac.uk/services/innovations/wemwbs/licenses/) still requires the appropriate licence. The UNSW FAQ, official scoring template and Bristol threshold sheet below were also reopened and checked against the existing scoring code. No scoring formula or instrument text was changed. Approved institutional materials remain absent.
+
 Reviewed 23 October 2026. No approved Indonesian item bank, response labels, instructions, institutional instrument approval, or WEMWBS licence was found in the repository. The screenshots are visual references only. No clinical wording or fictional participant data has been seeded.
 
 ## Verified scoring references
@@ -22,4 +24,4 @@ Synthetic strings in `tests/fixtures/assessment.ts` and the browser harness are 
 
 ## Processing consent
 
-`assessment-processing-id-v1` refers to the exact text in `src/lib/assessment/consent.ts`. Creating a session requires `processingConsent: true`; the server records the timestamp, text version and authenticated participant through the session relationship. The checkbox starts unchecked. Resuming preserves the original consent record. This permission does not authorize sharing with psychologists or Nani. Withdrawal/retention policies and broader consent management remain a future phase requiring institutional policy review.
+`assessment-processing-id-v1` refers to the exact text in `src/lib/assessment/consent.ts`. Creating a session requires `processingConsent: true`; the server records the timestamp, text version and authenticated participant through the session relationship. The checkbox starts unchecked. Resuming preserves the original consent record. This permission does not authorize sharing with psychologists or Chatbot. Withdrawal/retention policies and broader consent management remain a future phase requiring institutional policy review.

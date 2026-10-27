@@ -75,17 +75,59 @@ describe("answer persistence",()=>{
   it("never edits completed sessions",async()=>{ db.assessmentSession.findFirst.mockResolvedValue({...session(),status:"COMPLETED"}); await expect(saveAnswers(sessionId,participantId,input)).rejects.toMatchObject({code:"ASSESSMENT_ALREADY_COMPLETED"}); expect(db.assessmentAnswer.upsert).not.toHaveBeenCalled(); });
 });
 describe("atomic completion",()=>{
-  it("rejects missing answers before scores or reports",async()=>{ db.assessmentSession.findFirst.mockResolvedValue(session()); await expect(submitAssessment(sessionId,participantId)).rejects.toMatchObject({code:"ASSESSMENT_INCOMPLETE"}); expect(db.assessmentScore.create).not.toHaveBeenCalled(); expect(db.report.create).not.toHaveBeenCalled(); });
+  it("requires the revision reviewed by the participant",async()=>{
+    await expect(submitAssessment(sessionId,participantId,{})).rejects.toMatchObject({code:"VALIDATION_ERROR"});
+    expect(db.$transaction).not.toHaveBeenCalled();
+  });
+  it("rejects a stale review before counting quota or writing any result",async()=>{
+    db.assessmentSession.findFirst.mockResolvedValue({...session(),revision:2});
+    await expect(submitAssessment(sessionId,participantId,{expectedRevision:1})).rejects.toMatchObject({code:"STALE_REVISION"});
+    expect(db.assessmentSession.count).not.toHaveBeenCalled();
+    expect(db.assessmentScore.create).not.toHaveBeenCalled();
+    expect(db.report.create).not.toHaveBeenCalled();
+  });
+  it("rechecks quota at submission even if answers were already saved",async()=>{
+    db.assessmentSession.findFirst.mockResolvedValue(session());
+    db.assessmentSession.count.mockResolvedValue(3);
+    await expect(submitAssessment(sessionId,participantId,{expectedRevision:0})).rejects.toMatchObject({code:"ASSESSMENT_QUOTA_EXCEEDED"});
+    expect(db.assessmentScore.create).not.toHaveBeenCalled();
+  });
+  it("cannot complete another participant's session",async()=>{
+    await expect(submitAssessment(sessionId,participantId,{expectedRevision:0})).rejects.toMatchObject({code:"RESOURCE_NOT_FOUND"});
+    expect(db.assessmentScore.create).not.toHaveBeenCalled();
+  });
+  it("rejects missing answers before scores or reports",async()=>{ db.assessmentSession.findFirst.mockResolvedValue(session()); await expect(submitAssessment(sessionId,participantId,{expectedRevision:0})).rejects.toMatchObject({code:"ASSESSMENT_INCOMPLETE"}); expect(db.assessmentScore.create).not.toHaveBeenCalled(); expect(db.report.create).not.toHaveBeenCalled(); });
   it("calculates scores, creates pending metadata and completes in one transaction",async()=>{
     const answers=syntheticQuestionSet().questions.map(q=>({questionId:q.id,answerValue:q.instrument==="DASS21"?0:3}));
     const result={...session(),status:"COMPLETED",completedAt:new Date("2026-10-23T10:00:00Z"),score:{depressionScore:0,depressionCategory:"NORMAL",anxietyScore:0,anxietyCategory:"NORMAL",stressScore:0,stressCategory:"NORMAL",wemwbsScore:42},report:{id:fixtureId(500)}};
     db.assessmentSession.findFirst.mockResolvedValueOnce({...session(),answers}).mockResolvedValue(result);
-    const first=await submitAssessment(sessionId,participantId); expect(first).toMatchObject({scores:{wemwbs:{score:42}},completedAt:"2026-10-23T10:00:00.000Z"});
+    const first=await submitAssessment(sessionId,participantId,{expectedRevision:0}); expect(first).toMatchObject({scores:{wemwbs:{score:42}},completedAt:"2026-10-23T10:00:00.000Z"});
     expect(db.report.create).toHaveBeenCalledWith({data:{assessmentSessionId:sessionId,status:"PENDING"}});
-    expect(await submitAssessment(sessionId,participantId)).toEqual(first); expect(db.assessmentScore.create).toHaveBeenCalledTimes(1); expect(db.report.create).toHaveBeenCalledTimes(1);
+    expect(await submitAssessment(sessionId,participantId,{expectedRevision:0})).toEqual(first); expect(db.assessmentScore.create).toHaveBeenCalledTimes(1); expect(db.report.create).toHaveBeenCalledTimes(1);
   });
   it("propagates report failure so the transaction rolls back",async()=>{
     db.assessmentSession.findFirst.mockResolvedValue({...session(),answers:syntheticQuestionSet().questions.map(q=>({questionId:q.id,answerValue:1}))}); db.report.create.mockRejectedValue(new Error("write failed"));
-    await expect(submitAssessment(sessionId,participantId)).rejects.toThrow("write failed"); expect(db.assessmentSession.update).not.toHaveBeenCalled();
+    await expect(submitAssessment(sessionId,participantId,{expectedRevision:0})).rejects.toThrow("write failed"); expect(db.assessmentSession.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("persisted dashboard progress and period changes",()=>{
+  it("loads the pinned question set and only the saved answer count for resume",async()=>{
+    const questionSetId=fixtureId(101);
+    db.assessmentSession.findFirst.mockResolvedValue({id:sessionId,questionSetId,updatedAt:new Date("2026-10-24T03:24:00Z"),_count:{answers:23}});
+    expect(await getQuota(participantId)).toMatchObject({inProgressSessionId:sessionId,inProgress:{answered:23,total:35,updatedAt:"2026-10-24T03:24:00.000Z"}});
+    expect(db.assessmentQuestionSet.findMany.mock.calls[0][0].where).toEqual({id:questionSetId,isPublished:true});
+    expect(db.assessmentSession.findFirst.mock.calls[0][0].select).not.toHaveProperty("answers");
+  });
+  it("does not manufacture progress when no session exists",async()=>{
+    expect(await getQuota(participantId)).toMatchObject({inProgress:null,inProgressSessionId:null});
+  });
+  it.each([{periods:[]},{periods:[{...period,id:fixtureId(401)}]}])("rejects save and submit after the session period is deactivated %#",async({periods})=>{
+    db.assessmentSession.findFirst.mockResolvedValue(session());
+    db.academicPeriod.findMany.mockResolvedValue(periods);
+    await expect(saveAnswers(sessionId,participantId,{expectedRevision:0,answers:[{questionId:fixtureId(1),answerValue:1}]})).rejects.toMatchObject({code:"NO_ACTIVE_ACADEMIC_PERIOD"});
+    await expect(submitAssessment(sessionId,participantId,{expectedRevision:0})).rejects.toMatchObject({code:"NO_ACTIVE_ACADEMIC_PERIOD"});
+    expect(db.assessmentAnswer.upsert).not.toHaveBeenCalled();
+    expect(db.assessmentScore.create).not.toHaveBeenCalled();
   });
 });

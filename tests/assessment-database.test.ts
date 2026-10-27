@@ -5,6 +5,7 @@ import { fixtureId, syntheticQuestionSet } from "./fixtures/assessment";
 let db: PGlite;
 const user=fixtureId(200), period=fixtureId(400), session=fixtureId(300), set=fixtureId(100);
 const migration=readFileSync("prisma/migrations/20261023010000_phase2_assessment/migration.sql","utf8");
+const approvalFields = `approved_at=now(),approved_by='SYNTHETIC',dass_source='SYNTHETIC',wemwbs_licence_reference='SYNTHETIC',translation_reference='SYNTHETIC',presentation_approval_reference='SYNTHETIC'`;
 async function createSession(id= session, periodId=period) {
   return db.query(`INSERT INTO assessment_sessions (id,participant_id,academic_period_id,question_set_id,status,processing_consent_at,processing_consent_version,updated_at) VALUES ($1,$2,$3,$4,'IN_PROGRESS',now(),'synthetic-test',now())`,[id,user,periodId,set]);
 }
@@ -21,9 +22,75 @@ beforeAll(async()=>{
 });
 afterAll(async()=>{await db?.close();});
 describe.sequential("actual PostgreSQL Phase 2 constraints and atomicity (PGlite)",()=>{
+  it("rejects direct published insertion even with every approval field", async () => {
+    const id = fixtureId(101);
+    await expect(db.query(`INSERT INTO assessment_question_sets
+      (id,version,is_published,approved_at,approved_by,dass_source,wemwbs_licence_reference,translation_reference,presentation_approval_reference,dass_instructions,wemwbs_instructions,dass_options,wemwbs_options)
+      VALUES ($1,'SYNTHETIC-BYPASS',true,now(),'SYNTHETIC','SYNTHETIC','SYNTHETIC','SYNTHETIC','SYNTHETIC','synthetic','synthetic','[]','[]')`, [id]))
+      .rejects.toThrow(/must be inserted as unpublished drafts/);
+    expect((await db.query("SELECT id FROM assessment_question_sets WHERE id=$1", [id])).rows).toHaveLength(0);
+  });
+  it("defaults new sets to unpublished drafts without approval evidence", async () => {
+    expect((await db.query("SELECT is_published,approved_at,approved_by FROM assessment_question_sets WHERE id=$1", [set])).rows)
+      .toEqual([{ is_published: false, approved_at: null, approved_by: null }]);
+  });
+  it("allows explicit draft creation and editing but refuses publication with no questions", async () => {
+    const id = fixtureId(102);
+    await db.query(`INSERT INTO assessment_question_sets
+      (id,version,is_published,dass_instructions,wemwbs_instructions,dass_options,wemwbs_options)
+      VALUES ($1,'SYNTHETIC-DRAFT',false,'synthetic','synthetic','[]','[]')`, [id]);
+    await db.query(`UPDATE assessment_question_sets SET dass_instructions='edited draft',${approvalFields} WHERE id=$1`, [id]);
+    expect((await db.query("SELECT is_published,dass_instructions FROM assessment_question_sets WHERE id=$1", [id])).rows)
+      .toEqual([{ is_published: false, dass_instructions: "edited draft" }]);
+    await expect(db.query("UPDATE assessment_question_sets SET is_published=true WHERE id=$1", [id])).rejects.toThrow(/35 active items/);
+    expect((await db.query("SELECT is_published FROM assessment_question_sets WHERE id=$1", [id])).rows).toEqual([{ is_published: false }]);
+    await db.query("DELETE FROM assessment_question_sets WHERE id=$1", [id]);
+    expect((await db.query("SELECT id FROM assessment_question_sets WHERE id=$1", [id])).rows).toHaveLength(0);
+  });
+  it("rejects publication when one of the 35 questions is inactive despite complete evidence", async () => {
+    await db.query("UPDATE questions SET is_active=false WHERE id=$1", [fixtureId(35)]);
+    try {
+      await expect(db.query(`UPDATE assessment_question_sets SET is_published=true,${approvalFields} WHERE id=$1`, [set])).rejects.toThrow(/35 active items/);
+      expect((await db.query("SELECT is_published,approved_at FROM assessment_question_sets WHERE id=$1", [set])).rows)
+        .toEqual([{ is_published: false, approved_at: null }]);
+    } finally { await db.query("UPDATE questions SET is_active=true WHERE id=$1", [fixtureId(35)]); }
+  });
   it("refuses publication without evidence",async()=>{await expect(db.query("UPDATE assessment_question_sets SET is_published=true WHERE id=$1",[set])).rejects.toThrow(/approval/);});
+  it.each([
+    "approved_at=NULL", "approved_by=NULL", "approved_by='   '",
+    "dass_source=NULL", "dass_source='   '",
+    "wemwbs_licence_reference=NULL", "wemwbs_licence_reference='   '",
+    "translation_reference=NULL", "translation_reference='   '",
+    "presentation_approval_reference=NULL", "presentation_approval_reference='   '",
+  ])("rejects publication with invalid evidence: %s", async invalidField => {
+    await db.query(`UPDATE assessment_question_sets SET ${approvalFields} WHERE id=$1`, [set]);
+    await expect(db.query(`UPDATE assessment_question_sets SET is_published=true,${invalidField} WHERE id=$1`, [set]))
+      .rejects.toThrow(/published_question_set_approval/);
+    expect((await db.query("SELECT is_published FROM assessment_question_sets WHERE id=$1", [set])).rows).toEqual([{ is_published: false }]);
+  });
   it("publishes an explicitly synthetic test set with all evidence fields",async()=>{
     await db.query(`UPDATE assessment_question_sets SET is_published=true,approved_at=now(),approved_by='SYNTHETIC',dass_source='SYNTHETIC',wemwbs_licence_reference='SYNTHETIC',translation_reference='SYNTHETIC',presentation_approval_reference='SYNTHETIC' WHERE id=$1`,[set]);
+    expect((await db.query("SELECT is_published FROM assessment_question_sets WHERE id=$1", [set])).rows).toEqual([{ is_published: true }]);
+    expect((await db.query("SELECT instrument,count(*)::int AS count FROM questions WHERE question_set_id=$1 AND is_active GROUP BY instrument ORDER BY instrument", [set])).rows)
+      .toEqual([{ instrument: "DASS21", count: 21 }, { instrument: "WEMWBS", count: 14 }]);
+  });
+  it.each([
+    "UPDATE assessment_question_sets SET is_published=false WHERE id=$1",
+    "UPDATE assessment_question_sets SET approved_by='changed' WHERE id=$1",
+    "DELETE FROM assessment_question_sets WHERE id=$1",
+  ])("rejects published-set mutation %#", async sql => {
+    await expect(db.query(sql, [set])).rejects.toThrow(/Published question set is immutable/);
+    expect((await db.query("SELECT is_published,approved_by FROM assessment_question_sets WHERE id=$1", [set])).rows)
+      .toEqual([{ is_published: true, approved_by: "SYNTHETIC" }]);
+  });
+  it.each([
+    "DELETE FROM questions WHERE id=$1",
+    "UPDATE questions SET is_active=false WHERE id=$1",
+    "UPDATE questions SET question_set_id='00000000-0000-4000-8000-000000000999' WHERE id=$1",
+  ])("rejects published-question mutation %#", async sql => {
+    await expect(db.query(sql, [fixtureId(1)])).rejects.toThrow(/Published question is immutable/);
+    expect((await db.query("SELECT is_active,question_set_id FROM questions WHERE id=$1", [fixtureId(1)])).rows)
+      .toEqual([{ is_active: true, question_set_id: set }]);
   });
   it("freezes published content and response options",async()=>{
     await expect(db.query("UPDATE questions SET question_text='changed' WHERE id=$1",[fixtureId(1)])).rejects.toThrow(/immutable/);
