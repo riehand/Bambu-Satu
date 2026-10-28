@@ -76,8 +76,28 @@ model User {
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   assessmentSessions AssessmentSession[]
+  psychologistProfile PsychologistProfile?
 
   @@map("users")
+}
+
+model PsychologistProfile {
+  id                   String   @id @default(uuid()) @db.Uuid
+  userId               String   @unique @map("user_id") @db.Uuid
+  professionalTitle    String?  @map("professional_title")
+  qualification        String?
+  education            String?  @db.Text
+  shortBio             String?  @map("short_bio") @db.Text
+  areasOfFocus         String[] @default([]) @map("areas_of_focus")
+  consultationMethod   String?  @map("consultation_method")
+  consultationLocation String?  @map("consultation_location")
+  languages            String[] @default([])
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@map("psychologist_profiles")
 }
 
 // ─── Phase 2 Models ────────────────────────────────────────

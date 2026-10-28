@@ -32,7 +32,7 @@ export function ParticipantShell({ fullName, userType, children }: { fullName: s
     document.addEventListener("keydown", onKey);
     return () => { document.body.style.overflow = previousOverflow; document.removeEventListener("keydown", onKey); media.removeEventListener("change", onResize); menuButton?.focus(); };
   }, [open]);
-  const links = [{ href: "/participant/dashboard", label: "Ringkasan" }, { href: "/participant/assessment", label: "Asesmen" }, { href: "/participant/history", label: "Riwayat" }];
+  const links = [{ href: "/participant/dashboard", label: "Ringkasan" }, { href: "/participant/assessment", label: "Asesmen" }, { href: "/participant/history", label: "Riwayat" }, { href: "/participant/psychologists", label: "Psikolog" }];
   const active = pathname.endsWith("/results") ? "Riwayat" : links.find(l => pathname.startsWith(l.href))?.label ?? "Ringkasan";
   const focused = /^\/participant\/assessment\/[^/]+$/.test(pathname);
   if (focused) return <div className="wb-app">{children}</div>;

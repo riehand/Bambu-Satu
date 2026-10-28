@@ -148,6 +148,8 @@ LECTURER
 ## Purpose
 Stores professional/public psychologist information separately from authentication data.
 
+**Implementation status (Phase 3 B1, 28 October 2026):** the additive table is implemented. `areas_of_focus` and `languages` are PostgreSQL `TEXT[]` columns. `profile_photo_path` remains a future field and is not part of the current Prisma model or migration.
+
 ## Columns
 
 ```text
@@ -157,11 +159,10 @@ professional_title      VARCHAR / NULL
 qualification           VARCHAR / NULL
 education               TEXT / NULL
 short_bio               TEXT / NULL
-areas_of_focus          TEXT or JSON / NULL
+areas_of_focus          TEXT[] / DEFAULT []
 consultation_method     VARCHAR or ENUM / NULL
 consultation_location   VARCHAR / NULL
-languages               TEXT or JSON / NULL
-profile_photo_path      VARCHAR / NULL
+languages               TEXT[] / DEFAULT []
 created_at              TIMESTAMP / NOT NULL
 updated_at              TIMESTAMP / NOT NULL
 ```

@@ -2,13 +2,15 @@
 
 Participant well-being assessments using Next.js 16, React 19, Prisma 5.22 and Supabase Auth/PostgreSQL. Phase 2 implements unified DASS-21/WEMWBS sessions, consent, autosave/resume, review, revision-aware submission, deterministic scoring and participant history. The companion application's name is **Chatbot**.
 
-**Development handover: implementation complete and published on `riehand_branch` at `8a76603`.** Teammates can begin Phase 3 development. The [readiness review](docs/PHASE2-HANDOVER-READINESS.md) records the documentation/repository-hygiene follow-up awaiting commit/push approval. Prior evidence records 230 automated tests and seven real PostgreSQL integration/concurrency tests passing; this review did not rerun them.
+**Phase 2 handover:** the delivered assessment foundation and its historical evidence are documented in the [handover](docs/PHASE2-HANDOVER.md). Phase 3 workstream B1 (psychologist profiles and participant directory) is implemented locally on the current `Phase3` branch and has not been committed, pushed or deployed. See the [B1 status and API contract](docs/PHASE3-B1-STATUS.md) for the current scope and verification evidence.
 
 **Hosted deployment: not activated.** The Phase 2 migration is unapplied. Privilege review, shared-database coordination, approved content/period activation and hosted acceptance remain separate deployment work. Encrypted project and database backups are verified off-device on private Google Drive; full restoration remains untested. Restoration and new backup/security work are not prerequisites for starting Phase 3 development.
 
 ## Start here
 
 - [Team handover](docs/PHASE2-HANDOVER.md): architecture, implemented APIs, invariants and development workflow.
+- [Phase 3 B1 status](docs/PHASE3-B1-STATUS.md): current psychologist profile/directory implementation, API shapes and remaining scope.
+- [Phase 3 progress](docs/PROGRESS-FASE3.md): current worktree state, confirmed decisions, validation evidence and staged roadmap.
 - [Chatbot database contract](docs/CHATBOT-DATABASE-CONTRACT.md): shared identity, reserved objects, migration ownership and consent boundaries.
 - [Auth migration](docs/AUTH-MIGRATION.md) and [Phase 2 migration](docs/PHASE2-MIGRATION.md): ordered database setup and approval boundaries.
 - [Activation](docs/PHASE2-ACTIVATION.md) and [security review](docs/PHASE2-SECURITY-REVIEW.md): hosted-release tasks, not general development prerequisites.

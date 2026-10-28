@@ -47,7 +47,7 @@ describe("encrypted archive preparation without exports or storage claims", () =
     expect(result.stdout).toContain('"exportEnabled": false');
     expect(result.stdout + result.stderr).not.toContain(secretMarker);
   });
-  it.each([["--export-approved"], ["--dry-run", "--export-approved"]])("old approval switches cannot trigger an export: %j", args => {
+  it.each([{ args: ["--export-approved"] }, { args: ["--dry-run", "--export-approved"] }])("old approval switches cannot trigger an export: %j", ({ args }) => {
     const result = run(args);
     expect(result.status).toBe(1);
     expect(result.stdout + result.stderr).not.toContain(secretMarker);
