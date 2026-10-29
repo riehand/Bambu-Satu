@@ -126,6 +126,10 @@ Superadmin role MUST NOT automatically bypass report-content privacy.
 
 Consent MUST be checked at access/use boundary, not only recorded in UI.
 
+Appointment-linked report access MUST be denied after revocation, assigned psychologist early closure, scheduled end, authorized cancellation, or confirmed terminal no-show. A matching standalone grant MUST be evaluated separately. Revocation MUST NOT cancel an appointment or close consultation.
+
+The first observation of an appointment-linked lifecycle expiry MUST persist one append-only `EXPIRED` audit event with server observation time and the effective `expired_at`. Audit events MUST identify `USER` or `SYSTEM`; system events MUST NOT impersonate a user.
+
 ---
 
 # 3. Correctness
@@ -154,25 +158,36 @@ Invalid transitions MUST be rejected.
 
 Critical timing MUST use authoritative server/database time, not client browser time.
 
+## NFR-COR-005 — Appointment Slot Time Boundary
+
+Booking and availability reads MUST reject or omit slots whose scheduled start is at or before server time. Appointment-linked report authorization MUST deny access at `scheduled_end_at` even when the auto-close job is delayed.
+
 ---
 
 # 4. Data Integrity and Transactions
 
 ## NFR-DATA-001 — Booking Transaction
 
-Booking SHOULD execute within transaction/atomic mechanism that preserves:
+Booking MUST execute within a transaction/atomic mechanism that preserves:
 
 ```text
 slot AVAILABLE
+→ validate latest completed assessment and GENERATED report
 → create appointment CONFIRMED
 → slot BOOKED
+→ create consultation session
+→ create appointment-linked consent
 ```
+
+Any failure MUST roll back every state change above.
 
 ---
 
 ## NFR-DATA-002 — Double Booking
 
 Database/transaction strategy MUST prevent concurrent double booking.
+
+PostgreSQL MUST enforce at most one active appointment per psychologist/date/session while allowing terminal historical appointments to retain their slot reference.
 
 ---
 
@@ -185,6 +200,10 @@ Assessment finalization MUST be idempotent or guarded against duplicate executio
 ## NFR-DATA-004 — Referential Integrity
 
 Database SHOULD enforce foreign keys/constraints for critical relationships where supported.
+
+## NFR-DATA-005 — Consent Scope Integrity
+
+Appointment consent MUST reference an appointment and match its participant, report, and psychologist. Standalone consent MUST have no appointment association. Consent type and appointment nullability MUST be constrained so the two authorization paths cannot be confused.
 
 ---
 
@@ -434,6 +453,8 @@ timestamp
 metadata limited to non-sensitive operational context
 ```
 
+Consent grant audit MUST additionally capture purpose, scope, policy version, and server-generated grant time. Revocation/expiry events MUST identify the affected grant without logging report contents or scores.
+
 ---
 
 ## NFR-AUD-002
@@ -633,6 +654,10 @@ Minimum:
 - Participant A cannot fetch Participant B appointment.
 - Psychologist A cannot fetch Psychologist B appointment.
 - Psychologist without consent cannot fetch report.
+- appointment consent cannot be replaced by standalone consent for booking;
+- report ID from another owner, an older assessment, or a non-GENERATED report cannot be booked;
+- revoking appointment consent blocks that grant without cancelling appointment or closing consultation;
+- a matching standalone grant is evaluated independently from appointment consent;
 - Guessing report/appointment IDs does not bypass authorization.
 - Chatbot token cannot access human consultation messages.
 - Human consultation session credential cannot retrieve unrelated chatbot context.
@@ -646,6 +671,8 @@ Minimum:
 
 - duplicate assessment submit does not consume quota twice;
 - concurrent same-slot bookings produce at most one success;
+- booking failure rolls back appointment, consultation session, slot reservation, and consent;
+- past and past-no-show slots are not newly bookable;
 - notification retry does not create harmful duplicate state;
 - chatbot provider failure leaves report intact;
 - session timing rules remain correct around boundary timestamps.

@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:browser": "playwright test",
+    "test:browser": "node scripts/run-browser-tests.mjs",
     "auth:preflight": "node scripts/auth-preflight.mjs"
   },
   "dependencies": {

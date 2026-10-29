@@ -32,7 +32,7 @@ export function ParticipantShell({ fullName, userType, children }: { fullName: s
     document.addEventListener("keydown", onKey);
     return () => { document.body.style.overflow = previousOverflow; document.removeEventListener("keydown", onKey); media.removeEventListener("change", onResize); menuButton?.focus(); };
   }, [open]);
-  const links = [{ href: "/participant/dashboard", label: "Ringkasan" }, { href: "/participant/assessment", label: "Asesmen" }, { href: "/participant/history", label: "Riwayat" }, { href: "/participant/psychologists", label: "Psikolog" }];
+  const links = [{ href: "/participant/dashboard", label: "Ringkasan" }, { href: "/participant/assessment", label: "Asesmen" }, { href: "/participant/history", label: "Riwayat" }, { href: "/participant/psychologists", label: "Psikolog" }, { href: "/participant/appointments", label: "Janji konsultasi" }];
   const active = pathname.endsWith("/results") ? "Riwayat" : links.find(l => pathname.startsWith(l.href))?.label ?? "Ringkasan";
   const focused = /^\/participant\/assessment\/[^/]+$/.test(pathname);
   if (focused) return <div className="wb-app">{children}</div>;
@@ -43,7 +43,7 @@ export function ParticipantShell({ fullName, userType, children }: { fullName: s
       <Link href="/participant/dashboard" onClick={() => setOpen(false)}><Brand /></Link>
       <p className="wb-nav-label">KESEJAHTERAAN KAMPUS</p>
       <nav>{links.map(link => <Link key={link.href} href={link.href} aria-current={active === link.label ? "page" : undefined} onClick={() => setOpen(false)}>{link.label}</Link>)}
-        {["Psikolog", "Pendamping AI", "Persetujuan & privasi"].map(label => <span className="wb-nav-disabled" key={label} aria-disabled="true">{label}<small>Segera</small></span>)}
+        {["Pendamping AI"].map(label => <span className="wb-nav-disabled" key={label} aria-disabled="true">{label}<small>Segera</small></span>)}
       </nav>
       <p className="wb-sidebar-note">Ruang untuk merawat diri.<br/><br/>Untuk mahasiswa dan dosen<br/>Telkom University.</p>
       <LogoutButton />

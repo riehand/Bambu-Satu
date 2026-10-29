@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { requirePageRole } from "@/lib/auth/session";
 import { getPsychologistById } from "@/lib/psychologist/service";
 import { psychologistIdSchema } from "@/lib/validations/psychologist";
+import { PsychologistAvailability } from "@/components/participant/psychologist-availability";
+import { jakartaDate } from "@/lib/psychologist/availability-config";
 
 export default async function PsychologistDetail({ params }: { params: Promise<{ psychologistId: string }> }) {
   await requirePageRole("PARTICIPANT");
@@ -21,6 +23,6 @@ export default async function PsychologistDetail({ params }: { params: Promise<{
       {psychologist.languages.length > 0 && <div><h3>Bahasa layanan</h3><ul className="wb-psychologist-tags">{psychologist.languages.map((language) => <li key={language}>{language}</li>)}</ul></div>}
       {(psychologist.consultationMethod || psychologist.consultationLocation) && <div><h3>Informasi konsultasi</h3>{psychologist.consultationMethod && <p>{psychologist.consultationMethod}</p>}{psychologist.consultationLocation && <p>{psychologist.consultationLocation}</p>}</div>}
     </section>
-    <div className="wb-notice"><p>Informasi ini belum menyediakan jadwal atau pemesanan konsultasi. Profil ini tidak memberi akses kepada psikolog atas hasil asesmen Anda.</p></div>
+    <PsychologistAvailability psychologistId={psychologist.id} psychologistName={psychologist.fullName} today={jakartaDate()}/>
   </>;
 }

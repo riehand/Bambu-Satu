@@ -193,6 +193,8 @@ password: required, satisfy password policy
 }
 ```
 
+Participant responses contain only future `AVAILABLE` sessions. The API uses the fixed Asia/Jakarta session definition and must not expose past or past-no-show slots as bookable.
+
 ### Errors
 
 ```text
@@ -678,8 +680,14 @@ Psychologist:
 ```text
 appointment.psychologist_id == current_user.id
 AND appointment.report_id == report.id
-AND valid PSYCHOLOGIST_REPORT_ACCESS consent exists
+AND valid APPOINTMENT_REPORT_ACCESS matches participant/report/psychologist/appointment
 ```
+
+A matching `STANDALONE_REPORT_ACCESS` may independently authorize standalone report access. Evaluate it separately; it never satisfies booking consent. Appointment-linked authorization also requires a nonterminal appointment/session and `server_now < scheduled_end_at`; early psychologist close, cancellation, confirmed terminal no-show, or revocation denies that grant. A delayed close job MUST NOT extend access.
+
+If a consent-list, revocation, re-consent, or report-access request first observes an appointment-linked lifecycle expiry, it MUST persist the earliest effective `expired_at` and one append-only `EXPIRED` audit event. If a participant revokes after an earlier lifecycle expiry, record that expiry first, then record the separate `REVOKED` event. Audit events use `actor_type: USER` with a user ID for a known user action or `actor_type: SYSTEM` with no user ID for system-observed expiry. If expiry audit materialization fails, the operation MUST return a safe non-success response and MUST NOT authorize or disclose report data.
+
+The report API is available only after status `GENERATED` and valid private artifact metadata exist. It returns authorized score JSON but never the object key. PDF delivery remains a separate workstream.
 
 ### Success
 
@@ -741,13 +749,15 @@ Either:
 
 Return permanent public URL.
 
+Private PDF download belongs to the separate PDF/report-generation workstream and is not implemented in the current B2/B3 slice.
+
 ---
 
 # 5. CONSENT DOMAIN
 
 ---
 
-## API-CONSENT-01 — Grant Psychologist Report Consent
+## API-CONSENT-01 — Grant Standalone Psychologist Report Consent
 
 ```http
 POST /api/consents/psychologist-report
@@ -763,7 +773,8 @@ POST /api/consents/psychologist-report
 {
   "assessmentSessionId": "uuid",
   "reportId": "uuid",
-  "psychologistId": "uuid"
+  "psychologistId": "uuid",
+  "consent": true
 }
 ```
 
@@ -773,7 +784,10 @@ POST /api/consents/psychologist-report
 participant owns assessment
 participant owns report
 report belongs to assessment
+report status == GENERATED and private artifact metadata is present
 psychologist role valid
+appointment_id is null
+consent == true
 ```
 
 ### Success
@@ -787,12 +801,15 @@ psychologist role valid
   "success": true,
   "data": {
     "consentId": "uuid",
-    "consentType": "PSYCHOLOGIST_REPORT_ACCESS",
+    "consentType": "STANDALONE_REPORT_ACCESS",
     "targetUserId": "uuid",
+    "appointmentId": null,
     "grantedAt": "..."
   }
 }
 ```
+
+The server MUST capture purpose, scope, current policy version, and server-generated timestamp. This standalone grant MUST NOT satisfy the fresh booking-consent prerequisite.
 
 ---
 
@@ -801,6 +818,8 @@ psychologist role valid
 ```http
 POST /api/consents/psychologist-contact
 ```
+
+This endpoint is part of the separate contact-consent workstream and is not implemented by B2/B3.
 
 ### Actor
 
@@ -827,6 +846,8 @@ Creates `PSYCHOLOGIST_CONTACT_ACCESS`.
 ```http
 POST /api/consents/chatbot-report
 ```
+
+This endpoint is part of the separate Chatbot workstream and is not implemented by B2/B3.
 
 ### Actor
 
@@ -895,7 +916,19 @@ Own consent only.
 
 ### Note
 
-Revocation effect on already-completed appointments/chatbot sessions must follow the latest business rules. The coding agent MUST NOT invent retrospective deletion behavior.
+Revocation immediately removes authorization from the selected grant. Revoking appointment-linked consent MUST NOT cancel the confirmed appointment or close its consultation session. If an earlier appointment lifecycle expiry has not yet been materialized, the revoke request MUST record that expiry before the separate `REVOKED` event. Any matching standalone grant is evaluated as an independent permission. Re-consent creates a new grant; revoked/expired historical grants are never reactivated.
+
+---
+
+## API-CONSENT-06 — Re-consent for an Existing Appointment
+
+```http
+POST /api/appointments/{appointmentId}/report-consent
+```
+
+Actor: `PARTICIPANT`. Request body: `{ "consent": true }`.
+
+The participant must own the appointment and its report. The appointment/session must remain eligible for report access and `server_now < scheduled_end_at`. An observed expiry on a previous appointment-linked grant MUST be materialized before re-consent is denied. A successful request creates a new `APPOINTMENT_REPORT_ACCESS` row with the same exact participant/report/psychologist/appointment scope, fresh server timestamp, purpose, scope snapshot, policy version, and audit event. It never updates or reactivates a historical grant. Re-consent does not change appointment status or session state.
 
 ---
 
@@ -1070,6 +1103,8 @@ GET /api/psychologist/availability
 
 `PSYCHOLOGIST`
 
+The psychologist may view their own `AVAILABLE`, `UNAVAILABLE`, and `BOOKED` session rows. Query accepts one `date` or a `from`/`to` range of at most 31 days.
+
 ---
 
 ## API-AVAIL-03 — Set Own Daily Availability
@@ -1113,6 +1148,7 @@ PUT /api/psychologist/availability/{date}
 
 ```text
 409 AVAILABILITY_ALREADY_BOOKED
+409 SLOT_START_PASSED
 422 INVALID_SESSION_TYPE
 ```
 
@@ -1120,10 +1156,25 @@ PUT /api/psychologist/availability/{date}
 
 - create arbitrary start/end time;
 - mark a booked slot free without approved cancellation/reschedule flow.
+- mark an already-started session newly available.
+
+A daily update MUST preserve a booked session. Booking/cancellation/reschedule transitions own slot release; past no-show availability is not automatically reopened.
 
 ---
 
 # 8. APPOINTMENT DOMAIN
+
+---
+
+## API-APPT-00 — Read Booking Prerequisite
+
+```http
+GET /api/appointments/booking-context
+```
+
+Actor: `PARTICIPANT`.
+
+Returns only the authenticated participant's latest completed assessment/report references, completion time, report status, and whether the report is usable for booking. `canBook` is true only when the latest combined assessment has a corresponding privately stored `GENERATED` report. This endpoint returns no scores or artifact storage keys.
 
 ---
 
@@ -1145,22 +1196,28 @@ POST /api/appointments
   "assessmentSessionId": "uuid",
   "reportId": "uuid",
   "availabilityId": "uuid",
+  "reportConsent": true,
   "participantNote": "Saya ingin membahas tekanan akademik yang saya rasakan akhir-akhir ini."
 }
 ```
 
+`participantNote` is optional and limited to 500 characters.
+
 ### Preconditions
 
 ```text
-assessment completed
-report exists
-participant owns assessment/report
+latest completed DASS-21 + WEMWBS assessment exists
+corresponding report status == GENERATED
+participant owns assessment/report and report belongs to that latest assessment
 psychologist active
 selected availability == AVAILABLE
-valid PSYCHOLOGIST_REPORT_ACCESS consent
+fresh affirmative reportConsent == true
+slot scheduled start is in the future according to server time
 contact consent if phone contact will be used
 participantNote <= 500 chars
 ```
+
+The client report reference is validated against the server-resolved latest report; it is never trusted alone. A previous standalone consent MUST NOT satisfy this booking prerequisite. The server supplies appointment ID, purpose/scope, policy version, and consent timestamp; clients cannot choose or forge them.
 
 ### Success
 
@@ -1178,10 +1235,10 @@ participantNote <= 500 chars
       "id": "uuid",
       "fullName": "Dr. Example"
     },
-    "date": "2026-10-10",
+    "date": "2026-11-10",
     "sessionType": "MORNING",
-    "scheduledStartAt": "2026-10-10T09:00:00+07:00",
-    "scheduledEndAt": "2026-10-10T11:00:00+07:00"
+    "scheduledStartAt": "2026-11-10T09:00:00+07:00",
+    "scheduledEndAt": "2026-11-10T11:00:00+07:00"
   }
 }
 ```
@@ -1189,12 +1246,15 @@ participantNote <= 500 chars
 ### Errors
 
 ```text
-400 PARTICIPANT_NOTE_TOO_LONG
+422 VALIDATION_ERROR
 403 REPORT_CONSENT_REQUIRED
-403 CONTACT_CONSENT_REQUIRED
+409 ASSESSMENT_REQUIRED
+409 ASSESSMENT_REPORT_NOT_LATEST
+409 REPORT_NOT_GENERATED
+404 PSYCHOLOGIST_NOT_FOUND
 409 SLOT_NOT_AVAILABLE
 409 SLOT_ALREADY_BOOKED
-409 APPOINTMENT_CONFLICT
+409 SLOT_START_PASSED
 ```
 
 ### Transaction
@@ -1207,6 +1267,8 @@ lock/check availability
 → mark availability BOOKED
 → create consultation_session
 ```
+
+The same transaction MUST validate the latest completed owned combined assessment and `GENERATED` report, require fresh explicit consent, create `APPOINTMENT_REPORT_ACCESS` with the appointment ID, and capture purpose/scope/policy version/server timestamp. Any failure MUST roll back the appointment, consultation session, slot reservation, and consent.
 
 ### No Approval Step
 
@@ -1224,15 +1286,7 @@ GET /api/appointments
 
 `PARTICIPANT`
 
-### Query
-
-Optional:
-
-```text
-status
-page
-limit
-```
+Returns the authenticated participant's appointment history ordered by scheduled start, newest first. No participant identifiers or another participant's appointments are included.
 
 ---
 
@@ -1284,6 +1338,8 @@ GET /api/appointments/{appointmentId}
 
 Caller must be one of appointment parties.
 
+Psychologist detail MUST omit report/session identifiers unless a separate authorized report response is requested. Participant detail is limited to the caller's own appointment.
+
 ---
 
 ## API-APPT-05 — Reschedule Failed/No-Show Appointment
@@ -1298,13 +1354,7 @@ POST /api/appointments/{appointmentId}/reschedule
 
 ### Preconditions
 
-Appointment qualifies for recovery:
-
-```text
-CANCELLED
-or
-NO_SHOW / failed due to psychologist absence
-```
+**Not enabled until rescheduling eligibility and cutoff are approved.** Prior requirements considered upcoming appointments as candidates in addition to cancellation/no-show recovery. Do not finalize eligibility from terminal appointment states alone. Completed consultations are never eligible as a continuation/follow-up.
 
 ### Request
 
@@ -1323,7 +1373,7 @@ NO_SHOW / failed due to psychologist absence
 
 ### Rule
 
-This is recovery, NOT follow-up consultation.
+When enabled, rescheduling MUST preserve the original appointment/audit history, create a linked replacement appointment, require fresh appointment consent, and replace slots transactionally and concurrency-safely. A completed consultation MUST NOT create a follow-up.
 
 ---
 

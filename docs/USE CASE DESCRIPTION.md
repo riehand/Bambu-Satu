@@ -99,7 +99,7 @@ Represents the external AI application that receives authorized processed assess
 | UC-33 | Receive Appointment Reminder | Participant / Psychologist |
 | UC-34 | Handle Psychologist Late State | System |
 | UC-35 | Handle Psychologist No-Show | System |
-| UC-36 | Reschedule Failed/No-Show Appointment | Participant |
+| UC-36 | Reschedule Appointment (Policy Pending) | Participant |
 | UC-37 | Manage Users | Superadmin |
 | UC-38 | Manage Psychologists | Superadmin |
 | UC-39 | Manage Academic Period | Superadmin |
@@ -305,30 +305,47 @@ DASS-21 and WEMWBS MUST NOT be treated as separate quota-consuming sessions.
 **Primary Actor:** Participant
 
 ### Preconditions
-- Current completed assessment and report exist.
+- Participant's latest completed assessment includes DASS-21 and WEMWBS, with its corresponding report in `GENERATED` status.
 - Psychologist selected.
 - Date and `AVAILABLE` fixed session selected.
-- Report consent provided.
+- Participant explicitly grants fresh appointment-linked report consent during booking; an existing standalone grant does not satisfy this prerequisite.
 - Contact consent provided if required by approved flow.
 
 ### Main Flow
 1. Participant optionally fills `What would you like to discuss?`.
 2. System validates max 500 characters.
-3. System shows booking review.
-4. Participant confirms.
-5. System verifies slot availability transactionally.
-6. System creates `CONFIRMED` appointment.
-7. System marks selected psychologist session `BOOKED`.
-8. System initializes consultation session.
-9. Participant sees confirmation.
+3. System shows the exact latest report and an unchecked report-sharing consent control.
+4. Participant explicitly selects consent and confirms booking.
+5. Server verifies report ownership, latest assessment association, `GENERATED` status, and future slot time.
+6. One transaction reserves the slot and creates the `CONFIRMED` appointment, consultation session, and appointment-linked consent with purpose, scope, policy version, and server timestamp.
+7. Participant sees confirmation.
+
+Consent audit events distinguish user and system actors. Expiry discovered by an API is persisted once with the effective lifecycle timestamp and a server-observed `EXPIRED` event; the report authorization decision does not wait for that materialization.
 
 ### Exception
 - Concurrent booking consumed slot → reject with slot unavailable.
 - Missing required consent → reject.
+- Client report does not match the latest owned `GENERATED` report → reject.
+- Any transaction step fails → roll back the appointment, session, slot, and consent.
 
 ### Postconditions
 - Confirmed appointment exists.
 - No psychologist approval step is required.
+
+---
+
+## UC-17 — Manage Standalone Report Consent
+
+**Primary Actor:** Participant
+
+### Main Flow
+1. Participant selects one completed report and one psychologist.
+2. System explains that the grant is independent of appointments.
+3. Participant explicitly grants standalone report access.
+4. System records participant, report, psychologist, purpose, policy version, and server timestamp with no appointment association.
+
+### Revocation
+Participant may revoke the grant. Revocation immediately removes authorization from that grant but does not cancel an appointment or close a consultation. Any matching appointment-linked or standalone grant is evaluated independently. Re-consent creates a new grant; historical records are not reactivated.
 
 ---
 
@@ -553,10 +570,21 @@ Configured no-show threshold is reached and psychologist remains absent.
 ### Main Flow
 1. System marks/derives no-show.
 2. Appointment is not treated as successful consultation.
-3. Participant may be offered reschedule as recovery.
+3. The appointment reaches a server-confirmed terminal no-show state; appointment-linked report authorization ends.
+4. Rescheduling, if later approved, follows UC-36 policy.
 
 ### Constraint
-Reschedule due to failed/no-show appointment is NOT a follow-up consultation.
+No-show MUST NOT automatically create a replacement appointment.
+
+---
+
+## UC-36 — Reschedule Appointment (Eligibility/Window Pending)
+
+**Primary Actor:** Participant
+
+Eligibility and cutoff are unresolved. Prior requirements considered upcoming appointments as well as failed/no-show recovery; do not implement this use case until approved states and timing rules are documented.
+
+When approved, rescheduling MUST preserve the original appointment and audit history, create a linked replacement, require fresh appointment consent, and replace slots transactionally. A completed consultation MUST NOT be continued or represented as a follow-up.
 
 ---
 

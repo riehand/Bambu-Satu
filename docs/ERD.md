@@ -81,10 +81,12 @@ reports
  └── 0..* chatbot_handoffs
 
 psychologist_availability
- └── 0..1 appointments
+ └── 0..* historical appointments, at most one active appointment per slot
 
 appointments
  └── 0..1 consultation_sessions
+ ├── 0..* appointment-linked consent grants over history
+ └── 0..1 replacement appointment through rescheduled_from_appointment_id
 
 consultation_sessions
  └── 0..* consultation_messages
@@ -166,6 +168,8 @@ languages               TEXT[] / DEFAULT []
 created_at              TIMESTAMP / NOT NULL
 updated_at              TIMESTAMP / NOT NULL
 ```
+
+Database check constraint MUST require `appointment_id IS NOT NULL` for `APPOINTMENT_REPORT_ACCESS` and `appointment_id IS NULL` for `STANDALONE_REPORT_ACCESS` and other non-appointment consent types.
 
 ## Relationship
 
@@ -374,8 +378,9 @@ Represents the generated official assessment report.
 ```text
 id                      UUID / PK
 assessment_session_id   UUID / FK assessment_sessions.id / UNIQUE / NOT NULL
+status                  ENUM PENDING | GENERATED / NOT NULL / DEFAULT PENDING
 file_path_or_object_key VARCHAR / NULL
-generated_at            TIMESTAMP / NOT NULL
+generated_at            TIMESTAMP / NULL
 created_at              TIMESTAMP / NOT NULL
 updated_at              TIMESTAMP / NOT NULL
 ```
@@ -391,6 +396,7 @@ assessment_sessions 1 ----- 0..1 reports
 - report exists only for completed assessment.
 - report is private by default.
 - report file storage MUST NOT use unrestricted public URLs.
+- `GENERATED` means the private report artifact was successfully generated and stored; assessment submission creates `PENDING` metadata only.
 
 ---
 
@@ -406,31 +412,62 @@ id                      UUID / PK
 participant_id          UUID / FK users.id / NOT NULL
 assessment_session_id   UUID / FK assessment_sessions.id / NOT NULL
 report_id               UUID / FK reports.id / NOT NULL
-consent_type            ENUM / NOT NULL
-target_user_id          UUID / FK users.id / NULL
-target_system           VARCHAR or ENUM / NULL
-granted_at              TIMESTAMP / NOT NULL
-revoked_at              TIMESTAMP / NULL
-created_at              TIMESTAMP / NOT NULL
-updated_at              TIMESTAMP / NOT NULL
+target_user_id          UUID / FK users.id / NOT NULL
+appointment_id          UUID / FK appointments.id / NULL
+consent_type            ENUM APPOINTMENT_REPORT_ACCESS | STANDALONE_REPORT_ACCESS
+purpose                 TEXT / NOT NULL
+scope                   JSONB / NOT NULL
+policy_version          VARCHAR / NOT NULL
+granted_at              TIMESTAMPTZ / NOT NULL
+expires_at              TIMESTAMPTZ / NULL
+expired_at              TIMESTAMPTZ / NULL
+revoked_at              TIMESTAMPTZ / NULL
+created_at              TIMESTAMPTZ / NOT NULL
 ```
 
 ## Enum: consent_type
 
 ```text
-CHATBOT_REPORT_ACCESS
-PSYCHOLOGIST_REPORT_ACCESS
-PSYCHOLOGIST_CONTACT_ACCESS
+APPOINTMENT_REPORT_ACCESS
+STANDALONE_REPORT_ACCESS
 ```
 
 ## Rules
 
-### Psychologist consent
-For psychologist-related consent:
+### Appointment report consent
 
 ```text
-target_user_id = selected psychologist
+consent_type = APPOINTMENT_REPORT_ACCESS
+participant_id, report_id, and target_user_id match the appointment
+appointment_id IS NOT NULL and references that appointment
+expires_at equals the appointment scheduled end at grant time
 ```
+
+Booking consent is fresh, affirmative, and created in the booking transaction. A standalone grant cannot satisfy booking consent. Revocation removes authorization from that grant immediately but does not cancel the appointment or close consultation. Re-consent creates a new row; revoked/expired rows are never reactivated.
+
+### Standalone report consent
+
+```text
+consent_type = STANDALONE_REPORT_ACCESS
+participant_id, report_id, and target_user_id are independently validated
+appointment_id IS NULL
+expires_at IS NULL
+```
+
+Standalone grants remain active until revoked and are evaluated independently from appointment grants. They do not satisfy the booking prerequisite.
+
+Appointment-linked report authorization expires at the earliest of revocation, psychologist early closure, scheduled end, authorized cancellation, or confirmed terminal no-show. The API also checks authoritative server time at each access; expiry does not depend on a delayed close job.
+
+### ConsentAuditEvent
+
+```text
+actor_type      ENUM USER | SYSTEM / NOT NULL
+actor_user_id   UUID / FK users.id / NULL
+action          ENUM GRANTED | REVOKED | EXPIRED | ACCESSED / NOT NULL
+occurred_at     TIMESTAMPTZ / NOT NULL
+```
+
+CHECK `USER` events have a user ID and `SYSTEM` events have none. The first API observation of an unmaterialized appointment-grant expiry sets `expired_at` to its effective lifecycle time and appends one `EXPIRED` event with server observation time. Access checks deny from current server time and lifecycle state independently of this audit write. Audit events remain append-only.
 
 ### Chatbot consent
 For chatbot:
@@ -442,6 +479,9 @@ target_system = EXTERNAL_CHATBOT
 - consent MUST be participant-specific.
 - consent MUST be report/assessment-specific.
 - consent MUST NOT imply access to full assessment history.
+- Consent audit events append grant, revoke, authorized access, and lifecycle-expiry actions with actor and server timestamp.
+- Grant scope/purpose/version are immutable; revoke/expiry timestamps are one-way transitions and audit events are append-only.
+- Chatbot and contact consent remain separate future workstreams and are not introduced by this migration.
 
 ---
 
@@ -496,6 +536,8 @@ UNIQUE(psychologist_id, availability_date, session_type)
 
 - psychologist may make all/some/none sessions available per date.
 - one psychologist/session/date MUST NOT be double-booked.
+- participant reads MUST omit slots whose scheduled start has passed; past no-show slots MUST NOT be automatically reopened.
+- BOOKED availability MUST only be released during an authorized transition and when the slot remains eligible for reuse.
 - arbitrary time slots are out of scope.
 
 ---
@@ -513,9 +555,12 @@ participant_id          UUID / FK users.id / NOT NULL
 psychologist_id         UUID / FK users.id / NOT NULL
 assessment_session_id   UUID / FK assessment_sessions.id / NOT NULL
 report_id               UUID / FK reports.id / NOT NULL
-availability_id         UUID / FK psychologist_availability.id / UNIQUE / NOT NULL
+availability_id         UUID / FK psychologist_availability.id / NOT NULL
+rescheduled_from_appointment_id UUID / FK appointments.id / NULL
 participant_note        VARCHAR(500) / NULL
 status                  ENUM / NOT NULL
+scheduled_start_at      TIMESTAMPTZ / NOT NULL
+scheduled_end_at        TIMESTAMPTZ / NOT NULL
 booked_at               TIMESTAMP / NOT NULL
 completed_at            TIMESTAMP / NULL
 cancelled_at            TIMESTAMP / NULL
@@ -527,15 +572,17 @@ updated_at              TIMESTAMP / NOT NULL
 
 ```text
 CONFIRMED
+IN_PROGRESS
 COMPLETED
 CANCELLED
+NO_SHOW
 RESCHEDULED
 ```
 
 ## Required Constraint
 
 ```text
-UNIQUE(availability_id)
+UNIQUE active appointment per availability_id (PostgreSQL partial unique index)
 ```
 
 ## Rules
@@ -547,17 +594,23 @@ assessment_session.participant_id == appointment.participant_id
 report.assessment_session_id == appointment.assessment_session_id
 availability.psychologist_id == appointment.psychologist_id
 availability.status == AVAILABLE before booking
+availability's scheduled start > authoritative server time
+assessment_session is participant's latest completed combined assessment
+report.assessment_session_id == appointment.assessment_session_id
+report.status == GENERATED
+appointment-linked consent matches appointment participant/report/psychologist and has appointment_id
 ```
 
-Successful booking SHOULD atomically:
+Successful booking MUST atomically:
 
 ```text
 create appointment CONFIRMED
 mark availability BOOKED
 create consultation_session
+create APPOINTMENT_REPORT_ACCESS consent with appointment_id
 ```
 
-No second psychologist approval step.
+Any failure rolls back the complete transaction. No second psychologist approval step. Historical appointments are retained; terminal history does not permanently block a valid future slot reuse.
 
 ---
 
@@ -889,7 +942,7 @@ UNIQUE(psychologist_availability.psychologist_id,
        psychologist_availability.availability_date,
        psychologist_availability.session_type)
 
-UNIQUE(appointments.availability_id)
+UNIQUE active appointments(availability_id) WHERE appointment status = CONFIRMED
 
 UNIQUE(consultation_sessions.appointment_id)
 
@@ -935,6 +988,9 @@ consents.report_id
 
 consents.target_user_id
   -> users.id
+
+consents.appointment_id
+  -> appointments.id (nullable only for non-appointment consent types)
 
 psychologist_availability.psychologist_id
   -> users.id
@@ -1154,13 +1210,17 @@ MUST prevent race conditions:
 
 ```text
 lock/check availability
-→ assert AVAILABLE
+→ assert AVAILABLE and scheduled start is in the future
+→ validate participant's latest completed combined assessment and owned GENERATED report
 → create appointment CONFIRMED
 → mark availability BOOKED
 → create consultation_session
+→ create APPOINTMENT_REPORT_ACCESS with required appointment_id
 ```
 
-At most one booking may succeed for the same availability row.
+Any failure MUST roll back the slot, appointment, consultation session, and consent. At most one active booking may succeed for the same availability row.
+
+Reschedule mechanics are deferred until eligibility and cutoff are approved. When implemented, preserve the source appointment, create a linked replacement, require fresh appointment consent, and reserve/release eligible slots within one transaction. Completed consultations MUST NOT be continued.
 
 ---
 

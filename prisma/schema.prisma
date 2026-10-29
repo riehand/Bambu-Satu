@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -19,6 +19,67 @@ enum Role {
 enum UserType {
   STUDENT
   LECTURER
+}
+
+enum ConsultationSessionType {
+  MORNING
+  AFTERNOON
+  EVENING
+}
+
+enum PsychologistAvailabilityStatus {
+  AVAILABLE
+  UNAVAILABLE
+  BOOKED
+}
+
+enum AppointmentStatus {
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+  RESCHEDULED
+}
+
+enum ConsultationSessionStatus {
+  SCHEDULED
+  READY
+  IN_PROGRESS
+  PSYCHOLOGIST_LATE
+  PARTICIPANT_LATE
+  NO_SHOW
+  COMPLETED
+  CLOSED
+}
+
+enum ConsultationEndedBy {
+  PSYCHOLOGIST
+  SYSTEM
+}
+
+enum ConsultationEndReason {
+  PSYCHOLOGIST_COMPLETED
+  SCHEDULED_END_REACHED
+  PARTICIPANT_NO_SHOW
+  PSYCHOLOGIST_NO_SHOW
+}
+
+enum ConsentType {
+  APPOINTMENT_REPORT_ACCESS
+  STANDALONE_REPORT_ACCESS
+}
+
+enum ConsentAuditAction {
+  GRANTED
+  REVOKED
+  EXPIRED
+  ACCESSED
+}
+
+enum ConsentAuditActorType {
+  USER
+  SYSTEM
 }
 
 // ─── Phase 2 Enums ─────────────────────────────────────────
@@ -75,8 +136,14 @@ model User {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
-  assessmentSessions AssessmentSession[]
-  psychologistProfile PsychologistProfile?
+  assessmentSessions       AssessmentSession[]
+  psychologistProfile      PsychologistProfile?
+  availabilitySlots        PsychologistAvailability[]
+  participantAppointments  Appointment[]              @relation("AppointmentParticipant")
+  psychologistAppointments Appointment[]              @relation("AppointmentPsychologist")
+  grantedReportConsents    Consent[]                  @relation("ConsentParticipant")
+  receivedReportConsents   Consent[]                  @relation("ConsentTarget")
+  consentAuditEvents       ConsentAuditEvent[]        @relation("ConsentAuditActor")
 
   @@map("users")
 }
@@ -100,6 +167,24 @@ model PsychologistProfile {
   @@map("psychologist_profiles")
 }
 
+model PsychologistAvailability {
+  id               String                         @id @default(uuid()) @db.Uuid
+  psychologistId   String                         @map("psychologist_id") @db.Uuid
+  availabilityDate DateTime                       @map("availability_date") @db.Date
+  sessionType      ConsultationSessionType        @map("session_type")
+  status           PsychologistAvailabilityStatus @default(UNAVAILABLE)
+  createdAt        DateTime                       @default(now()) @map("created_at")
+  updatedAt        DateTime                       @updatedAt @map("updated_at")
+
+  psychologist User          @relation(fields: [psychologistId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "psychologist_availability_psychologist_id_fkey")
+  appointments Appointment[]
+
+  @@unique([psychologistId, availabilityDate, sessionType], name: "psychologist_date_session", map: "psychologist_availability_psychologist_date_session_key")
+  @@unique([id, psychologistId], map: "psychologist_availability_id_psychologist_key")
+  @@index([availabilityDate, status], map: "psychologist_availability_date_status_idx")
+  @@map("psychologist_availability")
+}
+
 // ─── Phase 2 Models ────────────────────────────────────────
 
 model AcademicPeriod {
@@ -118,15 +203,15 @@ model AcademicPeriod {
 }
 
 model Question {
-  id               String           @id @default(uuid()) @db.Uuid
+  id               String                @id @default(uuid()) @db.Uuid
   instrument       Instrument
-  questionNumber   Int              @map("question_number")
-  questionText     String           @map("question_text")
-  scoringDimension ScoringDimension @map("scoring_dimension")
-  isActive         Boolean          @default(true) @map("is_active")
-  createdAt        DateTime         @default(now()) @map("created_at")
-  updatedAt        DateTime         @updatedAt @map("updated_at")
-  questionSetId    String           @map("question_set_id") @db.Uuid
+  questionNumber   Int                   @map("question_number")
+  questionText     String                @map("question_text")
+  scoringDimension ScoringDimension      @map("scoring_dimension")
+  isActive         Boolean               @default(true) @map("is_active")
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
+  questionSetId    String                @map("question_set_id") @db.Uuid
   questionSet      AssessmentQuestionSet @relation(fields: [questionSetId], references: [id])
 
   assessmentAnswers AssessmentAnswer[]
@@ -136,27 +221,30 @@ model Question {
 }
 
 model AssessmentSession {
-  id               String                  @id @default(uuid()) @db.Uuid
-  participantId    String                  @map("participant_id") @db.Uuid
-  academicPeriodId String                  @map("academic_period_id") @db.Uuid
-  status           AssessmentSessionStatus
-  startedAt        DateTime                @default(now()) @map("started_at")
-  completedAt      DateTime?               @map("completed_at")
-  createdAt        DateTime                @default(now()) @map("created_at")
-  updatedAt        DateTime                @updatedAt @map("updated_at")
-  revision         Int                     @default(0)
-  questionSetId    String                  @map("question_set_id") @db.Uuid
-  processingConsentAt DateTime            @map("processing_consent_at")
-  processingConsentVersion String         @map("processing_consent_version")
-  questionSet      AssessmentQuestionSet   @relation(fields: [questionSetId], references: [id])
+  id                       String                  @id @default(uuid()) @db.Uuid
+  participantId            String                  @map("participant_id") @db.Uuid
+  academicPeriodId         String                  @map("academic_period_id") @db.Uuid
+  status                   AssessmentSessionStatus
+  startedAt                DateTime                @default(now()) @map("started_at")
+  completedAt              DateTime?               @map("completed_at")
+  createdAt                DateTime                @default(now()) @map("created_at")
+  updatedAt                DateTime                @updatedAt @map("updated_at")
+  revision                 Int                     @default(0)
+  questionSetId            String                  @map("question_set_id") @db.Uuid
+  processingConsentAt      DateTime                @map("processing_consent_at")
+  processingConsentVersion String                  @map("processing_consent_version")
+  questionSet              AssessmentQuestionSet   @relation(fields: [questionSetId], references: [id])
 
   participant    User           @relation(fields: [participantId], references: [id])
   academicPeriod AcademicPeriod @relation(fields: [academicPeriodId], references: [id])
 
-  answers AssessmentAnswer[]
-  score   AssessmentScore?
-  report  Report?
+  answers      AssessmentAnswer[]
+  score        AssessmentScore?
+  report       Report?
+  appointments Appointment[]
+  consents     Consent[]
 
+  @@unique([id, participantId], map: "assessment_sessions_id_participant_key")
   @@index([participantId, academicPeriodId])
   @@map("assessment_sessions")
 }
@@ -164,22 +252,23 @@ model AssessmentSession {
 // Approval evidence is supplied by the institution; never auto-populated.
 // Published content is immutable (SQL triggers). New content needs a new set.
 model AssessmentQuestionSet {
-  id              String   @id @default(uuid()) @db.Uuid
-  version         String   @unique
-  isPublished     Boolean  @default(false) @map("is_published")
-  approvedAt      DateTime? @map("approved_at")
-  approvedBy      String?  @map("approved_by")
-  dassSource      String?  @map("dass_source")
-  wemwbsLicenceReference String? @map("wemwbs_licence_reference")
-  translationReference String? @map("translation_reference")
-  presentationApprovalReference String? @map("presentation_approval_reference")
-  dassInstructions String @map("dass_instructions")
-  wemwbsInstructions String @map("wemwbs_instructions")
-  dassOptions     Json     @map("dass_options")
-  wemwbsOptions   Json     @map("wemwbs_options")
-  createdAt       DateTime @default(now()) @map("created_at")
-  questions       Question[]
-  sessions        AssessmentSession[]
+  id                            String              @id @default(uuid()) @db.Uuid
+  version                       String              @unique
+  isPublished                   Boolean             @default(false) @map("is_published")
+  approvedAt                    DateTime?           @map("approved_at")
+  approvedBy                    String?             @map("approved_by")
+  dassSource                    String?             @map("dass_source")
+  wemwbsLicenceReference        String?             @map("wemwbs_licence_reference")
+  translationReference          String?             @map("translation_reference")
+  presentationApprovalReference String?             @map("presentation_approval_reference")
+  dassInstructions              String              @map("dass_instructions")
+  wemwbsInstructions            String              @map("wemwbs_instructions")
+  dassOptions                   Json                @map("dass_options")
+  wemwbsOptions                 Json                @map("wemwbs_options")
+  createdAt                     DateTime            @default(now()) @map("created_at")
+  questions                     Question[]
+  sessions                      AssessmentSession[]
+
   @@map("assessment_question_sets")
 }
 
@@ -227,6 +316,109 @@ model Report {
   updatedAt           DateTime     @updatedAt @map("updated_at")
 
   assessmentSession AssessmentSession @relation(fields: [assessmentSessionId], references: [id])
+  appointments      Appointment[]
+  consents          Consent[]
 
+  @@unique([id, assessmentSessionId], map: "reports_id_assessment_session_key")
   @@map("reports")
+}
+
+model Appointment {
+  id                  String            @id @default(uuid()) @db.Uuid
+  participantId       String            @map("participant_id") @db.Uuid
+  psychologistId      String            @map("psychologist_id") @db.Uuid
+  assessmentSessionId String            @map("assessment_session_id") @db.Uuid
+  reportId            String            @map("report_id") @db.Uuid
+  availabilityId      String            @map("availability_id") @db.Uuid
+  rescheduledFromId   String?           @map("rescheduled_from_appointment_id") @db.Uuid
+  participantNote     String?           @map("participant_note") @db.VarChar(500)
+  status              AppointmentStatus @default(CONFIRMED)
+  scheduledStartAt    DateTime          @map("scheduled_start_at") @db.Timestamptz(3)
+  scheduledEndAt      DateTime          @map("scheduled_end_at") @db.Timestamptz(3)
+  bookedAt            DateTime          @default(now()) @map("booked_at") @db.Timestamptz(3)
+  completedAt         DateTime?         @map("completed_at") @db.Timestamptz(3)
+  cancelledAt         DateTime?         @map("cancelled_at") @db.Timestamptz(3)
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  participant         User                     @relation("AppointmentParticipant", fields: [participantId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "appointments_participant_fkey")
+  psychologist        User                     @relation("AppointmentPsychologist", fields: [psychologistId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "appointments_psychologist_fkey")
+  assessmentSession   AssessmentSession        @relation(fields: [assessmentSessionId, participantId], references: [id, participantId], onDelete: Restrict, onUpdate: Cascade, map: "appointments_assessment_owner_fkey")
+  report              Report                   @relation(fields: [reportId, assessmentSessionId], references: [id, assessmentSessionId], onDelete: Restrict, onUpdate: Cascade, map: "appointments_report_session_fkey")
+  availability        PsychologistAvailability @relation(fields: [availabilityId, psychologistId], references: [id, psychologistId], onDelete: Restrict, onUpdate: Cascade, map: "appointments_availability_psychologist_fkey")
+  rescheduledFrom     Appointment?             @relation("AppointmentReschedule", fields: [rescheduledFromId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "appointments_rescheduled_from_fkey")
+  replacements        Appointment[]            @relation("AppointmentReschedule")
+  consultationSession ConsultationSession?
+  consents            Consent[]
+
+  @@unique([id, participantId, reportId, psychologistId], map: "appointments_id_scope_key")
+  @@index([participantId, status, scheduledStartAt], map: "appointments_participant_status_start_idx")
+  @@index([psychologistId, status, scheduledStartAt], map: "appointments_psychologist_status_start_idx")
+  @@index([rescheduledFromId], map: "appointments_rescheduled_from_idx")
+  @@map("appointments")
+}
+
+model ConsultationSession {
+  id                      String                    @id @default(uuid()) @db.Uuid
+  appointmentId           String                    @unique(map: "consultation_sessions_appointment_key") @map("appointment_id") @db.Uuid
+  status                  ConsultationSessionStatus @default(SCHEDULED)
+  scheduledStartAt        DateTime                  @map("scheduled_start_at") @db.Timestamptz(3)
+  scheduledEndAt          DateTime                  @map("scheduled_end_at") @db.Timestamptz(3)
+  participantCheckedInAt  DateTime?                 @map("participant_checked_in_at") @db.Timestamptz(3)
+  psychologistCheckedInAt DateTime?                 @map("psychologist_checked_in_at") @db.Timestamptz(3)
+  startedAt               DateTime?                 @map("started_at") @db.Timestamptz(3)
+  endedAt                 DateTime?                 @map("ended_at") @db.Timestamptz(3)
+  endedBy                 ConsultationEndedBy?      @map("ended_by")
+  endReason               ConsultationEndReason?    @map("end_reason")
+  createdAt               DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt               DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "consultation_sessions_appointment_fkey")
+
+  @@map("consultation_sessions")
+}
+
+model Consent {
+  id                  String      @id @default(uuid()) @db.Uuid
+  participantId       String      @map("participant_id") @db.Uuid
+  assessmentSessionId String      @map("assessment_session_id") @db.Uuid
+  reportId            String      @map("report_id") @db.Uuid
+  targetUserId        String      @map("target_user_id") @db.Uuid
+  appointmentId       String?     @map("appointment_id") @db.Uuid
+  consentType         ConsentType @map("consent_type")
+  purpose             String      @db.Text
+  scope               Json        @db.JsonB
+  policyVersion       String      @map("policy_version")
+  grantedAt           DateTime    @default(now()) @map("granted_at") @db.Timestamptz(3)
+  expiresAt           DateTime?   @map("expires_at") @db.Timestamptz(3)
+  expiredAt           DateTime?   @map("expired_at") @db.Timestamptz(3)
+  revokedAt           DateTime?   @map("revoked_at") @db.Timestamptz(3)
+  createdAt           DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  participant       User                @relation("ConsentParticipant", fields: [participantId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "consents_participant_fkey")
+  targetUser        User                @relation("ConsentTarget", fields: [targetUserId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "consents_target_fkey")
+  assessmentSession AssessmentSession   @relation(fields: [assessmentSessionId, participantId], references: [id, participantId], onDelete: Restrict, onUpdate: Cascade, map: "consents_assessment_owner_fkey")
+  report            Report              @relation(fields: [reportId, assessmentSessionId], references: [id, assessmentSessionId], onDelete: Restrict, onUpdate: Cascade, map: "consents_report_session_fkey")
+  appointment       Appointment?        @relation(fields: [appointmentId, participantId, reportId, targetUserId], references: [id, participantId, reportId, psychologistId], onDelete: Restrict, onUpdate: Cascade, map: "consents_appointment_scope_fkey")
+  auditEvents       ConsentAuditEvent[]
+
+  @@index([participantId, grantedAt], map: "consents_participant_granted_at_idx")
+  @@index([targetUserId, reportId, consentType], map: "consents_target_report_type_idx")
+  @@index([appointmentId, consentType], map: "consents_appointment_type_idx")
+  @@map("consents")
+}
+
+model ConsentAuditEvent {
+  id          String                @id @default(uuid()) @db.Uuid
+  consentId   String                @map("consent_id") @db.Uuid
+  actorType   ConsentAuditActorType @map("actor_type")
+  actorUserId String?               @map("actor_user_id") @db.Uuid
+  action      ConsentAuditAction
+  occurredAt  DateTime              @default(now()) @map("occurred_at") @db.Timestamptz(3)
+
+  consent Consent @relation(fields: [consentId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "consent_audit_events_consent_fkey")
+  actor   User?   @relation("ConsentAuditActor", fields: [actorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "consent_audit_events_actor_fkey")
+
+  @@index([consentId, occurredAt], map: "consent_audit_events_consent_time_idx")
+  @@map("consent_audit_events")
 }

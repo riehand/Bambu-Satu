@@ -321,6 +321,8 @@ Completed Assessment
 
 Database stores report metadata and private storage key, not unrestricted public file URLs.
 
+Phase 2 currently writes `PENDING` report metadata. `GENERATED` is set only after the separate report worker successfully creates and stores the private PDF artifact. B3 may be developed/tested with synthetic `GENERATED` reports, but production acceptance depends on the separate generation workflow; B3 MUST NOT implement PDF generation or fabricate the status.
+
 # 12. Consent Module
 
 Consent is a first-class domain concern.
@@ -328,7 +330,8 @@ Consent is a first-class domain concern.
 Types:
 ```text
 CHATBOT_REPORT_ACCESS
-PSYCHOLOGIST_REPORT_ACCESS
+APPOINTMENT_REPORT_ACCESS
+STANDALONE_REPORT_ACCESS
 PSYCHOLOGIST_CONTACT_ACCESS
 ```
 
@@ -339,6 +342,12 @@ assessment/report
 target psychologist or target system
 purpose
 ```
+
+Appointment grants require an appointment ID and match the appointment's participant, exact report, and psychologist. Standalone grants have no appointment association and are evaluated independently. Revoking an appointment grant immediately removes that grant's authorization but does not cancel the appointment or close consultation; any matching standalone grant is checked separately. Re-consent creates a new audited grant and never reactivates revoked or expired records.
+
+Appointment-linked report authorization ends at the earliest applicable event: explicit revocation, assigned psychologist early close, scheduled end, authorized cancellation, or confirmed terminal no-show. The report API checks state and server time on each request; it does not wait for a delayed auto-close job. Standalone access remains active until revoked and does not inherit appointment expiry.
+
+When a consent-list, revoke, re-consent, or report API first observes an appointment grant that has expired by time or terminal lifecycle state, it records `expired_at` at the effective event time and appends one `EXPIRED` event in the same transaction. The access decision is made from current state/server time before materialization. Audit `actor_type` is `USER` with a user ID for a known psychologist close/completion, or `SYSTEM` with a null user ID for system-observed expiry. Future lifecycle writers must call the same expiry path when they perform a terminal transition.
 
 # 13. Psychologist Module
 
@@ -370,6 +379,7 @@ date + session_type + availability
 No arbitrary standard time slots.
 
 At most one participant per psychologist/date/session.
+Availability reads omit slots whose start has passed. Past no-show slots are never automatically reopened; only an authorized transition may release a slot when reuse remains permitted.
 
 # 15. Appointment Module
 
@@ -390,11 +400,16 @@ Booking MUST be transactionally safe:
 BEGIN
 lock/check availability
 if status != AVAILABLE: fail
+validate latest completed combined assessment and owned GENERATED report
+require fresh explicit booking consent
 create appointment CONFIRMED
 update availability -> BOOKED
 create consultation_session
+create APPOINTMENT_REPORT_ACCESS with required appointment_id
 COMMIT
 ```
+
+Any failure rolls back the slot, appointment, consultation session, and consent. Booking rejects slots whose scheduled start has passed.
 
 # 16. Consultation Module
 
@@ -609,7 +624,7 @@ At +15:
 NO_SHOW
 ```
 
-Reschedule may exist only as recovery for failed/no-show appointment, not as follow-up.
+Reschedule eligibility and cutoff remain unresolved until approved. Prior requirements considered upcoming appointments as possible candidates; do not infer a terminal-state-only rule. Reschedule, when authorized, preserves the original, creates a linked replacement with fresh consent, and replaces slots transactionally. Completed consultations cannot become follow-up sessions.
 
 # 27. Notification Module
 

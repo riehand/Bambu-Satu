@@ -106,6 +106,8 @@ Valid AVAILABLE session booking MUST directly create a CONFIRMED appointment.
 
 MUST NOT add a second psychologist approval step.
 
+An availability record whose session start is at or before authoritative server time MUST NOT be booked or exposed as newly bookable. Past no-show slots MUST NOT be automatically reopened. Availability MAY be released only by an authorized transition and when the slot remains eligible for reuse.
+
 ---
 
 ## INV-011 — Hard Maximum Consultation Duration
@@ -306,7 +308,9 @@ MUST NOT call AI in official scoring path.
 
 # 7. Report
 
-Completed assessment MUST produce a report.
+Completed assessment MUST produce one report metadata row. `PENDING` means report content/artifact is not generated yet.
+
+`GENERATED` means the private report artifact has been successfully produced and stored, with its storage key and generated timestamp. Assessment completion MUST NOT mark a report `GENERATED` to satisfy appointment booking.
 
 Report MUST be private by default.
 
@@ -409,14 +413,18 @@ Booking MUST require:
 
 ```text
 authenticated participant
-completed current assessment
-current report
+participant's latest completed assessment containing DASS-21 and WEMWBS
+corresponding report with status GENERATED
 selected psychologist
 selected date
 selected fixed session
 session status AVAILABLE
-report consent
+fresh explicit APPOINTMENT_REPORT_ACCESS consent
 ```
+
+Booking consent MUST identify the authenticated participant, exact report, selected psychologist, and newly created appointment. A standalone grant MUST NOT satisfy this prerequisite.
+The participant MUST affirm an unchecked-by-default control. The appointment itself MUST NOT imply report authorization.
+The server MUST resolve and validate the latest assessment/report association and ownership; a client report ID is only an expected reference and MUST match the server-resolved report.
 
 Contact consent MUST be required only if phone/contact use is part of approved flow.
 
@@ -432,16 +440,19 @@ Backend MUST validate it.
 
 ## 13.1 Atomic Booking
 
-Successful booking SHOULD atomically:
+Successful booking MUST atomically:
 
 ```text
-verify session AVAILABLE
+verify latest completed assessment and GENERATED report ownership
+require explicit fresh appointment-scoped consent
+claim a future AVAILABLE session
 create appointment CONFIRMED
-mark psychologist session BOOKED
+mark availability BOOKED
 initialize consultation session
+create appointment-linked consent with purpose, scope, policy version, and server timestamp
 ```
 
-Concurrent double booking MUST be prevented.
+Any failure MUST roll back the appointment, consultation session, slot reservation, and consent. Concurrent double booking MUST be prevented by PostgreSQL constraints and transactions. A slot whose scheduled start has passed MUST NOT be booked.
 
 ---
 
@@ -459,7 +470,11 @@ availability/session slot id
 
 or equivalent domain relationships.
 
-Psychologist report access MUST be limited to appointment-bound current report.
+Appointment-linked report access MUST match the appointment's participant, report, and psychologist. Standalone report access is a distinct consent path and MUST be evaluated independently; it MUST NOT satisfy booking consent.
+
+Appointment-linked authorization ends at the earliest of participant revocation, assigned psychologist early closure, scheduled end time, authorized cancellation, or confirmed terminal no-show. Authorization MUST use current server time at the access boundary even if a background close job is delayed. Revoking consent MUST NOT cancel the confirmed appointment or close its consultation. Revoked and expired grants MUST never be reactivated; re-consent creates a new grant.
+
+Standalone consent MUST have no appointment association, remains active until revoked, and MUST be separately scoped to the participant, exact report, and target psychologist.
 
 ---
 
@@ -850,7 +865,9 @@ Agent MUST NOT implement:
 - automatic same-psychologist follow-up;
 - chat extension beyond two hours.
 
-Rescheduling MAY exist only as recovery for failed/cancelled/no-show appointment if separately supported.
+Rescheduling eligibility and cutoff remain unresolved and MUST NOT be finalized from terminal appointment states alone. Earlier requirements also considered upcoming appointments. Synchronize the approved eligibility and cutoff before implementing reschedule; completed consultations MUST NOT be continued as follow-up sessions.
+
+General cancellation policy and cancellation functionality remain in the product backlog until separately approved.
 
 Do not conflate `reschedule` with `follow-up`.
 
@@ -928,6 +945,9 @@ PSYCHOLOGIST_CONTACT_ACCESS
 Consent MUST NOT be prechecked.
 
 Psychologist report consent MUST be scoped to selected psychologist + relevant current report/appointment.
+Appointment report consent MUST use `APPOINTMENT_REPORT_ACCESS` and require a valid appointment ID. Standalone report consent MUST use `STANDALONE_REPORT_ACCESS` and have no appointment ID.
+Every grant MUST capture purpose, participant/report/psychologist scope, policy version, and server-generated timestamp. Revocation immediately removes authorization from that grant but MUST NOT cancel an appointment or close consultation. Any matching standalone grant MUST be evaluated as a separate permission.
+Appointment-linked grants MUST expire on the earliest applicable lifecycle event; standalone grants do not inherit appointment lifecycle expiry. The first API observation of an unmaterialized expiry MUST persist `expired_at` and exactly one append-only `EXPIRED` event; authorization MUST already deny access from authoritative time and lifecycle state before that write occurs. User-triggered expiry records the responsible user; system-triggered expiry records actor type `SYSTEM` with no user ID.
 
 ---
 
@@ -1020,6 +1040,15 @@ Exact names MAY differ.
 - psychologist may mark AFTERNOON unavailable;
 - unavailable session cannot be booked;
 - same psychologist/session cannot be booked twice.
+- past and past-no-show slots are not exposed or booked again automatically.
+
+## Booking and Report Consent
+- booking uses only the participant's latest completed combined assessment and its `GENERATED` report;
+- another participant's, older, mismatched, or `PENDING` report is rejected;
+- fresh unchecked-by-default appointment consent is required; standalone consent does not satisfy the booking gate;
+- appointment, consultation session, slot reservation, and consent roll back together on failure;
+- revocation removes authorization from the affected grant immediately and does not cancel or close consultation;
+- a matching standalone grant is evaluated independently.
 
 ## Consultation Start/End
 - chat not writable before session;
@@ -1055,8 +1084,9 @@ Exact names MAY differ.
 
 ## No-Show
 - psychologist absent beyond threshold enters no-show;
-- reschedule recovery may be offered if implemented;
-- reschedule is not represented as follow-up.
+- appointment-linked report consent expires at confirmed terminal no-show;
+- reschedule eligibility/cutoff tests are deferred until policy approval;
+- completed consultations are never represented as reschedule/follow-up.
 
 ---
 

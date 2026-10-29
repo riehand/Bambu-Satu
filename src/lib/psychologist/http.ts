@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { AuthError, requireApiRole } from "@/lib/auth/session";
 import { isSameOrigin, privateHeaders } from "@/lib/auth/http";
+import { availabilityRangeSchema } from "@/lib/validations/availability";
 
 export class PsychologistError extends Error {
   constructor(public readonly code: string, message: string, public readonly status: number) {
@@ -43,4 +44,13 @@ export async function readPsychologistJson(request: Request) {
   const body = await request.text();
   if (body.length > 12000) throw new PsychologistError("REQUEST_TOO_LARGE", "Permintaan terlalu besar.", 413);
   return JSON.parse(body) as unknown;
+}
+
+export function readAvailabilityRange(request: Request) {
+  const params = new URL(request.url).searchParams;
+  const entries = [...params.entries()];
+  if (new Set(entries.map(([key]) => key)).size !== entries.length) {
+    throw new PsychologistError("VALIDATION_ERROR", "Parameter pencarian tidak valid.", 422);
+  }
+  return availabilityRangeSchema.parse(Object.fromEntries(entries));
 }

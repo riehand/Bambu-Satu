@@ -1,69 +1,128 @@
 # PROGRESS-FASE3
 
-**Pembaruan:** 29 Oktober 2026  
-**Branch:** `Phase3`  
-**Baseline HEAD:** `052c603`  
-**Status publikasi:** Perubahan B1 masih lokal; belum di-commit, di-push, atau di-deploy.
+- **Pembaruan:** 29 Oktober 2026
+- **Branch:** `Phase3`
+- **HEAD lokal:** `cd44289` (perubahan Phase 3 masih belum di-commit)
+- **Status publikasi:** tidak ada commit, push, migrasi hosted, perubahan privilege, atau deployment pada verifikasi ini. Ref remote tidak diperiksa.
 
-## Ringkasan Status
+## Ringkasan
 
-- **B1 — Profil psikolog dan direktori peserta: selesai lokal.** Psikolog mengelola profil sendiri; peserta terautentikasi dapat melihat direktori dan detail psikolog aktif.
-- **B2 — Ketersediaan psikolog: berikutnya.** Belum ada model, migrasi, API, atau UI ketersediaan.
-- **Booking + consent laporan: direncanakan setelah B2.** Belum ada appointment, consent berbagi, maupun akses laporan psikolog.
-- **Chatbot, PDF privat, chat konsultasi manusia, dan dashboard Super Admin: belum dikerjakan dalam irisan ini.** Consent/handoff Chatbot menunggu persetujuan bersama.
+- **B1 - Profil psikolog dan direktori peserta:** tetap berfungsi; pemeriksaan regresi lokal lulus.
+- **B2 - Ketersediaan psikolog:** implementasi lokal selesai dan dapat dikembangkan terpisah dari report generation. Tiga sesi tetap menggunakan `Asia/Jakarta`: 09:00-11:00, 13:00-15:00, dan 16:00-18:00.
+- **B3 - Booking dan report consent:** implementasi serta verifikasi lokal selesai. Booking memerlukan consent baru yang eksplisit dan affirmative; appointment, consultation session, reservasi slot, dan grant consent dibuat dalam satu transaksi. Status appointment langsung `CONFIRMED`.
+- **Batas penerimaan produksi B3:** Phase 2 saat ini membuat metadata report berstatus `PENDING`. Berdasarkan kontrak report dan field repository (`status`, `filePathOrObjectKey`, `generatedAt`), `GENERATED` berarti report assessment yang usable telah dibuat dan disimpan sebagai artifact privat dengan metadata valid. Booking produksi tetap tertahan sampai workflow report-generation nyata tersedia dan diverifikasi. Phase 3 tidak menambahkan generator PDF.
+- **Workstream terpisah:** PDF privat/report generation, consultation chat, Superadmin, dan integrasi Chatbot tetap terpisah dari B2/B3.
 
-## Checklist Phase 3
+## Aturan Appointment dan Consent
 
-- [x] B1 — Profil psikolog dan direktori peserta.
-- [ ] B2 — Ketersediaan psikolog.
-- [ ] Booking appointment + consent laporan terikat appointment + akses laporan terbatas.
-- [ ] No-show 15 menit + reschedule sebagai pemulihan.
-- [ ] PDF laporan privat.
-- [ ] Chat konsultasi manusia.
-- [ ] Fitur Super Admin sesuai scope yang disetujui.
-- [ ] Chatbot — menunggu persetujuan bersama untuk consent/handoff.
+- Booking memakai assessment terbaru milik participant yang sudah selesai dan memuat DASS-21 serta WEMWBS, berikut report yang terkait dan valid berstatus `GENERATED`. Server memeriksa ownership dan association; `PENDING`, report participant lain, report lama, atau report yang tidak cocok ditolak.
+- Checkbox booking consent selalu tidak tercentang pada awalnya. Setiap booking harus menerima affirmative action baru. Consent standalone yang sudah ada tidak dapat memenuhi prasyarat booking.
+- `APPOINTMENT_REPORT_ACCESS` harus terhubung ke appointment yang sama dan mencocokkan participant, report, serta psychologist. `STANDALONE_REPORT_ACCESS` harus tanpa appointment. Kedua tipe diperiksa sebagai izin yang berbeda.
+- Grant merekam purpose, scope, policy version, dan timestamp server. Revocation segera menghapus izin dari grant tersebut tanpa membatalkan appointment atau menutup consultation. Grant standalone lain yang cocok tetap diperiksa terpisah.
+- Grant appointment berakhir pada event pertama: revocation, early closure oleh psychologist yang ditugaskan, scheduled end, cancellation yang sah, atau confirmed terminal no-show. Server memeriksa waktu authoritative tanpa bergantung pada auto-close job. Observasi lifecycle dari consent list, revoke, re-consent, atau report access mematerialisasi `expired_at` dan satu event `EXPIRED`; event sistem memakai actor type `SYSTEM` tanpa user ID. Re-consent membuat grant baru; grant revoked/expired tidak diaktifkan kembali.
+- Slot tidak dapat dipesan setelah waktu mulai berlalu. Database transaction dan partial unique index mencegah double booking serta menjaga appointment historis. Availability hanya dilepas lewat transisi yang berizin dan saat penggunaan ulang memang diizinkan.
+- Kebijakan umum cancellation tetap di backlog; cancellation bukan acceptance criterion yang telah diimplementasikan pada workstream ini. Eligibility dan cutoff reschedule belum disetujui. Replacement di masa mendatang harus mempertahankan riwayat asal, meminta consent baru, dan mengganti slot secara atomik. Consultation selesai tidak dapat dijadikan follow-up otomatis.
 
-## Pekerjaan B1 yang Sudah Ada
+## Verifikasi Lokal Aktual
 
-- Model Prisma `PsychologistProfile` dan migrasi additive `20261028000000_psychologist_profiles`.
-- API psikolog untuk membaca/memperbarui profil sendiri serta API peserta untuk direktori dan detail profil.
-- UI profil mandiri di `/psychologist/dashboard`, direktori peserta di `/participant/psychologists`, detail profil, dan navigasi peserta.
-- Proteksi role, ownership dari sesi Supabase terverifikasi, validasi allowlist, respons `private/no-store`, dan pemilihan kolom publik tanpa email/telepon/ID institusi.
-- Migrasi mengaktifkan RLS dan mencabut akses tabel langsung dari `PUBLIC`, `anon`, serta `authenticated`.
+- `npm.cmd test` - **301 tes lulus dalam 21 file**, mencakup auth Phase 1, assessment Phase 2, direktori B1, serta B2/B3 service, API, dan database tests.
+- `npm.cmd run test:browser -- --reporter=list` - **59 tes browser lulus** (53 browser assessment yang sudah ada dan 6 skenario B2/B3). Semua data/API respons browser bersifat sintetis. Wrapper browser memulai fixture Vite di `127.0.0.1`, menjalankan Playwright, lalu menghentikan proses Vite yang dibuatnya.
+- `npm.cmd exec -- tsc --noEmit` - lulus.
+- `npm.cmd run lint` - 0 error, 2 warning `<img>` yang sudah ada pada `src/app/page.tsx` (baris 54 dan 160).
+- `npx.cmd prisma generate` dan `npx.cmd prisma validate --schema prisma/schema.prisma` - lulus menggunakan URL PostgreSQL placeholder lokal; tidak membuka koneksi database.
+- `npm.cmd run build` - lulus dengan Next.js 16.4.2.
+- `git diff --check` - lulus.
+- Pencarian source tidak menemukan assignment status `GENERATED` pada kode aplikasi. Perubahan status `GENERATED` hanya ada pada fixture sintetis pengujian; status tersebut tidak dibuat untuk melewati validasi booking.
 
-## Keputusan Phase 3 yang Sudah Disepakati
+## Rehearsal PostgreSQL Terisolasi
 
-- Slot konsultasi tetap dua jam: **MORNING 09.00–11.00**, **AFTERNOON 13.00–15.00**, **EVENING 16.00–18.00**. Gunakan waktu Jakarta (`Asia/Jakarta`), dengan waktu API ber-offset `+07:00`; jangan menambah slot waktu bebas.
-- Peserta memilih psikolog sendiri. Slot tersedia yang berhasil dipesan langsung menjadi `CONFIRMED`; tidak ada persetujuan psikolog tahap kedua.
-- Consent pemrosesan asesmen tidak mengizinkan berbagi laporan. Consent laporan psikolog diberikan secara eksplisit saat booking, tidak tercentang sebelumnya, dan terikat pada satu appointment, satu psikolog, serta laporan yang bersangkutan.
-- Grant, revoke, dan akses laporan sensitif diaudit tanpa menaruh isi laporan/skor, jawaban, token, atau data sensitif di log. Revoke langsung memblokir akses berikutnya. Peserta boleh memberi consent lagi secara eksplisit selama sesi/appointment belum berakhir; setiap grant/revoke tetap tercatat. Salinan yang telah diunduh tidak dapat ditarik kembali.
-- No-show psikolog memakai ambang 15 menit. Penjadwalan ulang hanya pemulihan dari sesi gagal/no-show, bukan follow-up otomatis.
-- Consent kontak tetap terpisah dan baru diperlukan jika informasi kontak peserta benar-benar digunakan. Consent/handoff Chatbot ditunda sampai ada persetujuan bersama.
-- Profil psikolog dikelola sendiri. Hanya akun psikolog aktif yang tampil; tidak ada alur persetujuan profil oleh Super Admin dalam scope ini.
+- **Hasil:** 6/6 tes real PostgreSQL lulus pada 29 Oktober 2026. Database baru `wellbeing_phase3_rehearsal` hanya berisi Auth baseline dan data sintetis.
+- **Runtime:** Docker 28.4.0, PostgreSQL 17.11, Prisma 5.22.0; image `postgres:17` dengan digest `sha256:31ba9c94a03ada9988f2bb493a22a75eef3a185884533e5cdbcd498ea835b08f`. Container `wellbeing-phase3-58b930fcc0` dipublikasikan hanya ke `127.0.0.1:50397`.
+- Setelah rehearsal, semua container sintetis Phase 3 yang dibuat untuk verifikasi telah dihentikan; volume serta file evidence lokal tetap disimpan.
+- Enam migrasi diterapkan pada database baru dan seluruh checksum cocok dengan file migrasi. Profil/Auth trigger baseline tetap sama sebelum dan sesudah migrasi Phase 2, B1, dan B2/B3.
+- Tes menolak report `PENDING` tanpa memesan slot; membuat booking `CONFIRMED` dengan consent atomik; membuktikan object-level authorization, revoke, re-consent sebagai grant baru, dan isolasi consent standalone; memmaterialisasi expiry scheduled end, early close, cancellation, serta no-show; serta membuktikan late revoke/re-consent tetap mencatat expiry yang lebih dahulu.
+- Uji contention memakai koneksi PostgreSQL independen. Dua backend (`154` dan `173`) menunggu pada lock slot yang dipegang backend `171`; sesudah lock dilepas, tepat satu appointment dan satu linked consent berhasil dibuat.
+- Fault injection saat insert consent membuktikan rollback penuh: slot kembali tersedia, dan appointment, consultation session, consent, serta audit event tidak tertinggal.
+- Evidence lokal yang diabaikan Git: `.tmp/phase3-rehearsal-2026-10-29T10-49-53.129Z/` (`result.json`, `isolation.json`, `checks.jsonl`, dan log). Ini bukan verifikasi hosted Supabase.
 
-## Roadmap Berikutnya
+## Batas dan Pekerjaan Berikutnya
 
-| Urutan | Workstream | Isi utama | Ketergantungan / batas |
-| --- | --- | --- | --- |
-| 0 | Penutupan B1 | Pertahankan catatan API, migrasi, hasil validasi; browser suite penuh perlu dijalankan kembali setelah masalah runner selesai ditangani. | Perbaikan catatan waktu/slot telah diselaraskan dengan keputusan di atas. |
-| 1 | B2 — Availability | Model dan constraint unik psikolog/tanggal/jenis sesi; API psikolog mengelola availability; API peserta hanya menampilkan slot tersedia; UI kalender/pemilihan tanggal. | Tidak membuat booking. Slot yang sudah `BOOKED` tidak dapat dibuka kembali melalui update availability biasa. |
-| 2 | Booking + consent + akses laporan | `POST /api/appointments` memvalidasi peserta, asesmen/laporan selesai dan milik peserta, psikolog aktif, slot tersedia, serta consent eksplisit. Transaksi membuat appointment `CONFIRMED`, menandai slot `BOOKED`, membuat consultation-session, mencatat consent dan audit. Tambahkan appointment list/detail, report JSON terbatas, consent list/revoke, serta grant ulang eksplisit untuk appointment aktif. | Bergantung pada B2. Akses laporan hanya untuk pemilik atau psikolog appointment dengan consent aktif. PDF privat tidak termasuk; tidak mengekspos kontak peserta tanpa consent kontak terpisah. |
-| 3 | No-show dan reschedule recovery | Terapkan status no-show pada ambang 15 menit, tampilkan tindakan reschedule, dan pertahankan jejak appointment asal pada transaksi reschedule. | Tidak membuat follow-up otomatis. Kebijakan pembatalan umum dan endpoint pembatalan tidak ditambahkan tanpa persetujuan kebijakan. |
-| 4 | Workstream Phase 3 berikutnya | PDF privat, chat konsultasi manusia, serta fitur Super Admin sesuai scope yang disetujui. | Chat manusia bergantung pada appointment/session; integrasi Chatbot tetap menunggu persetujuan bersama. |
+- B3 belum diterima untuk produksi sampai report-generation workflow nyata menghasilkan artifact privat, menyimpan metadata yang dapat digunakan, dan membuktikan transisi `GENERATED`. Test lokal menggunakan artifact fixture sintetis; tidak ada data participant produksi atau generated PDF nyata.
+- Tidak ada migrasi yang diterapkan ke Supabase hosted, tidak ada shared schema atau privilege yang diubah, dan tidak ada deployed resource yang disentuh. Deployment memerlukan persetujuan terpisah serta review database bersama.
+- Workstream lifecycle konsultasi mendatang tetap mencakup check-in participant/psychologist, deteksi psychologist terlambat, no-show, early closure oleh psychologist, system auto-closure, dan batas waktu konsultasi. Participant tidak dapat mengakhiri sesi secara manual. Sistem tidak membuat consultation follow-up otomatis.
+- Rekomendasi workstream berikutnya: **private PDF report generation** sesuai kontrak report yang ada. Tetap pisahkan chat konsultasi, Superadmin, dan Chatbot. Kebijakan cancellation umum serta eligibility/cutoff reschedule menunggu keputusan.
 
-## Bukti Validasi B1
+## Inventory Perubahan Lokal
 
-- `npm.cmd test`: 255 tes lulus dalam 15 file. Setelah penyesuaian akhir SQL migrasi, 25 tes terfokus lulus, termasuk tes API, service, backup-layout, dan PGlite migrasi.
-- `npm.cmd exec -- tsc --noEmit`: lulus. Perubahan tipe-only pada `tests/phase2-backup-layout.test.ts` menghilangkan error typing yang sudah ada tanpa mengubah perilaku tes.
-- `npm.cmd run lint`: 0 error; 2 warning `<img>` lama di `src/app/page.tsx`.
-- `prisma validate`: lulus.
-- `npm.cmd run build`: lulus dengan Next.js 16.4.2 dan mendaftarkan route B1.
-- `npm.cmd run test:browser`: run penuh melaporkan 52 dari 53 skenario lulus sebelum fixture asesmen sintetis tidak menemukan `.wb-app` pada lebar 768 px. Skenario tersebut lulus saat dijalankan tersendiri; runner Playwright/Vite tertahan setelah tes terakhir dan dihentikan, sehingga run penuh belum berakhir bersih. Suite ini tidak menguji halaman B1 terautentikasi.
+Total **59 file** berubah atau baru, belum di-commit.
 
-Seluruh data pengujian bersifat sintetis dan tes database memakai PGlite lokal. Migrasi B1 belum diterapkan ke Supabase hosted/shared; perilaku hosted belum diverifikasi. Instalasi dependency juga melaporkan 3 temuan audit (1 moderate, 2 critical); tidak ada dependency yang diubah dalam workstream B1.
+### Dokumentasi (10)
 
-## Batas Operasional
+- `docs/API CONTRACT.md`
+- `docs/BUSINESS RULES.md`
+- `docs/ERD.md`
+- `docs/FUNCTIONAL REQUIREMENT.md`
+- `docs/NON FUNCTIONAL REQUIREMENT.md`
+- `docs/PHASE3-B1-STATUS.md`
+- `docs/PROGRESS-FASE3.md`
+- `docs/SYSTEM ARCHITECTURE.md`
+- `docs/USE CASE DESCRIPTION.md`
+- `docs/USE CASE SPECIFICATION.md`
 
-- Migrasi Phase 3 berikutnya harus additive, ditinjau, dan diuji pada database development terisolasi.
-- Jangan mengubah migrasi lama, menjalankan `db push`/reset, mengubah grants/RLS hosted, atau menerapkan migrasi hosted tanpa persetujuan terpisah.
-- Jangan commit atau push otomatis. Status B1 di atas adalah status worktree lokal, bukan klaim bahwa perubahan sudah dipublikasikan.
+### Schema, migrasi, konfigurasi, dan tooling verifikasi (9)
+
+- `prisma/schema.prisma`
+- `prisma/migrations/20261029000000_psychologist_availability/migration.sql`
+- `prisma/migrations/20261029000001_appointments_report_consent/migration.sql`
+- `package.json`
+- `playwright.config.ts`
+- `vitest.phase3.rehearsal.config.ts`
+- `scripts/phase3-rehearsal.mjs`
+- `scripts/phase3-safety.mjs`
+- `scripts/run-browser-tests.mjs`
+
+### Aplikasi (30)
+
+- `src/app/api/appointments/[appointmentId]/report-consent/route.ts`
+- `src/app/api/appointments/[appointmentId]/route.ts`
+- `src/app/api/appointments/booking-context/route.ts`
+- `src/app/api/appointments/route.ts`
+- `src/app/api/consents/[consentId]/revoke/route.ts`
+- `src/app/api/consents/psychologist-report/route.ts`
+- `src/app/api/consents/route.ts`
+- `src/app/api/psychologist/appointments/route.ts`
+- `src/app/api/psychologist/availability/[date]/route.ts`
+- `src/app/api/psychologist/availability/route.ts`
+- `src/app/api/psychologists/[psychologistId]/availability/route.ts`
+- `src/app/api/reports/[reportId]/route.ts`
+- `src/app/participant/appointments/page.tsx`
+- `src/app/participant/participant.css`
+- `src/app/participant/psychologists/[psychologistId]/page.tsx`
+- `src/app/psychologist/dashboard/page.tsx`
+- `src/app/psychologist/psychologist.css`
+- `src/components/participant/appointment-center.tsx`
+- `src/components/participant/dashboard.tsx`
+- `src/components/participant/psychologist-availability.tsx`
+- `src/components/participant/shell.tsx`
+- `src/components/psychologist/appointment-list.tsx`
+- `src/components/psychologist/availability-editor.tsx`
+- `src/lib/appointments/http.ts`
+- `src/lib/appointments/service.ts`
+- `src/lib/psychologist/availability-config.ts`
+- `src/lib/psychologist/http.ts`
+- `src/lib/psychologist/service.ts`
+- `src/lib/validations/appointment.ts`
+- `src/lib/validations/availability.ts`
+
+### Pengujian (10)
+
+- `tests/appointment-api.test.ts`
+- `tests/appointment-database.test.ts`
+- `tests/appointment-service.test.ts`
+- `tests/browser/phase3.spec.ts`
+- `tests/phase3-safety.test.ts`
+- `tests/psychologist-availability-api.test.ts`
+- `tests/psychologist-availability-service.test.ts`
+- `tests/psychologist-database.test.ts`
+- `tests/rehearsal/phase3.rehearsal.ts`
+- `tests/visual/main.tsx`

@@ -94,8 +94,8 @@ name: Book Psychologist Consultation
 primary_actor: Participant
 preconditions:
   - participant_authenticated
-  - current_assessment_status == COMPLETED
-  - current_report_exists
+  - latest_completed_assessment_contains_DASS21_and_WEMWBS
+  - latest_assessment_report_status == GENERATED
   - psychologist_selected
   - date_selected
   - fixed_session_selected
@@ -105,8 +105,12 @@ fixed_sessions:
   EVENING: "16:00-18:00"
 guards:
   - selected_session_status == AVAILABLE
+  - selected_session_start_at > authoritative_server_time
   - psychologist_active
-  - report_consent == true
+  - fresh_explicit_booking_consent == true
+  - standalone_consent_does_not_satisfy_booking_gate
+  - report_belongs_to_authenticated_participant_and_latest_assessment
+  - report_assessment_association_is_valid
 optional_inputs:
   participant_note:
     max_chars: 500
@@ -116,9 +120,14 @@ conditional_inputs:
 transaction:
   - lock_or_verify_availability
   - assert_session_still_AVAILABLE
+  - assert_session_start_is_in_future
+  - assert_latest_completed_report_is_GENERATED_and_owned
   - create_appointment_status_CONFIRMED
   - mark_availability_BOOKED
   - create_consultation_session
+  - create_APPOINTMENT_REPORT_ACCESS_with_required_appointment_id
+  - capture_purpose_scope_policy_version_and_server_granted_at
+  - rollback_everything_on_any_failure
 postconditions:
   - exactly_one_booking_for_psychologist_date_session
   - appointment_status == CONFIRMED
@@ -126,6 +135,8 @@ postconditions:
 errors:
   - SLOT_NOT_AVAILABLE
   - REPORT_CONSENT_REQUIRED
+  - REPORT_NOT_GENERATED
+  - REPORT_NOT_LATEST_OR_NOT_OWNED
   - CONTACT_CONSENT_REQUIRED
 must_not:
   - auto_assign_psychologist
@@ -357,11 +368,13 @@ no_show_condition:
   - now >= scheduled_start_at + no_show_after_minutes
 no_show_actions:
   - mark_no_show
-  - mark_appointment_as_failed_or_recoverable_according_to_model
-  - expose_reschedule_recovery_if_supported
+  - expire_appointment_linked_report_consent
+  - reschedule_only_if_approved_policy_allows
 must_not:
   - classify_reschedule_as_follow_up
 ```
+
+Reschedule eligibility and cutoff remain unresolved. Prior requirements considered upcoming appointments as possible candidates; do not infer eligibility from terminal statuses alone.
 
 ---
 
@@ -412,6 +425,78 @@ decision:
 must_not:
   - count_DASS21_and_WEMWBS_separately
   - carry_previous_period_count_into_new_period
+```
+
+---
+
+# SUC-13 — Grant or Revoke Standalone Report Access
+
+```yaml
+id: SUC-13
+name: Manage Standalone Psychologist Report Consent
+primary_actor: Participant
+grant_scope:
+  - authenticated_participant
+  - specific_report_from_owned_completed_assessment
+  - selected_psychologist
+consent_type: STANDALONE_REPORT_ACCESS
+appointment_id: null
+grant_fields:
+  - purpose
+  - scope
+  - policy_version
+  - server_generated_granted_at
+revoke:
+  - participant_owns_grant
+  - block_subsequent_access_through_this_grant_immediately
+  - do_not_cancel_appointment_or_close_consultation
+reconsent:
+  - create_new_grant_record
+  - never_reactivate_revoked_or_expired_grant
+must_not:
+  - satisfy_fresh_appointment_booking_consent
+  - associate_with_appointment
+```
+
+Appointment-linked and standalone grants MUST be checked as separate authorization paths.
+
+Audit event actor semantics:
+
+```yaml
+actor_type: USER | SYSTEM
+actor_user_id: required_for_USER, null_for_SYSTEM
+appointment_expiry:
+  set_expired_at_once: true
+  append_EXPIRED_once: true
+  enforce_access_denial_before_audit_materialization: true
+```
+
+---
+
+# SUC-14 — Reschedule Appointment (Policy Pending)
+
+```yaml
+id: SUC-14
+name: Reschedule Appointment
+status: deferred_until_policy_approval
+unresolved:
+  - eligible_appointment_states
+  - reschedule_cutoff
+candidate_scope:
+  - prior_requirements_considered_upcoming_appointments
+must_not_infer:
+  - terminal_state_only_eligibility
+when_policy_is_approved:
+  - preserve_original_appointment_and_audit_history
+  - create_linked_replacement_appointment
+  - require_fresh_APPOINTMENT_REPORT_ACCESS_consent_with_replacement_appointment_id
+  - reserve_replacement_and_release_original_slot_in_one_transaction
+  - enforce_concurrency_safe_slot_constraints
+  - expire_original_appointment_linked_grant_at_terminal_replacement_transition
+must_not:
+  - reschedule_completed_consultation_as_follow_up
+  - create_automatic_follow_up_consultation
+  - count_deferred_reschedule_as_current_workstream_acceptance
 ```
 
 ---

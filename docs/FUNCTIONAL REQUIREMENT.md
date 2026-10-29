@@ -202,7 +202,11 @@ Scoring functions MUST have automated known-input/expected-output tests.
 
 ## FR-REP-001
 
-Completed assessment MUST produce one primary report.
+Completed assessment MUST produce one report metadata row. Report status MUST remain `PENDING` until the separate report-generation workflow successfully produces and stores the private artifact.
+
+## FR-REP-006
+
+`GENERATED` MUST mean a usable private report artifact was successfully generated and persisted. Assessment submission MUST NOT set this status merely because scores and report metadata exist.
 
 ---
 
@@ -360,11 +364,11 @@ appointment: create CONFIRMED
 Booking MUST require:
 
 ```text
-completed current assessment
-report
+participant's latest completed assessment containing DASS-21 and WEMWBS
+corresponding report with status GENERATED
 selected psychologist
 AVAILABLE slot
-report consent
+fresh explicit appointment-linked report consent
 ```
 
 Contact consent MUST be required if contact detail will be exposed/used.
@@ -398,6 +402,12 @@ assessment_session_id
 report_id
 schedule_slot_id
 ```
+
+## FR-BOOK-005
+
+Booking consent MUST be a fresh affirmative participant action with an unchecked-by-default control. A standalone grant MUST NOT satisfy the booking prerequisite. The booking transaction MUST create the appointment-linked consent, confirmed appointment, consultation session, and slot reservation atomically; any failure MUST roll back all four.
+
+The booking service MUST resolve the participant from verified server identity and validate that the report belongs to the participant's latest completed combined assessment. A client-supplied report reference MUST match that server-resolved report.
 
 ---
 
@@ -658,6 +668,8 @@ Agent MUST NOT invent clinical-signoff requirements.
 
 Reschedule MUST preserve original appointment/session traceability.
 
+Eligibility and cutoff MUST remain unresolved until an approved policy is documented. Prior requirements considered upcoming appointments as well as recovery after failure/no-show; implementation MUST NOT assume only terminal appointments are eligible. Completed consultations MUST NOT be rescheduled as continuation or follow-up.
+
 ---
 
 # 20. Consent
@@ -668,7 +680,8 @@ MUST distinguish:
 
 ```text
 CHATBOT_REPORT_ACCESS
-PSYCHOLOGIST_REPORT_ACCESS
+APPOINTMENT_REPORT_ACCESS
+STANDALONE_REPORT_ACCESS
 PSYCHOLOGIST_CONTACT_ACCESS
 ```
 
@@ -682,7 +695,9 @@ Consent controls MUST NOT be prechecked.
 
 ## FR-CNT-003
 
-Consent record SHOULD persist actor, type, target, report/assessment, and timestamp.
+Consent records MUST persist actor, type, participant/report/psychologist scope, purpose, policy version, and server timestamp. `APPOINTMENT_REPORT_ACCESS` requires a valid appointment ID; `STANDALONE_REPORT_ACCESS` has no appointment association. Re-consent creates a new grant; revoked or expired records MUST NOT be reactivated.
+
+Revoking appointment-linked consent MUST immediately remove authorization from that grant without cancelling the confirmed appointment or closing consultation. A matching standalone grant MUST be checked separately. Appointment-linked access expires at the earliest of revocation, psychologist early closure, scheduled end, authorized cancellation, or confirmed terminal no-show. Standalone access remains active until revoked. When an API first observes an unmaterialized lifecycle expiry, it MUST persist `expired_at` and exactly one append-only `EXPIRED` event; live authorization checks MUST deny access without waiting for this write. Audit actor type MUST distinguish `USER` from `SYSTEM`; only user events have an `actor_user_id`.
 
 ---
 
@@ -887,6 +902,14 @@ Participant MUST explicitly select an AVAILABLE fixed session.
 Consultation MUST NOT remain writable after the fixed session end.
 
 Maximum writable duration is two hours.
+
+## FR-SYNC-006 — Past Slot Exclusion
+
+Booking MUST reject a slot whose scheduled start has passed using authoritative server time. Availability reads MUST NOT expose past slots or automatically reopen past no-show slots.
+
+## FR-SYNC-007 — Slot History and Reuse
+
+Historical appointments MUST remain intact. Slot occupancy MAY be released only through an authorized transition and when reuse is permitted. Reschedule slot replacement MUST be transactional and concurrency-safe after its eligibility policy is approved. General cancellation behavior remains deferred pending approval.
 
 ---
 
