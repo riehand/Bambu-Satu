@@ -35,6 +35,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+# Local environment files supplied without a leading dot
+/env
+/env.download
 
 # vercel
 .vercel
