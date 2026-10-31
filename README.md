@@ -31,6 +31,8 @@ Use `.env.example` for variable names and placeholders only. Obtain credentials 
 
 Synthetic unit/database and browser fixtures support development without production access. Full signup/authenticated integration needs a Supabase-compatible development Auth baseline and approved development configuration; a plain empty PostgreSQL database does not supply GoTrue. Missing assessment tables/content/periods produce truthful unavailable states. Synthetic questionnaires are for isolated development/tests only.
 
+Private assessment PDF generation and download use the pre-created, private `assessment-reports` Supabase Storage bucket and server-only `SUPABASE_SECRET_KEY`. Configure that variable in an ignored local server environment from an approved development project. Never prefix it with `NEXT_PUBLIC_`, send it to the browser, or expose Storage object paths/URLs. Do not make the bucket public. This feature does not create or change hosted buckets, policies, credentials, or database resources. Generation uses the persisted Phase 2 scores; a failed PDF attempt leaves the completed assessment and scores intact so the participant can retry.
+
 For relevant future changes, use `npm test`, `npx tsc --noEmit`, `npm run lint`, `npx prisma validate`, `npm run build`, and `npm run test:browser` (synthetic fixtures; installed Chrome required). These are teammate/regression instructions, not a request to repeat completed checks now.
 
 ## Database and Git boundaries

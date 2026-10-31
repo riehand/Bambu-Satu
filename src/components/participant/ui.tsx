@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Icon } from "./icons";
-import type { DassCategory } from "@/lib/assessment/scoring/dass21";
+import { DASS_CATEGORY_LABELS, type DassCategory } from "@/lib/assessment/scoring/dass21";
 
 export function Notice({ title, children }: { title: string; children: React.ReactNode }) {
   return <div className="wb-notice"><Icon name="shield"/><div><strong>{title}</strong><p>{children}</p></div></div>;
@@ -12,7 +12,7 @@ export function DataError({ message }: { message: string }) { return <div classN
 export function EmergencyNote() { return <p className="wb-footnote">Layanan ini bukan layanan darurat. Jika Anda berada dalam bahaya langsung, hubungi layanan darurat setempat atau datangi IGD terdekat.</p>; }
 export function PrivacyNote() { return <Notice title="Hasil Anda bersifat pribadi">Jawaban dan hasil asesmen tidak dibagikan secara otomatis kepada psikolog atau Chatbot. Persetujuan berbagi merupakan izin yang terpisah.</Notice>; }
 export function dateLabel(value: string | Date) { return new Intl.DateTimeFormat("id-ID", { dateStyle: "long", timeStyle: "short", timeZone: "Asia/Jakarta" }).format(new Date(value)) + " WIB"; }
-export const categoryLabels: Record<DassCategory, string> = { NORMAL: "Normal", MILD: "Ringan", MODERATE: "Sedang", SEVERE: "Berat", EXTREMELY_SEVERE: "Sangat berat" };
+export const categoryLabels = DASS_CATEGORY_LABELS;
 export type Scores = { depressionScore: number; depressionCategory: DassCategory; anxietyScore: number; anxietyCategory: DassCategory; stressScore: number; stressCategory: DassCategory; wemwbsScore: number };
 export function ScoreCards({ scores }: { scores: Scores }) {
   const cards = [{ title: "Depresi", value: scores.depressionScore, category: scores.depressionCategory }, { title: "Kecemasan", value: scores.anxietyScore, category: scores.anxietyCategory }, { title: "Stres", value: scores.stressScore, category: scores.stressCategory }, { title: "WEMWBS", value: scores.wemwbsScore, category: null }];

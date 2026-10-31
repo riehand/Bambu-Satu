@@ -321,7 +321,7 @@ Completed Assessment
 
 Database stores report metadata and private storage key, not unrestricted public file URLs.
 
-Phase 2 currently writes `PENDING` report metadata. `GENERATED` is set only after the separate report worker successfully creates and stores the private PDF artifact. B3 may be developed/tested with synthetic `GENERATED` reports, but production acceptance depends on the separate generation workflow; B3 MUST NOT implement PDF generation or fabricate the status.
+Phase 2 writes `PENDING` report metadata. When a participant views a completed assessment, the server may generate the PDF with `pdf-lib` and embedded Noto Sans fonts, using only persisted Phase 2 scores. The private bucket uses the server-only `SUPABASE_SECRET_KEY`. The key is deterministic from the validated report UUID; upload is create-only (`upsert: false`). On a conflict or uncertain upload result, the server reads back and validates the existing PDF before it can recover metadata. A short conditional PostgreSQL update sets `GENERATED` only after artifact verification. No transaction or row lock remains open during PDF generation or any Storage network operation. Failed attempts keep the report `PENDING`, leave its artifact metadata unset, and do not change the completed assessment or scores. A retry can reconcile a valid uploaded artifact after a database failure. No worker, queue, or additional persisted status is used.
 
 # 12. Consent Module
 
@@ -558,6 +558,8 @@ Do NOT trust original filename as storage path.
 # 23. Private Object Storage
 
 Use S3-compatible private storage or equivalent.
+
+Assessment reports MUST use the private `assessment-reports` bucket and the authenticated server proxy. Their paths are derived only from validated report metadata. Every download rechecks the owner or current B3 consent authorization and verifies the PDF; it streams with `Cache-Control: private, no-store` and attachment disposition. Assessment report endpoints MUST NOT return public or reusable signed URLs. The Storage secret key MUST remain server-only.
 
 Store:
 - assessment report PDF;

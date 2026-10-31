@@ -34,7 +34,7 @@ else if(view==="appointments") content=<AppointmentCenter/>;
 else if(view==="availability-editor") content=<PsychologistAvailabilityEditor today={query.get("today")??"2030-01-01"}/>;
 else if(view==="introduction") content=<Introduction quota={unavailable?null:quota} error={unavailable}/>;
 else if(view==="questionnaire") content=<Questionnaire sessionId={fixtureId(300)} initialRevision={Number(sessionStorage.getItem("synthetic-revision")??0)} initialAnswers={persisted??answers} questions={set.questions} dassInstructions={set.dassInstructions} wemwbsInstructions={set.wemwbsInstructions} dassOptions={set.dassOptions as {value:number;label:string}[]} wemwbsOptions={set.wemwbsOptions as {value:number;label:string}[]}/>;
-else if(view==="results") content=<ResultsView sessionId={fixtureId(300)} completedAt="2026-10-23T03:24:00Z" reportId={fixtureId(800)} scores={scores} history={history}/>;
+else if(view==="results") content=<ResultsView sessionId={fixtureId(300)} completedAt="2026-10-23T03:24:00Z" reportId={fixtureId(800)} reportStatus="GENERATED" scores={scores} history={history}/>;
 else if(view==="history") content=<HistoryList history={state==="populated"?history:[]}/>;
 else content=<DashboardView fullName="Peserta Uji Sintetis" quota={unavailable?null:quota} quotaError={unavailable} history={state==="populated"?history:[]} historyError={null}/>;
 createRoot(document.getElementById("root")!).render(<>{view==="availability-editor"?<main className="ph-dashboard">{content}</main>:<ParticipantShell fullName="Peserta Uji Sintetis" userType="STUDENT">{content}</ParticipantShell>}<div className="fixture-label">FIXTURE SINTETIS · BUKAN DATA PENGGUNA</div></>);

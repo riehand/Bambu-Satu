@@ -17,5 +17,5 @@ export default async function ResultsPage({ params }: { params: Promise<{ sessio
   if (!loaded.data) return <DataError message={loaded.error}/>;
   const { session, history } = loaded.data;
   if (!session.score || !session.completedAt || !session.report) return <DataError message="Hasil untuk sesi ini belum tersedia."/>;
-  return <ResultsView sessionId={session.id} completedAt={session.completedAt.toISOString()} reportId={session.report.id} scores={session.score} history={history}/>;
+  return <ResultsView sessionId={session.id} completedAt={session.completedAt.toISOString()} reportId={session.report.id} reportStatus={session.report.status} scores={session.score} history={history}/>;
 }

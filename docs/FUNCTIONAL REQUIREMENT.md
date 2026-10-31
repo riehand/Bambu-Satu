@@ -202,11 +202,13 @@ Scoring functions MUST have automated known-input/expected-output tests.
 
 ## FR-REP-001
 
-Completed assessment MUST produce one report metadata row. Report status MUST remain `PENDING` until the separate report-generation workflow successfully produces and stores the private artifact.
+Completed assessment MUST produce one report metadata row. When its owner views completed results while the report is `PENDING`, the server MUST safely attempt PDF generation or recovery. The report MUST remain `PENDING` until the private artifact has been read back and verified.
 
 ## FR-REP-006
 
 `GENERATED` MUST mean a usable private report artifact was successfully generated and persisted. Assessment submission MUST NOT set this status merely because scores and report metadata exist.
+
+Generation MUST be idempotent under repeated and concurrent requests. Use a deterministic report UUID path, private Storage, create-only upload, verified read-back, and a short conditional PostgreSQL update. Never hold a database transaction or row lock across rendering or Storage I/O. Failed attempts MUST leave assessment data and scores unchanged, keep `PENDING`, and allow retry without resubmission.
 
 ---
 
@@ -231,6 +233,8 @@ Report MUST include non-diagnosis disclaimer.
 ## FR-REP-005
 
 Resource endpoint MUST verify ownership/authorized sharing.
+
+Every PDF download MUST independently verify participant ownership or active psychologist authorization under the B3 consent revocation and expiry rules. Stream the private artifact with no-store headers; never return public URLs, reusable signed URLs, Storage keys, or credentials.
 
 ---
 

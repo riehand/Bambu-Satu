@@ -23,7 +23,7 @@ vi.mock("@/lib/prisma", () => {
   return { prisma: { ...tx, $transaction: mocks.transaction } };
 });
 
-import { createAppointment, getBookingContext, getReportForActor, grantAppointmentConsent, grantStandaloneConsent, revokeConsent } from "@/lib/appointments/service";
+import { confirmReportDownloadAccess, createAppointment, getBookingContext, getReportArtifactForActor, grantAppointmentConsent, grantStandaloneConsent, revokeConsent } from "@/lib/appointments/service";
 
 const participantId = "00000000-0000-4000-8000-000000000101";
 const psychologistId = "00000000-0000-4000-8000-000000000102";
@@ -152,36 +152,39 @@ it("records an earlier lifecycle expiry before a later participant revocation", 
 
 it("evaluates standalone authorization separately when appointment consent is revoked", async () => {
   mocks.reportFindUnique.mockResolvedValue({ id: reportId, assessmentSessionId, status: "GENERATED", filePathOrObjectKey: "private/report.pdf", generatedAt: new Date(), assessmentSession: {
-    participantId, completedAt: new Date(), score: { depressionScore: 8, depressionCategory: "MILD", anxietyScore: 6, anxietyCategory: "MILD", stressScore: 10, stressCategory: "MILD", wemwbsScore: 49 },
+    participantId, status: "COMPLETED", completedAt: new Date(), score: { depressionScore: 8, depressionCategory: "MILD", anxietyScore: 6, anxietyCategory: "MILD", stressScore: 10, stressCategory: "MILD", wemwbsScore: 49 },
   } });
   mocks.queryRaw.mockImplementation((strings: TemplateStringsArray) => strings.join("").includes("STANDALONE_REPORT_ACCESS") ? [{ id: "standalone" }] : []);
   mocks.consentFindMany.mockResolvedValue([{ id: "standalone", consentType: "STANDALONE_REPORT_ACCESS", appointmentId: null, expiresAt: null, expiredAt: null, revokedAt: null }]);
-  const result = await getReportForActor(psychologistId, "PSYCHOLOGIST", reportId);
+  const result = await getReportArtifactForActor(psychologistId, "PSYCHOLOGIST", reportId);
   expect(result.id).toBe(reportId);
+  expect(mocks.auditCreate).not.toHaveBeenCalledWith({ data: expect.objectContaining({ action: "ACCESSED" }) });
+  await confirmReportDownloadAccess(psychologistId, "PSYCHOLOGIST", reportId);
   expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ consentId: "standalone", actorType: "USER", actorUserId: psychologistId, action: "ACCESSED" }) });
 });
 
 it("authorizes an assigned psychologist through an exact active appointment grant", async () => {
   mocks.reportFindUnique.mockResolvedValue({ id: reportId, assessmentSessionId, status: "GENERATED", filePathOrObjectKey: "private/report.pdf", generatedAt: new Date(), assessmentSession: {
-    participantId, completedAt: new Date(), score: { depressionScore: 8, depressionCategory: "MILD", anxietyScore: 6, anxietyCategory: "MILD", stressScore: 10, stressCategory: "MILD", wemwbsScore: 49 },
+    participantId, status: "COMPLETED", completedAt: new Date(), score: { depressionScore: 8, depressionCategory: "MILD", anxietyScore: 6, anxietyCategory: "MILD", stressScore: 10, stressCategory: "MILD", wemwbsScore: 49 },
   } });
   mocks.queryRaw.mockImplementation((strings: TemplateStringsArray) => strings.join("").includes("APPOINTMENT_REPORT_ACCESS") ? [{ id: "appointment-grant" }] : []);
   mocks.consentFindMany.mockResolvedValue([{ id: "appointment-grant", consentType: "APPOINTMENT_REPORT_ACCESS", appointmentId, expiresAt: new Date(Date.now() + 86400000), expiredAt: null, revokedAt: null, appointment: {
     participantId, reportId, psychologistId, status: "CONFIRMED", scheduledEndAt: new Date(Date.now() + 86400000), consultationSession: { endedAt: null },
   } }]);
-  expect((await getReportForActor(psychologistId, "PSYCHOLOGIST", reportId)).id).toBe(reportId);
+  expect((await getReportArtifactForActor(psychologistId, "PSYCHOLOGIST", reportId)).id).toBe(reportId);
+  await confirmReportDownloadAccess(psychologistId, "PSYCHOLOGIST", reportId);
   expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ consentId: "appointment-grant", actorType: "USER", actorUserId: psychologistId, action: "ACCESSED" }) });
 });
 
 it("denies appointment-linked report access at or after its server-enforced scheduled end", async () => {
   mocks.reportFindUnique.mockResolvedValue({ id: reportId, assessmentSessionId, status: "GENERATED", filePathOrObjectKey: "private/report.pdf", generatedAt: new Date(), assessmentSession: {
-    participantId, completedAt: new Date(), score: { depressionScore: 8, depressionCategory: "MILD", anxietyScore: 6, anxietyCategory: "MILD", stressScore: 10, stressCategory: "MILD", wemwbsScore: 49 },
+    participantId, status: "COMPLETED", completedAt: new Date(), score: { depressionScore: 8, depressionCategory: "MILD", anxietyScore: 6, anxietyCategory: "MILD", stressScore: 10, stressCategory: "MILD", wemwbsScore: 49 },
   } });
   mocks.queryRaw.mockImplementation((strings: TemplateStringsArray) => strings.join("").includes("APPOINTMENT_REPORT_ACCESS") ? [{ id: "expired" }] : []);
   mocks.consentFindMany.mockResolvedValue([{ id: "expired", consentType: "APPOINTMENT_REPORT_ACCESS", appointmentId, grantedAt: new Date("1999-01-01T00:00:00Z"), expiresAt: new Date("2000-01-01T00:00:00Z"), expiredAt: null, revokedAt: null, appointment: {
     participantId, reportId, psychologistId, status: "CONFIRMED", scheduledEndAt: new Date("2000-01-01T00:00:00Z"), consultationSession: { endedAt: null },
   } }]);
-  await expect(getReportForActor(psychologistId, "PSYCHOLOGIST", reportId)).rejects.toMatchObject({ code: "REPORT_ACCESS_DENIED", status: 403 });
+  await expect(getReportArtifactForActor(psychologistId, "PSYCHOLOGIST", reportId)).rejects.toMatchObject({ code: "REPORT_ACCESS_DENIED", status: 403 });
   expect(mocks.consentUpdate).toHaveBeenCalledWith({ where: { id: "expired" }, data: { expiredAt: new Date("2000-01-01T00:00:00Z") } });
   expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
     consentId: "expired", actorType: "SYSTEM", actorUserId: null, action: "EXPIRED", occurredAt: expect.any(Date),
@@ -192,7 +195,7 @@ it("denies appointment-linked report access at or after its server-enforced sche
 it("records psychologist early closure as one USER expiry event and denies access", async () => {
   const endedAt = new Date(Date.now() - 1000);
   mocks.reportFindUnique.mockResolvedValue({ id: reportId, assessmentSessionId, status: "GENERATED", filePathOrObjectKey: "private/report.pdf", generatedAt: new Date(), assessmentSession: {
-    participantId, completedAt: new Date(), score: { depressionScore: 8, depressionCategory: "MILD", anxietyScore: 6, anxietyCategory: "MILD", stressScore: 10, stressCategory: "MILD", wemwbsScore: 49 },
+    participantId, status: "COMPLETED", completedAt: new Date(), score: { depressionScore: 8, depressionCategory: "MILD", anxietyScore: 6, anxietyCategory: "MILD", stressScore: 10, stressCategory: "MILD", wemwbsScore: 49 },
   } });
   mocks.queryRaw.mockImplementation((strings: TemplateStringsArray) => strings.join("").includes("APPOINTMENT_REPORT_ACCESS") ? [{ id: "early-close" }] : []);
   mocks.consentFindMany.mockResolvedValue([{ id: "early-close", consentType: "APPOINTMENT_REPORT_ACCESS", appointmentId, grantedAt: new Date(Date.now() - 86400000), expiresAt: new Date(Date.now() + 86400000), expiredAt: null, revokedAt: null, appointment: {
@@ -200,14 +203,14 @@ it("records psychologist early closure as one USER expiry event and denies acces
     updatedAt: endedAt, consultationSession: { status: "CLOSED", endedAt, endedBy: "PSYCHOLOGIST", updatedAt: endedAt },
   } }]);
 
-  await expect(getReportForActor(psychologistId, "PSYCHOLOGIST", reportId)).rejects.toMatchObject({ code: "REPORT_ACCESS_DENIED", status: 403 });
+  await expect(getReportArtifactForActor(psychologistId, "PSYCHOLOGIST", reportId)).rejects.toMatchObject({ code: "REPORT_ACCESS_DENIED", status: 403 });
   expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ consentId: "early-close", actorType: "USER", actorUserId: psychologistId, action: "EXPIRED" }) });
   expect(mocks.auditCreate).not.toHaveBeenCalledWith({ data: expect.objectContaining({ action: "ACCESSED" }) });
 });
 
 it("uses a matching standalone grant independently after appointment consent expires", async () => {
   mocks.reportFindUnique.mockResolvedValue({ id: reportId, assessmentSessionId, status: "GENERATED", filePathOrObjectKey: "private/report.pdf", generatedAt: new Date(), assessmentSession: {
-    participantId, completedAt: new Date(), score: { depressionScore: 8, depressionCategory: "MILD", anxietyScore: 6, anxietyCategory: "MILD", stressScore: 10, stressCategory: "MILD", wemwbsScore: 49 },
+    participantId, status: "COMPLETED", completedAt: new Date(), score: { depressionScore: 8, depressionCategory: "MILD", anxietyScore: 6, anxietyCategory: "MILD", stressScore: 10, stressCategory: "MILD", wemwbsScore: 49 },
   } });
   mocks.queryRaw.mockImplementation((strings: TemplateStringsArray) => strings.join("").includes("APPOINTMENT_REPORT_ACCESS") ? [{ id: "expired" }] : [{ id: "standalone" }]);
   mocks.consentFindMany.mockResolvedValue([
@@ -218,20 +221,30 @@ it("uses a matching standalone grant independently after appointment consent exp
     { id: "standalone", consentType: "STANDALONE_REPORT_ACCESS", appointmentId: null, expiresAt: null, expiredAt: null, revokedAt: null },
   ]);
 
-  expect((await getReportForActor(psychologistId, "PSYCHOLOGIST", reportId)).id).toBe(reportId);
+  expect((await getReportArtifactForActor(psychologistId, "PSYCHOLOGIST", reportId)).id).toBe(reportId);
+  await confirmReportDownloadAccess(psychologistId, "PSYCHOLOGIST", reportId);
   expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ consentId: "expired", action: "EXPIRED", actorType: "SYSTEM" }) });
   expect(mocks.auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ consentId: "standalone", action: "ACCESSED", actorType: "USER" }) });
 });
 
 it("does not record report access for a PENDING report even if a matching grant exists", async () => {
   mocks.reportFindUnique.mockResolvedValue({ id: reportId, assessmentSessionId, status: "PENDING", filePathOrObjectKey: null, generatedAt: null, assessmentSession: {
-    participantId, completedAt: new Date(), score: { depressionScore: 8, depressionCategory: "MILD", anxietyScore: 6, anxietyCategory: "MILD", stressScore: 10, stressCategory: "MILD", wemwbsScore: 49 },
+    participantId, status: "COMPLETED", completedAt: new Date(), score: { depressionScore: 8, depressionCategory: "MILD", anxietyScore: 6, anxietyCategory: "MILD", stressScore: 10, stressCategory: "MILD", wemwbsScore: 49 },
   } });
   mocks.queryRaw.mockImplementation((strings: TemplateStringsArray) => strings.join("").includes("APPOINTMENT_REPORT_ACCESS") ? [{ id: "appointment-grant" }] : []);
   mocks.consentFindMany.mockResolvedValue([{ id: "appointment-grant", consentType: "APPOINTMENT_REPORT_ACCESS", appointmentId, expiresAt: new Date(Date.now() + 86400000), expiredAt: null, revokedAt: null, appointment: {
     participantId, reportId, psychologistId, status: "CONFIRMED", scheduledEndAt: new Date(Date.now() + 86400000), consultationSession: { status: "SCHEDULED", endedAt: null },
   } }]);
 
-  await expect(getReportForActor(psychologistId, "PSYCHOLOGIST", reportId)).rejects.toMatchObject({ code: "REPORT_NOT_GENERATED", status: 409 });
+  await expect(getReportArtifactForActor(psychologistId, "PSYCHOLOGIST", reportId)).rejects.toMatchObject({ code: "REPORT_NOT_GENERATED", status: 409 });
   expect(mocks.auditCreate).not.toHaveBeenCalledWith({ data: expect.objectContaining({ action: "ACCESSED" }) });
+});
+
+it("allows the authenticated owner to retrieve generated artifact metadata without psychologist consent", async () => {
+  mocks.reportFindUnique.mockResolvedValue({ id: reportId, assessmentSessionId, status: "GENERATED", filePathOrObjectKey: `reports/${reportId}.pdf`, generatedAt: new Date(), assessmentSession: {
+    participantId, status: "COMPLETED", completedAt: new Date(), score: { depressionScore: 8, depressionCategory: "MILD", anxietyScore: 6, anxietyCategory: "MILD", stressScore: 10, stressCategory: "MILD", wemwbsScore: 49 },
+  } });
+  const result = await getReportArtifactForActor(participantId, "PARTICIPANT", reportId);
+  expect(result.filePathOrObjectKey).toBe(`reports/${reportId}.pdf`);
+  expect(mocks.transaction).not.toHaveBeenCalled();
 });

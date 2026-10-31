@@ -433,11 +433,16 @@ export async function revokeConsent(participantId: string, consentId: string) {
 type ReportRow = Prisma.ReportGetPayload<{
   select: {
     id: true; assessmentSessionId: true; status: true; filePathOrObjectKey: true; generatedAt: true;
-    assessmentSession: { select: { participantId: true; completedAt: true; score: { select: typeof reportScoreSelect } } };
+    assessmentSession: { select: { participantId: true; status: true; completedAt: true; score: { select: typeof reportScoreSelect } } };
   };
 }>;
 
-async function authorizePsychologistReport(actorId: string, report: ReportRow) {
+const actorReportSelect = {
+  id: true, assessmentSessionId: true, status: true, filePathOrObjectKey: true, generatedAt: true,
+  assessmentSession: { select: { participantId: true, status: true, completedAt: true, score: { select: reportScoreSelect } } },
+} satisfies Prisma.ReportSelect;
+
+async function authorizePsychologistReport(actorId: string, report: ReportRow, recordAccess = true) {
   const authorized = await prisma.$transaction(async (tx) => {
     const appointmentRows = await tx.$queryRaw<Array<{ id: string }>>`
       SELECT id FROM public.consents
@@ -480,7 +485,7 @@ async function authorizePsychologistReport(actorId: string, report: ReportRow) {
       && grant.appointmentId === null && grant.expiresAt === null);
     const selectedGrant = appointmentGrant ?? standaloneGrant;
     if (!selectedGrant) return false;
-    if (isGeneratedReport(report)) await tx.consentAuditEvent.create({ data: {
+    if (recordAccess && isGeneratedReport(report)) await tx.consentAuditEvent.create({ data: {
       consentId: selectedGrant.id, actorType: ConsentAuditActorType.USER,
       actorUserId: actorId, action: "ACCESSED", occurredAt: serverNow,
     } });
@@ -489,23 +494,35 @@ async function authorizePsychologistReport(actorId: string, report: ReportRow) {
   if (!authorized) throw new AppointmentError("REPORT_ACCESS_DENIED", "Akses ke laporan ini tidak diizinkan.", 403);
 }
 
-export async function getReportForActor(actorId: string, role: "PARTICIPANT" | "PSYCHOLOGIST", reportId: string) {
-  const report = await prisma.report.findUnique({
-    where: { id: reportId },
-    select: {
-      id: true, assessmentSessionId: true, status: true, filePathOrObjectKey: true, generatedAt: true,
-      assessmentSession: { select: { participantId: true, completedAt: true, score: { select: reportScoreSelect } } },
-    },
-  });
-  if (!report || !report.assessmentSession.completedAt || !report.assessmentSession.score) {
+async function loadAuthorizedReport(actorId: string, role: "PARTICIPANT" | "PSYCHOLOGIST", reportId: string, recordAccess = true) {
+  const report = await prisma.report.findUnique({ where: { id: reportId }, select: actorReportSelect });
+  if (!report || report.assessmentSession.status !== "COMPLETED" || !report.assessmentSession.completedAt || !report.assessmentSession.score) {
     throw new AppointmentError("REPORT_NOT_FOUND", "Laporan tidak ditemukan.", 404);
   }
   if (role === "PARTICIPANT") {
     if (report.assessmentSession.participantId !== actorId) throw new AppointmentError("REPORT_NOT_FOUND", "Laporan tidak ditemukan.", 404);
   } else {
-    await authorizePsychologistReport(actorId, report);
+    await authorizePsychologistReport(actorId, report, recordAccess);
   }
   if (!isGeneratedReport(report)) throw new AppointmentError("REPORT_NOT_GENERATED", "Laporan belum siap.", 409);
+  return report;
+}
+
+export async function getReportArtifactForActor(actorId: string, role: "PARTICIPANT" | "PSYCHOLOGIST", reportId: string) {
+  // Check before Storage access; the route confirms again after read-back so a
+  // grant revoked during the download cannot authorize the final response.
+  return loadAuthorizedReport(actorId, role, reportId, false);
+}
+
+export async function confirmReportDownloadAccess(actorId: string, role: "PARTICIPANT" | "PSYCHOLOGIST", reportId: string) {
+  await loadAuthorizedReport(actorId, role, reportId, true);
+}
+
+export async function getReportForActor(actorId: string, role: "PARTICIPANT" | "PSYCHOLOGIST", reportId: string) {
+  const report = await loadAuthorizedReport(actorId, role, reportId);
+  if (!report.assessmentSession.completedAt || !report.assessmentSession.score) {
+    throw new AppointmentError("REPORT_NOT_FOUND", "Laporan tidak ditemukan.", 404);
+  }
   const scores = report.assessmentSession.score;
   return {
     id: report.id,

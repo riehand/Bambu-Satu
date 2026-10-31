@@ -30,6 +30,14 @@ export const DASS21_MULTIPLIER = 2;
 
 export type DassCategory = "NORMAL" | "MILD" | "MODERATE" | "SEVERE" | "EXTREMELY_SEVERE";
 
+export const DASS_CATEGORY_LABELS: Record<DassCategory, string> = {
+  NORMAL: "Normal",
+  MILD: "Ringan",
+  MODERATE: "Sedang",
+  SEVERE: "Berat",
+  EXTREMELY_SEVERE: "Sangat berat",
+};
+
 interface ThresholdBoundary {
   readonly max: number;
   readonly category: DassCategory;

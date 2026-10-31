@@ -687,7 +687,7 @@ A matching `STANDALONE_REPORT_ACCESS` may independently authorize standalone rep
 
 If a consent-list, revocation, re-consent, or report-access request first observes an appointment-linked lifecycle expiry, it MUST persist the earliest effective `expired_at` and one append-only `EXPIRED` audit event. If a participant revokes after an earlier lifecycle expiry, record that expiry first, then record the separate `REVOKED` event. Audit events use `actor_type: USER` with a user ID for a known user action or `actor_type: SYSTEM` with no user ID for system-observed expiry. If expiry audit materialization fails, the operation MUST return a safe non-success response and MUST NOT authorize or disclose report data.
 
-The report API is available only after status `GENERATED` and valid private artifact metadata exist. It returns authorized score JSON but never the object key. PDF delivery remains a separate workstream.
+The report API is available only after status `GENERATED` and valid private artifact metadata exist. It returns authorized score JSON but never the object key. The participant results page requests generation for a completed `PENDING` report; requests are idempotent and failures leave report status `PENDING` and the scores unchanged. There are no persisted generation-in-progress or failure states.
 
 ### Success
 
@@ -741,15 +741,29 @@ Same authorization as `API-REPORT-01`.
 
 ### Success
 
-Either:
-- streamed PDF; or
-- short-lived signed URL.
+Stream the verified PDF bytes with `Content-Type: application/pdf`, `Cache-Control: private, no-store`, and attachment `Content-Disposition`. The API rechecks participant ownership or the current B3 consent lifecycle on every request, then verifies the deterministic private artifact before streaming. It does not return an object key, public URL, or signed URL.
 
 ### MUST NOT
 
 Return permanent public URL.
 
-Private PDF download belongs to the separate PDF/report-generation workstream and is not implemented in the current B2/B3 slice.
+Storage access uses the server-only `SUPABASE_SECRET_KEY`; the `assessment-reports` bucket remains private. The object key is derived from the validated report UUID. Browser requests cannot choose a Storage path, and Storage calls are server-only.
+
+---
+
+## API-REPORT-03 - Generate or Recover Report PDF
+
+```http
+POST /api/reports/{reportId}/generate
+```
+
+Participant only, same-origin request, and ownership checked against the authenticated profile. The report must reference a completed assessment with its canonical Phase 2 scores. A `GENERATED` report returns its current status without replacing the artifact. A `PENDING` report is generated or recovered using a deterministic object key and create-only upload (`upsert: false`). A conflicting upload is accepted only after the existing object is read back and validated as the expected report PDF. PostgreSQL is updated with one short conditional `PENDING` to `GENERATED` update after verification; no database transaction or lock spans PDF rendering or Storage I/O.
+
+```json
+{ "success": true, "data": { "reportId": "uuid", "status": "GENERATED" } }
+```
+
+Temporary Storage or database failures return a safe retryable `503` (rate limit: `429` with `Retry-After`). They do not alter the assessment, canonical scores, or persisted `PENDING` report metadata. The participant may retry without repeating the assessment. Request throttling is in-memory per application process; object create-only semantics and conditional metadata finalization provide correctness across concurrent requests.
 
 ---
 
