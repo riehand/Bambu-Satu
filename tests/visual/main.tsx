@@ -10,6 +10,7 @@ import { HistoryList } from "@/components/participant/ui";
 import { AppointmentCenter } from "@/components/participant/appointment-center";
 import { PsychologistAvailability } from "@/components/participant/psychologist-availability";
 import { PsychologistAvailabilityEditor } from "@/components/psychologist/availability-editor";
+import { ReportDownloadFixture } from "./report-download-fixture";
 import Loading from "@/app/participant/loading";
 import { syntheticQuestionSet, fixtureId } from "../fixtures/assessment";
 import "@/app/participant/participant.css";
@@ -29,6 +30,7 @@ const persisted=JSON.parse(sessionStorage.getItem("synthetic-answers")??"null") 
 const unavailable=state==="unavailable"?"Belum ada periode akademik aktif. Asesmen belum tersedia.":null;
 let content;
 if(view==="loading") content=<Loading/>;
+else if(view==="report-download") content=<ReportDownloadFixture initiallyGenerated={state === "generated"}/>;
 else if(view==="availability") content=<PsychologistAvailability psychologistId={fixtureId(902)} psychologistName="Psikolog Uji Sintetis" today={query.get("today")??"2030-01-01"}/>;
 else if(view==="appointments") content=<AppointmentCenter/>;
 else if(view==="availability-editor") content=<PsychologistAvailabilityEditor today={query.get("today")??"2030-01-01"}/>;
