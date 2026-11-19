@@ -17,7 +17,7 @@ vi.mock("@/lib/reports/pdf", () => ({
   isExpectedAssessmentReportPdf: mocks.verifyPdf,
 }));
 
-import { generateReportForParticipant, ReportError } from "@/lib/reports/service";
+import { generateReportForParticipant, getValidatedReportArtifact, ReportError } from "@/lib/reports/service";
 import { ReportStorageError } from "@/lib/reports/storage";
 
 const participantId = "00000000-0000-4000-8000-000000000201";
@@ -165,4 +165,59 @@ it("refuses incomplete assessments before Storage access or metadata changes", a
   expect(mocks.download).not.toHaveBeenCalled();
   expect(mocks.upload).not.toHaveBeenCalled();
   expect(mocks.updateMany).not.toHaveBeenCalled();
+});
+
+it.each(["missing", "corrupted", "storage failure", "wrong key"])("fails safely for a GENERATED artifact that is %s without repairing immutable metadata", async (scenario) => {
+  row = { ...row, status: "GENERATED", filePathOrObjectKey: `reports/${row.id}.pdf`, generatedAt: new Date() };
+  objectExists = true;
+  if (scenario === "missing") objectExists = false;
+  if (scenario === "corrupted") mocks.verifyPdf.mockResolvedValue(false);
+  if (scenario === "storage failure") mocks.download.mockRejectedValue(new Error("private provider detail"));
+  if (scenario === "wrong key") row.filePathOrObjectKey = "other/private/key.pdf";
+  // Fixture categories are synthetic strings; the real Prisma payload uses enums.
+  await expect(getValidatedReportArtifact(row as Parameters<typeof getValidatedReportArtifact>[0])).rejects.toMatchObject({ code: "REPORT_ARTIFACT_UNAVAILABLE", status: 503 });
+  expect(mocks.upload).not.toHaveBeenCalled();
+  expect(mocks.updateMany).not.toHaveBeenCalled();
+  expect(row.status).toBe("GENERATED");
+});
+
+it("uses persisted completed scores and never accepts client scoring data", async () => {
+  const persisted = structuredClone(row.assessmentSession);
+  await generateReportForParticipant(participantId, row.id);
+  expect(mocks.generatePdf).toHaveBeenCalledWith({
+    reportId: row.id, assessmentSessionId: row.assessmentSessionId, assessmentDate: persisted.completedAt!.toISOString(),
+    scores: { depression: { score: 8, category: "NORMAL" }, anxiety: { score: 10, category: "MODERATE" }, stress: { score: 18, category: "MILD" }, wemwbs: { score: 49 } },
+  });
+  expect(row.assessmentSession).toEqual(persisted);
+});
+
+it("does not finalize when the uploaded object fails read-back validation", async () => {
+  mocks.verifyPdf.mockResolvedValue(false);
+  await expect(generateReportForParticipant(participantId, row.id)).rejects.toMatchObject({ code: "REPORT_ARTIFACT_NOT_READY" });
+  expect(mocks.upload).toHaveBeenCalledTimes(1);
+  expect(mocks.updateMany).not.toHaveBeenCalled();
+  expect(row.status).toBe("PENDING");
+});
+
+it("keeps concurrent attempts after the throttle window safe through create-only upload and conditional finalization", async () => {
+  let releaseFirst!: () => void;
+  let started!: () => void;
+  const waiting = new Promise<void>((resolve) => { started = resolve; });
+  const gate = new Promise<void>((resolve) => { releaseFirst = resolve; });
+  let uploads = 0;
+  mocks.upload.mockImplementation(async () => {
+    if (++uploads === 1) { started(); await gate; }
+    if (objectExists) throw new ReportStorageError("conflict");
+    objectExists = true;
+  });
+  const first = generateReportForParticipant(participantId, row.id);
+  await waiting;
+  vi.setSystemTime(Date.now() + 11_000);
+  const second = await generateReportForParticipant(participantId, row.id);
+  const finalizedAt = row.generatedAt;
+  releaseFirst();
+  expect(await first).toEqual(second);
+  expect(mocks.updateMany).toHaveBeenCalledTimes(2);
+  expect(row.generatedAt).toBe(finalizedAt);
+  expect(row.filePathOrObjectKey).toBe(`reports/${row.id}.pdf`);
 });

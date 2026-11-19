@@ -739,6 +739,8 @@ GET /api/reports/{reportId}/download
 
 Same authorization as `API-REPORT-01`.
 
+The psychologist appointment action supplies optional `?appointmentId={uuid}`. When supplied for a psychologist, the server additionally verifies that this assigned appointment references the same participant, assessment, and report. Only a grant for that appointment or an independently valid standalone grant can authorize this action. Omitting the query does not bypass the existing report consent checks. Authorization is checked both before Storage access and again after artifact verification, immediately before returning the PDF.
+
 ### Success
 
 Stream the verified PDF bytes with `Content-Type: application/pdf`, `Cache-Control: private, no-store`, and attachment `Content-Disposition`. The API rechecks participant ownership or the current B3 consent lifecycle on every request, then verifies the deterministic private artifact before streaming. It does not return an object key, public URL, or signed URL.
@@ -1334,6 +1336,16 @@ Need-to-know only:
 ```
 
 NIM/NIP MUST NOT be exposed by default.
+
+Each item also includes an explicit `reportAccess` DTO:
+
+```ts
+type AppointmentReportAccess =
+  | { status: "AVAILABLE"; reportId: string; consentType: "APPOINTMENT_REPORT_ACCESS" | "STANDALONE_REPORT_ACCESS" }
+  | { status: "CONSENT_UNAVAILABLE" | "CONSENT_EXPIRED" | "REPORT_UNAVAILABLE" };
+```
+
+Discovery evaluates current server time, exact consent scope, revocation, and appointment/session lifecycle. An independent standalone grant remains separate from an expired/revoked appointment grant. Report readiness is disclosed only after a matching grant authorizes discovery; denied states contain no report identifier. This read-only discovery response contains no scores, private object keys, signed URLs, or consent IDs, and does not record an `ACCESSED` event. `AVAILABLE` describes authorized, generated metadata; Storage availability is verified at download time. The download endpoint always rechecks access and performs the existing expiry/access auditing.
 
 ---
 

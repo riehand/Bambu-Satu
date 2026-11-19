@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ReportFileDownload } from "@/components/reports/file-download";
 
 type ReportStatus = "PENDING" | "GENERATED";
 type ViewState = "requesting" | "failed" | "generated";
 
 function DownloadLink({ reportId }: { reportId: string }) {
-  return <a className="wb-button secondary" href={`/api/reports/${encodeURIComponent(reportId)}/download`}>Unduh laporan PDF</a>;
+  return <ReportFileDownload reportId={reportId}/>;
 }
 
 export function ReportDownload({ reportId, reportStatus }: { reportId: string; reportStatus: ReportStatus }) {

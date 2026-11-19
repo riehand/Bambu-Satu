@@ -135,7 +135,7 @@ it("records an earlier lifecycle expiry before a later participant revocation", 
     id: consentId, participantId, appointmentId, consentType: "APPOINTMENT_REPORT_ACCESS",
     grantedAt, expiresAt: scheduledEndAt, expiredAt: null, revokedAt: null,
     appointment: {
-      participantId, reportId, psychologistId, status: "CONFIRMED", scheduledStartAt: new Date("1999-01-01T00:00:00Z"),
+      id: appointmentId, assessmentSessionId, participantId, reportId, psychologistId, status: "CONFIRMED", scheduledStartAt: new Date("1999-01-01T00:00:00Z"),
       scheduledEndAt, cancelledAt: null, completedAt: null,
       consultationSession: { status: "SCHEDULED", endedAt: null, endedBy: null },
     },
@@ -155,7 +155,7 @@ it("evaluates standalone authorization separately when appointment consent is re
     participantId, status: "COMPLETED", completedAt: new Date(), score: { depressionScore: 8, depressionCategory: "MILD", anxietyScore: 6, anxietyCategory: "MILD", stressScore: 10, stressCategory: "MILD", wemwbsScore: 49 },
   } });
   mocks.queryRaw.mockImplementation((strings: TemplateStringsArray) => strings.join("").includes("STANDALONE_REPORT_ACCESS") ? [{ id: "standalone" }] : []);
-  mocks.consentFindMany.mockResolvedValue([{ id: "standalone", consentType: "STANDALONE_REPORT_ACCESS", appointmentId: null, expiresAt: null, expiredAt: null, revokedAt: null }]);
+  mocks.consentFindMany.mockResolvedValue([{ id: "standalone", consentType: "STANDALONE_REPORT_ACCESS", participantId, reportId, assessmentSessionId, targetUserId: psychologistId, appointmentId: null, expiresAt: null, expiredAt: null, revokedAt: null }]);
   const result = await getReportArtifactForActor(psychologistId, "PSYCHOLOGIST", reportId);
   expect(result.id).toBe(reportId);
   expect(mocks.auditCreate).not.toHaveBeenCalledWith({ data: expect.objectContaining({ action: "ACCESSED" }) });
@@ -168,8 +168,8 @@ it("authorizes an assigned psychologist through an exact active appointment gran
     participantId, status: "COMPLETED", completedAt: new Date(), score: { depressionScore: 8, depressionCategory: "MILD", anxietyScore: 6, anxietyCategory: "MILD", stressScore: 10, stressCategory: "MILD", wemwbsScore: 49 },
   } });
   mocks.queryRaw.mockImplementation((strings: TemplateStringsArray) => strings.join("").includes("APPOINTMENT_REPORT_ACCESS") ? [{ id: "appointment-grant" }] : []);
-  mocks.consentFindMany.mockResolvedValue([{ id: "appointment-grant", consentType: "APPOINTMENT_REPORT_ACCESS", appointmentId, expiresAt: new Date(Date.now() + 86400000), expiredAt: null, revokedAt: null, appointment: {
-    participantId, reportId, psychologistId, status: "CONFIRMED", scheduledEndAt: new Date(Date.now() + 86400000), consultationSession: { endedAt: null },
+  mocks.consentFindMany.mockResolvedValue([{ id: "appointment-grant", participantId, reportId, assessmentSessionId, targetUserId: psychologistId, consentType: "APPOINTMENT_REPORT_ACCESS", appointmentId, expiresAt: new Date(Date.now() + 86400000), expiredAt: null, revokedAt: null, appointment: {
+    id: appointmentId, assessmentSessionId, participantId, reportId, psychologistId, status: "CONFIRMED", scheduledEndAt: new Date(Date.now() + 86400000), consultationSession: { endedAt: null },
   } }]);
   expect((await getReportArtifactForActor(psychologistId, "PSYCHOLOGIST", reportId)).id).toBe(reportId);
   await confirmReportDownloadAccess(psychologistId, "PSYCHOLOGIST", reportId);
@@ -181,8 +181,8 @@ it("denies appointment-linked report access at or after its server-enforced sche
     participantId, status: "COMPLETED", completedAt: new Date(), score: { depressionScore: 8, depressionCategory: "MILD", anxietyScore: 6, anxietyCategory: "MILD", stressScore: 10, stressCategory: "MILD", wemwbsScore: 49 },
   } });
   mocks.queryRaw.mockImplementation((strings: TemplateStringsArray) => strings.join("").includes("APPOINTMENT_REPORT_ACCESS") ? [{ id: "expired" }] : []);
-  mocks.consentFindMany.mockResolvedValue([{ id: "expired", consentType: "APPOINTMENT_REPORT_ACCESS", appointmentId, grantedAt: new Date("1999-01-01T00:00:00Z"), expiresAt: new Date("2000-01-01T00:00:00Z"), expiredAt: null, revokedAt: null, appointment: {
-    participantId, reportId, psychologistId, status: "CONFIRMED", scheduledEndAt: new Date("2000-01-01T00:00:00Z"), consultationSession: { endedAt: null },
+  mocks.consentFindMany.mockResolvedValue([{ id: "expired", participantId, reportId, assessmentSessionId, targetUserId: psychologistId, consentType: "APPOINTMENT_REPORT_ACCESS", appointmentId, grantedAt: new Date("1999-01-01T00:00:00Z"), expiresAt: new Date("2000-01-01T00:00:00Z"), expiredAt: null, revokedAt: null, appointment: {
+    id: appointmentId, assessmentSessionId, participantId, reportId, psychologistId, status: "CONFIRMED", scheduledEndAt: new Date("2000-01-01T00:00:00Z"), consultationSession: { endedAt: null },
   } }]);
   await expect(getReportArtifactForActor(psychologistId, "PSYCHOLOGIST", reportId)).rejects.toMatchObject({ code: "REPORT_ACCESS_DENIED", status: 403 });
   expect(mocks.consentUpdate).toHaveBeenCalledWith({ where: { id: "expired" }, data: { expiredAt: new Date("2000-01-01T00:00:00Z") } });
@@ -198,8 +198,8 @@ it("records psychologist early closure as one USER expiry event and denies acces
     participantId, status: "COMPLETED", completedAt: new Date(), score: { depressionScore: 8, depressionCategory: "MILD", anxietyScore: 6, anxietyCategory: "MILD", stressScore: 10, stressCategory: "MILD", wemwbsScore: 49 },
   } });
   mocks.queryRaw.mockImplementation((strings: TemplateStringsArray) => strings.join("").includes("APPOINTMENT_REPORT_ACCESS") ? [{ id: "early-close" }] : []);
-  mocks.consentFindMany.mockResolvedValue([{ id: "early-close", consentType: "APPOINTMENT_REPORT_ACCESS", appointmentId, grantedAt: new Date(Date.now() - 86400000), expiresAt: new Date(Date.now() + 86400000), expiredAt: null, revokedAt: null, appointment: {
-    participantId, reportId, psychologistId, status: "COMPLETED", scheduledEndAt: new Date(Date.now() + 86400000), cancelledAt: null, completedAt: endedAt,
+  mocks.consentFindMany.mockResolvedValue([{ id: "early-close", participantId, reportId, assessmentSessionId, targetUserId: psychologistId, consentType: "APPOINTMENT_REPORT_ACCESS", appointmentId, grantedAt: new Date(Date.now() - 86400000), expiresAt: new Date(Date.now() + 86400000), expiredAt: null, revokedAt: null, appointment: {
+    id: appointmentId, assessmentSessionId, participantId, reportId, psychologistId, status: "COMPLETED", scheduledEndAt: new Date(Date.now() + 86400000), cancelledAt: null, completedAt: endedAt,
     updatedAt: endedAt, consultationSession: { status: "CLOSED", endedAt, endedBy: "PSYCHOLOGIST", updatedAt: endedAt },
   } }]);
 
@@ -214,11 +214,11 @@ it("uses a matching standalone grant independently after appointment consent exp
   } });
   mocks.queryRaw.mockImplementation((strings: TemplateStringsArray) => strings.join("").includes("APPOINTMENT_REPORT_ACCESS") ? [{ id: "expired" }] : [{ id: "standalone" }]);
   mocks.consentFindMany.mockResolvedValue([
-    { id: "expired", consentType: "APPOINTMENT_REPORT_ACCESS", appointmentId, grantedAt: new Date("1999-01-01T00:00:00Z"), expiresAt: new Date("2000-01-01T00:00:00Z"), expiredAt: null, revokedAt: null, appointment: {
-      participantId, reportId, psychologistId, status: "CONFIRMED", scheduledEndAt: new Date("2000-01-01T00:00:00Z"),
+    { id: "expired", participantId, reportId, assessmentSessionId, targetUserId: psychologistId, consentType: "APPOINTMENT_REPORT_ACCESS", appointmentId, grantedAt: new Date("1999-01-01T00:00:00Z"), expiresAt: new Date("2000-01-01T00:00:00Z"), expiredAt: null, revokedAt: null, appointment: {
+      id: appointmentId, assessmentSessionId, participantId, reportId, psychologistId, status: "CONFIRMED", scheduledEndAt: new Date("2000-01-01T00:00:00Z"),
       consultationSession: { status: "SCHEDULED", endedAt: null },
     } },
-    { id: "standalone", consentType: "STANDALONE_REPORT_ACCESS", appointmentId: null, expiresAt: null, expiredAt: null, revokedAt: null },
+    { id: "standalone", consentType: "STANDALONE_REPORT_ACCESS", participantId, reportId, assessmentSessionId, targetUserId: psychologistId, appointmentId: null, expiresAt: null, expiredAt: null, revokedAt: null },
   ]);
 
   expect((await getReportArtifactForActor(psychologistId, "PSYCHOLOGIST", reportId)).id).toBe(reportId);
@@ -232,8 +232,8 @@ it("does not record report access for a PENDING report even if a matching grant 
     participantId, status: "COMPLETED", completedAt: new Date(), score: { depressionScore: 8, depressionCategory: "MILD", anxietyScore: 6, anxietyCategory: "MILD", stressScore: 10, stressCategory: "MILD", wemwbsScore: 49 },
   } });
   mocks.queryRaw.mockImplementation((strings: TemplateStringsArray) => strings.join("").includes("APPOINTMENT_REPORT_ACCESS") ? [{ id: "appointment-grant" }] : []);
-  mocks.consentFindMany.mockResolvedValue([{ id: "appointment-grant", consentType: "APPOINTMENT_REPORT_ACCESS", appointmentId, expiresAt: new Date(Date.now() + 86400000), expiredAt: null, revokedAt: null, appointment: {
-    participantId, reportId, psychologistId, status: "CONFIRMED", scheduledEndAt: new Date(Date.now() + 86400000), consultationSession: { status: "SCHEDULED", endedAt: null },
+  mocks.consentFindMany.mockResolvedValue([{ id: "appointment-grant", participantId, reportId, assessmentSessionId, targetUserId: psychologistId, consentType: "APPOINTMENT_REPORT_ACCESS", appointmentId, expiresAt: new Date(Date.now() + 86400000), expiredAt: null, revokedAt: null, appointment: {
+    id: appointmentId, assessmentSessionId, participantId, reportId, psychologistId, status: "CONFIRMED", scheduledEndAt: new Date(Date.now() + 86400000), consultationSession: { status: "SCHEDULED", endedAt: null },
   } }]);
 
   await expect(getReportArtifactForActor(psychologistId, "PSYCHOLOGIST", reportId)).rejects.toMatchObject({ code: "REPORT_NOT_GENERATED", status: 409 });

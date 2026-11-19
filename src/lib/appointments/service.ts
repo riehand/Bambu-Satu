@@ -3,6 +3,7 @@ import { AppointmentStatus, ConsentAuditActorType, ConsentType, Prisma } from "@
 import { prisma } from "@/lib/prisma";
 import { sessionStartsAt, type ConsultationSessionType } from "@/lib/psychologist/availability-config";
 import type { CreateAppointmentInput, StandaloneConsentInput } from "@/lib/validations/appointment";
+import type { AppointmentReportAccess } from "@/lib/reports/contracts";
 
 type DB = Prisma.TransactionClient;
 export const REPORT_CONSENT_POLICY_VERSION = "report-sharing-v1";
@@ -201,18 +202,38 @@ export async function listPsychologistAppointments(psychologistId: string) {
     where: { psychologistId },
     orderBy: [{ scheduledStartAt: "asc" }, { id: "asc" }],
     select: {
-      id: true, status: true, scheduledStartAt: true, scheduledEndAt: true, participantNote: true,
+      id: true, participantId: true, psychologistId: true, assessmentSessionId: true, reportId: true,
+      status: true, scheduledStartAt: true, scheduledEndAt: true, participantNote: true,
       participant: { select: { fullName: true, userType: true } },
-      assessmentSession: { select: { completedAt: true } },
+      assessmentSession: { select: { participantId: true, status: true, completedAt: true, score: { select: { id: true } } } },
+      report: { select: { id: true, assessmentSessionId: true, status: true, filePathOrObjectKey: true, generatedAt: true } },
       availability: { select: { sessionType: true } },
       consultationSession: { select: { status: true, participantCheckedInAt: true, psychologistCheckedInAt: true, endedAt: true } },
     },
   });
+  const grants = appointments.length ? await prisma.consent.findMany({
+    where: { targetUserId: psychologistId, reportId: { in: appointments.map((item) => item.reportId) } },
+    include: { appointment: { include: { consultationSession: true } } },
+  }) : [];
+  const now = new Date();
+  function reportAccess(item: typeof appointments[number]): AppointmentReportAccess {
+    const scope = { participantId: item.participantId, reportId: item.reportId, assessmentSessionId: item.assessmentSessionId, psychologistId, appointmentId: item.id };
+    const scoped = grants.filter((grant) => matchesReportGrant(grant, scope));
+    const grant = activeReportGrant(scoped, scope, now);
+    // Do not disclose report readiness until a matching grant authorizes discovery.
+    if (!grant) return { status: scoped.some((row) => !row.revokedAt && (row.expiredAt || consentExpiry(row, now))) ? "CONSENT_EXPIRED" : "CONSENT_UNAVAILABLE" };
+    if (item.psychologistId !== psychologistId || item.assessmentSession.participantId !== item.participantId
+      || item.report.id !== item.reportId || item.report.assessmentSessionId !== item.assessmentSessionId
+      || item.assessmentSession.status !== "COMPLETED" || !item.assessmentSession.completedAt || !item.assessmentSession.score
+      || !isGeneratedReport(item.report)) return { status: "REPORT_UNAVAILABLE" };
+    return { status: "AVAILABLE", reportId: item.reportId, consentType: grant.consentType };
+  }
   return appointments.map((item) => ({
     appointmentId: item.id, status: item.status, scheduledStartAt: item.scheduledStartAt.toISOString(),
     scheduledEndAt: item.scheduledEndAt.toISOString(), participantNote: item.participantNote,
     participant: item.participant, assessmentDate: item.assessmentSession.completedAt?.toISOString() ?? null,
     sessionType: item.availability.sessionType, consultationSession: item.consultationSession,
+    reportAccess: reportAccess(item),
   }));
 }
 
@@ -442,7 +463,33 @@ const actorReportSelect = {
   assessmentSession: { select: { participantId: true, status: true, completedAt: true, score: { select: reportScoreSelect } } },
 } satisfies Prisma.ReportSelect;
 
-async function authorizePsychologistReport(actorId: string, report: ReportRow, recordAccess = true) {
+type ReportGrantScope = { participantId: string; reportId: string; assessmentSessionId: string; psychologistId: string; appointmentId?: string };
+
+function matchesReportGrant(grant: ConsentWithAppointment, scope: ReportGrantScope) {
+  if (grant.participantId !== scope.participantId || grant.reportId !== scope.reportId
+    || grant.assessmentSessionId !== scope.assessmentSessionId || grant.targetUserId !== scope.psychologistId) return false;
+  if (grant.consentType === ConsentType.STANDALONE_REPORT_ACCESS) return grant.appointmentId === null && grant.expiresAt === null;
+  const appointment = grant.appointment;
+  return grant.consentType === ConsentType.APPOINTMENT_REPORT_ACCESS && grant.appointmentId !== null
+    && (!scope.appointmentId || grant.appointmentId === scope.appointmentId)
+    && appointment?.id === grant.appointmentId && appointment.participantId === scope.participantId
+    && appointment.reportId === scope.reportId && appointment.assessmentSessionId === scope.assessmentSessionId
+    && appointment.psychologistId === scope.psychologistId;
+}
+
+function activeReportGrant(grants: ConsentWithAppointment[], scope: ReportGrantScope, now: Date) {
+  const active = grants.filter((grant) => matchesReportGrant(grant, scope) && !grant.revokedAt && !grant.expiredAt
+    && (grant.expiresAt === null || now < grant.expiresAt));
+  return active.find((grant) => grant.consentType === ConsentType.APPOINTMENT_REPORT_ACCESS
+    && grant.expiresAt !== null && !consentExpiry(grant, now)
+    && (grant.appointment?.status === AppointmentStatus.CONFIRMED || grant.appointment?.status === AppointmentStatus.IN_PROGRESS)
+    && grant.appointment.consultationSession?.endedAt === null
+    && !["COMPLETED", "CLOSED", "NO_SHOW"].includes(grant.appointment.consultationSession.status)
+    && now < grant.appointment.scheduledEndAt)
+    ?? active.find((grant) => grant.consentType === ConsentType.STANDALONE_REPORT_ACCESS);
+}
+
+async function authorizePsychologistReport(actorId: string, report: ReportRow, recordAccess = true, appointmentId?: string) {
   const authorized = await prisma.$transaction(async (tx) => {
     const appointmentRows = await tx.$queryRaw<Array<{ id: string }>>`
       SELECT id FROM public.consents
@@ -465,25 +512,15 @@ async function authorizePsychologistReport(actorId: string, report: ReportRow, r
     // Capture time after acquiring grant locks so waiting on a concurrent revoke cannot
     // let an in-flight read cross the scheduled-end boundary using a stale timestamp.
     const serverNow = new Date();
-    const expiredIds = new Set<string>();
     for (const grant of grants) {
       if (grant.consentType !== ConsentType.APPOINTMENT_REPORT_ACCESS) continue;
-      if (await persistConsentExpiry(tx, grant, serverNow)) expiredIds.add(grant.id);
+      const expiredAt = await persistConsentExpiry(tx, grant, serverNow);
+      if (expiredAt) grant.expiredAt = expiredAt;
     }
-    const appointmentGrant = grants.find((grant) => grant.consentType === ConsentType.APPOINTMENT_REPORT_ACCESS
-      && !expiredIds.has(grant.id)
-      && grant.appointmentId !== null
-      && grant.expiresAt !== null
-      && serverNow < grant.expiresAt
-      && grant.appointment?.participantId === report.assessmentSession.participantId
-      && grant.appointment.reportId === report.id
-      && grant.appointment.psychologistId === actorId
-      && (grant.appointment.status === AppointmentStatus.CONFIRMED || grant.appointment.status === AppointmentStatus.IN_PROGRESS)
-      && grant.appointment.consultationSession?.endedAt === null
-      && serverNow < grant.appointment.scheduledEndAt);
-    const standaloneGrant = grants.find((grant) => grant.consentType === ConsentType.STANDALONE_REPORT_ACCESS
-      && grant.appointmentId === null && grant.expiresAt === null);
-    const selectedGrant = appointmentGrant ?? standaloneGrant;
+    const selectedGrant = activeReportGrant(grants, {
+      participantId: report.assessmentSession.participantId, reportId: report.id,
+      assessmentSessionId: report.assessmentSessionId, psychologistId: actorId, appointmentId,
+    }, serverNow);
     if (!selectedGrant) return false;
     if (recordAccess && isGeneratedReport(report)) await tx.consentAuditEvent.create({ data: {
       consentId: selectedGrant.id, actorType: ConsentAuditActorType.USER,
@@ -494,7 +531,8 @@ async function authorizePsychologistReport(actorId: string, report: ReportRow, r
   if (!authorized) throw new AppointmentError("REPORT_ACCESS_DENIED", "Akses ke laporan ini tidak diizinkan.", 403);
 }
 
-async function loadAuthorizedReport(actorId: string, role: "PARTICIPANT" | "PSYCHOLOGIST", reportId: string, recordAccess = true) {
+async function loadAuthorizedReport(actorId: string, role: "PARTICIPANT" | "PSYCHOLOGIST", reportId: string, recordAccess = true, appointmentId?: string) {
+  if (role !== "PARTICIPANT" && role !== "PSYCHOLOGIST") throw new AppointmentError("FORBIDDEN", "Akses tidak diizinkan.", 403);
   const report = await prisma.report.findUnique({ where: { id: reportId }, select: actorReportSelect });
   if (!report || report.assessmentSession.status !== "COMPLETED" || !report.assessmentSession.completedAt || !report.assessmentSession.score) {
     throw new AppointmentError("REPORT_NOT_FOUND", "Laporan tidak ditemukan.", 404);
@@ -502,20 +540,27 @@ async function loadAuthorizedReport(actorId: string, role: "PARTICIPANT" | "PSYC
   if (role === "PARTICIPANT") {
     if (report.assessmentSession.participantId !== actorId) throw new AppointmentError("REPORT_NOT_FOUND", "Laporan tidak ditemukan.", 404);
   } else {
-    await authorizePsychologistReport(actorId, report, recordAccess);
+    if (appointmentId) {
+      const appointment = await prisma.appointment.findFirst({
+        where: { id: appointmentId, psychologistId: actorId, participantId: report.assessmentSession.participantId, reportId: report.id, assessmentSessionId: report.assessmentSessionId },
+        select: { id: true },
+      });
+      if (!appointment) throw new AppointmentError("REPORT_ACCESS_DENIED", "Akses ke laporan ini tidak diizinkan.", 403);
+    }
+    await authorizePsychologistReport(actorId, report, recordAccess, appointmentId);
   }
   if (!isGeneratedReport(report)) throw new AppointmentError("REPORT_NOT_GENERATED", "Laporan belum siap.", 409);
   return report;
 }
 
-export async function getReportArtifactForActor(actorId: string, role: "PARTICIPANT" | "PSYCHOLOGIST", reportId: string) {
+export async function getReportArtifactForActor(actorId: string, role: "PARTICIPANT" | "PSYCHOLOGIST", reportId: string, appointmentId?: string) {
   // Check before Storage access; the route confirms again after read-back so a
   // grant revoked during the download cannot authorize the final response.
-  return loadAuthorizedReport(actorId, role, reportId, false);
+  return loadAuthorizedReport(actorId, role, reportId, false, appointmentId);
 }
 
-export async function confirmReportDownloadAccess(actorId: string, role: "PARTICIPANT" | "PSYCHOLOGIST", reportId: string) {
-  await loadAuthorizedReport(actorId, role, reportId, true);
+export async function confirmReportDownloadAccess(actorId: string, role: "PARTICIPANT" | "PSYCHOLOGIST", reportId: string, appointmentId?: string) {
+  await loadAuthorizedReport(actorId, role, reportId, true, appointmentId);
 }
 
 export async function getReportForActor(actorId: string, role: "PARTICIPANT" | "PSYCHOLOGIST", reportId: string) {
