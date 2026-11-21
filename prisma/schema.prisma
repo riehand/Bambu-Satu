@@ -144,6 +144,7 @@ model User {
   grantedReportConsents    Consent[]                  @relation("ConsentParticipant")
   receivedReportConsents   Consent[]                  @relation("ConsentTarget")
   consentAuditEvents       ConsentAuditEvent[]        @relation("ConsentAuditActor")
+  consultationMessages     ConsultationMessage[]
 
   @@map("users")
 }
@@ -374,8 +375,26 @@ model ConsultationSession {
   updatedAt               DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "consultation_sessions_appointment_fkey")
+  messages ConsultationMessage[]
 
   @@map("consultation_sessions")
+}
+
+model ConsultationMessage {
+  id                    String   @id @default(uuid()) @db.Uuid
+  consultationSessionId String   @map("consultation_session_id") @db.Uuid
+  senderId              String   @map("sender_id") @db.Uuid
+  clientMessageId       String   @map("client_message_id") @db.Uuid
+  body                  String   @db.VarChar(2000)
+  // SQL trigger assigns monotonic server timestamps while holding the appointment lock.
+  createdAt             DateTime @default(dbgenerated("clock_timestamp()")) @map("created_at") @db.Timestamptz(3)
+
+  consultationSession ConsultationSession @relation(fields: [consultationSessionId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "consultation_messages_session_fkey")
+  sender              User                @relation(fields: [senderId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "consultation_messages_sender_fkey")
+
+  @@unique([consultationSessionId, senderId, clientMessageId], name: "session_sender_request", map: "consultation_messages_idempotency_key")
+  @@index([consultationSessionId, createdAt, id], map: "consultation_messages_session_order_idx")
+  @@map("consultation_messages")
 }
 
 model Consent {
