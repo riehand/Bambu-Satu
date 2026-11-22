@@ -4,6 +4,9 @@ import { createHash, randomBytes } from "node:crypto";
 import { appendFileSync, copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { assertPhase3RehearsalEnvironment } from "./phase3-safety.mjs";
+import { prepareSharedBaseline, rehearseC4AndLedger } from "./stage2b3-rehearsal-checks.mjs";
+
+const stage2b3 = process.argv.includes("--stage2b3");
 
 const migrationNames = [
   "20261021144827_init_users",
@@ -57,7 +60,7 @@ if (!process.argv.includes("--create-approved-synthetic")) {
     appendFileSync(join(scratch, "operations.jsonl"), JSON.stringify({ stage, exitCode: result.status, elapsedMs: Date.now() - startedAt }) + "\n");
     if (command === process.execPath || result.status !== 0)
       appendFileSync(join(scratch, "execution.log"), `\n[${stage}]\n${sanitize(result.stdout)}${sanitize(result.stderr)}\n`);
-    if (result.status !== 0) throw new Error("operation failed");
+    if (result.status !== 0) throw Object.assign(new Error("operation failed"), { diagnostic: sanitize(result.stdout) + sanitize(result.stderr) });
     return result.stdout;
   }
 
@@ -133,6 +136,7 @@ if (!process.argv.includes("--create-approved-synthetic")) {
       CREATE SCHEMA rehearsal;
       CREATE TABLE rehearsal.identity (token text NOT NULL);
       INSERT INTO rehearsal.identity VALUES ('${token}');`);
+    if (stage2b3) prepareSharedBaseline(sql);
 
     const migrationsDirectory = join(scratch, "migrations");
     mkdirSync(migrationsDirectory, { recursive: true });
@@ -166,6 +170,10 @@ if (!process.argv.includes("--create-approved-synthetic")) {
     stage = "Phase 3 real PostgreSQL rehearsal";
     verifyLocalContainer(port, image.Id);
     run(process.execPath, ["node_modules/vitest/vitest.mjs", "run", "--config", "vitest.phase3.rehearsal.config.ts"]);
+    if (stage2b3) {
+      stage = "Stage 2B.3 C4 and ledger rehearsal";
+      rehearseC4AndLedger({ sql, migrate, copyMigrations, run, scratch, migrationNames });
+    }
 
     const postgresVersion = run("docker", ["exec", container, "postgres", "--version"]).trim();
     const migrationHashes = migrationNames.map(name => ({
@@ -182,5 +190,12 @@ if (!process.argv.includes("--create-approved-synthetic")) {
     writeFileSync(join(scratch, "result.json"), JSON.stringify({ status: "FAILED", stage, completedAt: new Date().toISOString(), hostedAuthVerified: false }, null, 2));
     console.error(`Phase 3 rehearsal stopped at: ${stage}. No pass claim. Diagnostics are sanitized; the isolated container and volume are retained.`);
     process.exitCode = 1;
+  } finally {
+    // Stop only the container created by this invocation; retain its volume/evidence.
+    // A failed/locality check never authorizes stopping another container.
+    const own = spawnSync("docker", ["inspect", "--format", '{{index .Config.Labels "wellbeing.rehearsal"}}', container], { env, encoding: "utf8", windowsHide: true });
+    if (own.status === 0 && own.stdout.trim() === token) {
+      spawnSync("docker", ["stop", "--time", "5", container], { env, encoding: "utf8", windowsHide: true, timeout: 30000 });
+    }
   }
 }
