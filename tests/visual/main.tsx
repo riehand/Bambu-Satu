@@ -12,6 +12,8 @@ import { PsychologistAvailability } from "@/components/participant/psychologist-
 import { PsychologistAvailabilityEditor } from "@/components/psychologist/availability-editor";
 import { ReportDownloadFixture } from "./report-download-fixture";
 import { PsychologistAppointmentList } from "@/components/psychologist/appointment-list";
+import { ConsultationDashboard } from "@/components/consultations/dashboard";
+import { AdminConsole } from "@/components/admin/console";
 import Loading from "@/app/participant/loading";
 import { syntheticQuestionSet, fixtureId } from "../fixtures/assessment";
 import "@/app/participant/participant.css";
@@ -31,6 +33,8 @@ const persisted=JSON.parse(sessionStorage.getItem("synthetic-answers")??"null") 
 const unavailable=state==="unavailable"?"Belum ada periode akademik aktif. Asesmen belum tersedia.":null;
 let content;
 if(view==="loading") content=<Loading/>;
+else if(view==="admin") content=<AdminConsole today="2030-01-31" from="2030-01-01"/>;
+else if(view==="consultations") content=<ConsultationDashboard role={query.get("role")==="psychologist"?"PSYCHOLOGIST":"PARTICIPANT"}/>;
 else if(view==="report-download") content=<ReportDownloadFixture initiallyGenerated={state === "generated"}/>;
 else if(view==="psychologist-appointments") content=<PsychologistAppointmentList/>;
 else if(view==="availability") content=<PsychologistAvailability psychologistId={fixtureId(902)} psychologistName="Psikolog Uji Sintetis" today={query.get("today")??"2030-01-01"}/>;
@@ -41,4 +45,4 @@ else if(view==="questionnaire") content=<Questionnaire sessionId={fixtureId(300)
 else if(view==="results") content=<ResultsView sessionId={fixtureId(300)} completedAt="2026-10-23T03:24:00Z" reportId={fixtureId(800)} reportStatus="GENERATED" scores={scores} history={history}/>;
 else if(view==="history") content=<HistoryList history={state==="populated"?history:[]}/>;
 else content=<DashboardView fullName="Peserta Uji Sintetis" quota={unavailable?null:quota} quotaError={unavailable} history={state==="populated"?history:[]} historyError={null}/>;
-createRoot(document.getElementById("root")!).render(<>{view==="availability-editor"?<main className="ph-dashboard">{content}</main>:<ParticipantShell fullName="Peserta Uji Sintetis" userType="STUDENT">{content}</ParticipantShell>}<div className="fixture-label">FIXTURE SINTETIS · BUKAN DATA PENGGUNA</div></>);
+createRoot(document.getElementById("root")!).render(<>{view==="admin"?<div className="admin-page">{content}</div>:view==="availability-editor"?<main className="ph-dashboard">{content}</main>:<ParticipantShell fullName="Peserta Uji Sintetis" userType="STUDENT">{content}</ParticipantShell>}<div className="fixture-label">FIXTURE SINTETIS · BUKAN DATA PENGGUNA</div></>);
