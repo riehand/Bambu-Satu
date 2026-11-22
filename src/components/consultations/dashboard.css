@@ -1,0 +1,17 @@
+.consultation-dashboard { margin-bottom: 24px; }
+.consultation-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.consultation-notice { color: #67583f; background: #faf6ee; border-radius: 12px; padding: 12px 16px; }
+.consultation-group { margin-top: 24px; }
+.consultation-entry { border-top: 1px solid #e6e4de; padding: 20px 0; overflow-wrap: anywhere; }
+.consultation-entry h4 { font-size: 1rem; margin: 0 0 8px; }
+.consultation-times { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.consultation-times dt, .consultation-action small { color: #686b66; font-size: .85rem; }
+.consultation-times dd { margin: 4px 0 0; }
+.consultation-actions { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; }
+.consultation-action { display: grid; align-content: start; gap: 8px; max-width: 260px; }
+.consultation-dashboard button:disabled { opacity: .55; cursor: not-allowed; }
+.consultation-dashboard button:focus-visible { outline: 3px solid #527852; outline-offset: 3px; }
+@media (max-width: 600px) {
+  .consultation-times { grid-template-columns: 1fr; }
+  .consultation-actions, .consultation-action { display: grid; width: 100%; max-width: none; }
+}

@@ -393,6 +393,16 @@ async function persistConsentExpiry(tx: DB, consent: ConsentWithAppointment, now
   return expiry.at;
 }
 
+// Called inside a lifecycle transaction after the appointment/session and grant locks.
+// Reuses the existing expiry resolver; standalone grants are never selected.
+export async function expireAppointmentConsents(tx: DB, appointmentId: string, now: Date) {
+  const grants = await tx.consent.findMany({
+    where: { appointmentId, consentType: ConsentType.APPOINTMENT_REPORT_ACCESS, revokedAt: null, expiredAt: null },
+    include: { appointment: { include: { consultationSession: true } } },
+  });
+  for (const grant of grants) await persistConsentExpiry(tx, grant, now);
+}
+
 export async function listOwnConsents(participantId: string) {
   const consents = await prisma.$transaction(async (tx) => {
     const locked = await tx.$queryRaw<Array<{ id: string }>>`
