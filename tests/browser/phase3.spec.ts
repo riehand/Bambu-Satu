@@ -27,7 +27,7 @@ async function mockAppointmentCenter(page: Page, consents: unknown[]) {
   await page.route("**/api/appointments", (route) => route.fulfill({ json: success([appointment]) }));
   await page.route("**/api/consents", (route) => route.fulfill({ json: success(consents) }));
   await page.route("**/api/appointments/booking-context", (route) => route.fulfill({ json: context }));
-  await page.route("**/api/psychologists*", (route) => route.fulfill({ json: success({ items: [{ id: psychologistId, fullName: "Psikolog Uji" }] }) }));
+  await page.route("**/api/psychologists*", (route) => route.fulfill({ json: success([{ id: psychologistId, fullName: "Psikolog Uji" }]) }));
 }
 
 test("participant sees fixed Asia/Jakarta sessions and booking requires fresh unchecked consent", async ({ page }) => {
@@ -75,6 +75,64 @@ test("failed booking leaves the slot visible, reports failure, and resets consen
   await expect(page.getByRole("alert")).toContainText("baru saja dipesan");
   await expect(consentBox).not.toBeChecked();
   await expect(page.getByRole("button", { name: "Pesan sesi" })).toBeDisabled();
+});
+
+test("participant retries a failed date load without submitting a stale slot", async ({ page }) => {
+  let loads = 0;
+  let submissions = 0;
+  const nextDate = "2030-01-02";
+  await page.route("**/api/appointments/booking-context", route => route.fulfill({ json: context }));
+  await page.route("**/api/psychologists/*/availability?*", route => {
+    const requested = new URL(route.request().url()).searchParams.get("date");
+    if (requested === nextDate && ++loads === 1) return route.fulfill({ status: 503, json: { success: false } });
+    return route.fulfill({ json: success([{ availabilityId: requested === date ? "old-slot" : "new-slot", date: requested, sessionType: "MORNING", startTime: "09:00", endTime: "11:00", status: "AVAILABLE" }]) });
+  });
+  await page.route("**/api/appointments", route => {
+    submissions++;
+    expect(route.request().postDataJSON().availabilityId).toBe("new-slot");
+    return route.fulfill({ json: success({ appointmentId, status: "CONFIRMED" }) });
+  });
+  await page.goto(`/?view=availability&today=${date}`);
+  await expect(page.getByRole("button", { name: "Muat ulang jadwal" })).toBeEnabled();
+  await page.getByRole("checkbox").check();
+  await page.locator('input[type="date"]').fill(nextDate);
+  await expect(page.getByRole("status")).toContainText("Jadwal belum dapat dimuat");
+  await expect(page.getByRole("button", { name: "Pesan sesi" })).toHaveCount(0);
+  expect(submissions).toBe(0);
+  await page.getByRole("button", { name: "Muat ulang jadwal" }).click();
+  await expect(page.getByRole("button", { name: "Pesan sesi" })).toBeDisabled();
+  await expect(page.getByRole("checkbox")).not.toBeChecked();
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "Pesan sesi" }).click();
+  await expect(page.getByRole("status")).toContainText("telah dikonfirmasi");
+  expect(submissions).toBe(1);
+});
+
+test("appointment details show server data and deny an unavailable detail", async ({ page }) => {
+  await mockAppointmentCenter(page, [consent(appointmentConsentId, "APPOINTMENT_REPORT_ACCESS", appointmentId, true)]);
+  let allow = false;
+  await page.route(`**/api/appointments/${appointmentId}`, route => allow
+    ? route.fulfill({ json: success({ ...appointment, participant: { fullName: "Peserta Uji" }, consultationSession: { status: "SCHEDULED" } }) })
+    : route.fulfill({ status: 404, json: { success: false } }));
+  await page.goto("/?view=appointments");
+  await page.getByRole("button", { name: "Lihat detail janji" }).click();
+  await expect(page.getByRole("alert")).toContainText("Detail janji belum dapat dimuat");
+  await expect(page.getByRole("region", { name: "Detail janji" })).toHaveCount(0);
+  allow = true;
+  await page.getByRole("button", { name: "Lihat detail janji" }).click();
+  await expect(page.getByRole("region", { name: "Detail janji" })).toContainText("SCHEDULED");
+  await expect(page.getByRole("region", { name: "Detail janji" })).toContainText("09.00");
+});
+
+test("directory failure cannot hide existing appointments or prevent consent revocation", async ({ page }) => {
+  await mockAppointmentCenter(page, [consent(appointmentConsentId, "APPOINTMENT_REPORT_ACCESS", appointmentId, true)]);
+  await page.route("**/api/psychologists*", route => route.fulfill({ status: 503, json: { success: false } }));
+  await page.route(`**/api/consents/${appointmentConsentId}/revoke`, route => route.fulfill({ json: success({ consentId: appointmentConsentId, revokedAt: "2029-12-02T00:00:00Z" }) }));
+  await page.goto("/?view=appointments");
+  await expect(page.locator(".wb-appointment-row")).toContainText("CONFIRMED");
+  await expect(page.getByText("Pilihan laporan atau psikolog belum dapat dimuat.", { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "Cabut persetujuan laporan" }).click();
+  await expect(page.locator(".wb-appointment-row")).toContainText("Akses laporan tidak aktif");
 });
 
 test("psychologist availability editor saves exactly the three fixed sessions and preserves a booked slot", async ({ page }) => {
@@ -133,7 +191,7 @@ test("re-consent requires a fresh affirmative choice and sends appointment-scope
     return route.fulfill({ json: success([consent(appointmentConsentId, "APPOINTMENT_REPORT_ACCESS", appointmentId, consentReads > 1, consentReads > 1 ? null : "2030-01-01T00:00:00Z")]) });
   });
   await page.route("**/api/appointments/booking-context", (route) => route.fulfill({ json: context }));
-  await page.route("**/api/psychologists*", (route) => route.fulfill({ json: success({ items: [{ id: psychologistId, fullName: "Psikolog Uji" }] }) }));
+  await page.route("**/api/psychologists*", (route) => route.fulfill({ json: success([{ id: psychologistId, fullName: "Psikolog Uji" }]) }));
   await page.route(`**/api/appointments/${appointmentId}/report-consent`, async (route) => {
     reconsentBody = route.request().postDataJSON();
     return route.fulfill({ json: success({ consentId: "new-grant", consentType: "APPOINTMENT_REPORT_ACCESS", appointmentId }) });

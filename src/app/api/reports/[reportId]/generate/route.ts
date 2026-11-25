@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { isSameOrigin, privateHeaders } from "@/lib/auth/http";
-import { requireApiRole } from "@/lib/auth/session";
+import { requireApiRole, withApplicationDatabase } from "@/lib/auth/session";
+import { gatewayMode, hasDatabaseRequest } from "@/lib/dal/context";
 import { reportErrorResponse } from "@/lib/reports/http";
 import { generateReportForParticipant, ReportError } from "@/lib/reports/service";
 import { reportIdSchema } from "@/lib/validations/appointment";
 
-export async function POST(request: Request, context: { params: Promise<{ reportId: string }> }) {
+export async function POST(request: Request, context: { params: Promise<{ reportId: string }> }): Promise<Response> {
   try {
+    if (gatewayMode() && !hasDatabaseRequest()) {
+      return await withApplicationDatabase(() => POST(request, context));
+    }
     const participant = await requireApiRole("PARTICIPANT");
     if (!isSameOrigin(request)) throw new ReportError("INVALID_ORIGIN", 403);
     const reportId = reportIdSchema.parse((await context.params).reportId);

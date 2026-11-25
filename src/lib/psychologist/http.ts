@@ -1,4 +1,6 @@
 import "server-only";
+import { gatewayMode, hasDatabaseRequest } from "@/lib/dal/context";
+import { withApplicationDatabase } from "@/lib/auth/session";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { AuthError, requireApiRole } from "@/lib/auth/session";
@@ -18,8 +20,9 @@ export async function psychologistApi(
   work: (actorId: string) => Promise<ApiResult>,
   request?: Request,
   mutation = false,
-) {
+): Promise<NextResponse> {
   try {
+    if (gatewayMode() && !hasDatabaseRequest()) return await withApplicationDatabase(()=>psychologistApi(role,work,request,mutation));
     const actor = await requireApiRole(role);
     if (mutation && request && !isSameOrigin(request)) {
       throw new PsychologistError("INVALID_ORIGIN", "Permintaan tidak diizinkan.", 403);

@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   getUser: vi.fn(), signInWithPassword: vi.fn(), signUp: vi.fn(),
   signOut: vi.fn(), verifyOtp: vi.fn(), resend: vi.fn(), findUnique: vi.fn(),
 }));
+vi.mock("next/server", async importOriginal => ({ ...await importOriginal<typeof import("next/server")>(), connection: async () => {} }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ auth: mocks }) }));
 vi.mock("@/lib/prisma", () => ({ prisma: { user: { findUnique: mocks.findUnique } } }));
 vi.mock("next/navigation", () => ({ unstable_rethrow: () => {}, redirect: (url: string) => { throw new Error(`REDIRECT:${url}`); } }));

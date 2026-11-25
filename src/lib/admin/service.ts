@@ -1,4 +1,5 @@
 import "server-only";
+import { gatewayMode, assertDatabaseActor } from "@/lib/dal/context";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { dateOnly, jakartaDate } from "@/lib/psychologist/availability-config";
@@ -22,6 +23,7 @@ const availabilityWindow = (query: { from: string; to: string }) => ({ gte: date
 async function operation<T>(actorId: string, work: (tx: Prisma.TransactionClient) => Promise<T>, write = false) {
   adminId.parse(actorId);
   return prisma.$transaction(async tx => {
+    if (gatewayMode()) assertDatabaseActor(actorId,"SUPERADMIN");
     await tx.$executeRaw`SET LOCAL statement_timeout = '3s'`;
     await tx.$queryRaw`SELECT id FROM public.users WHERE id=${actorId}::uuid FOR SHARE`;
     const actor = await tx.user.findFirst({ where: { id: actorId, role: "SUPERADMIN", isActive: true }, select: { id: true } });
@@ -38,6 +40,7 @@ function counts<S extends string>(statuses: readonly S[], groups: { status: S; _
 const appointmentStatuses = ["CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED", "NO_SHOW", "RESCHEDULED"] as const;
 const consultationStatuses = ["SCHEDULED", "READY", "IN_PROGRESS", "PARTICIPANT_LATE", "PSYCHOLOGIST_LATE", "COMPLETED", "CLOSED", "NO_SHOW"] as const;
 export async function adminOverview(actorId: string, input: OverviewQuery) {
+  if (gatewayMode()) throw new AdminError("ADMIN_UNAVAILABLE", "Dashboard lengkap belum tersedia pada runtime terbatas; gunakan agregat operasional terbatas.",503);
   const query = overviewQuery.parse(input);
   return operation(actorId, async tx => {
     await ensurePeriod(tx, query.periodId);
@@ -95,6 +98,7 @@ export async function createInactivePeriod(actorId: string, input: PeriodCommand
   }, true);
 }
 export async function adminPsychologists(actorId: string, input: PsychologistQuery) {
+  if(gatewayMode())throw new AdminError("ADMIN_UNAVAILABLE","Proyeksi operasional ini belum tersedia pada runtime terbatas.",503);
   const query = psychologistQuery.parse(input);
   return operation(actorId, async tx => {
     const rows = await tx.user.findMany({ where: { role: "PSYCHOLOGIST", ...(query.active !== "all" ? { isActive: query.active === "true" } : {}), ...(query.cursor ? { id: { gt: query.cursor } } : {}) },
@@ -107,6 +111,7 @@ export async function adminPsychologists(actorId: string, input: PsychologistQue
   });
 }
 export async function adminAppointments(actorId: string, input: AppointmentQuery) {
+  if(gatewayMode())throw new AdminError("ADMIN_UNAVAILABLE","Proyeksi operasional ini belum tersedia pada runtime terbatas.",503);
   const query = appointmentQuery.parse(input);
   let cursor: { id: string; at: string } | undefined;
   if (query.cursor) {
@@ -131,3 +136,16 @@ export type PeriodPage = Awaited<ReturnType<typeof adminPeriods>>;
 export type PeriodDetail = Awaited<ReturnType<typeof adminPeriod>>;
 export type PsychologistPage = Awaited<ReturnType<typeof adminPsychologists>>;
 export type AppointmentPage = Awaited<ReturnType<typeof adminAppointments>>;
+
+/** Isolated least-privilege integration; no production route calls this entrypoint. */
+export async function adminRestrictedOverview(actorId: string, input: OverviewQuery) {
+  const query = overviewQuery.parse(input);
+  if (query.periodId) throw new AdminError("FILTER_NOT_SUPPORTED", "Agregat terbatas belum mendukung filter periode.", 422);
+  return operation(actorId, async tx => {
+    const [row] = await tx.$queryRaw<Array<{ counts: {
+      activeParticipants: number; activePsychologists: number; assessmentsStarted: number;
+      assessmentsCompleted: number; appointments: number; clinicalIndicatorsEnabled: false;
+    } }>>`SELECT wb_guard.operational_counts(${query.from}::date, ${query.to}::date) AS counts`;
+    return row.counts;
+  });
+}

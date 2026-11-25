@@ -1,4 +1,6 @@
 import "server-only";
+import { gatewayMode, hasDatabaseRequest, DalError } from "@/lib/dal/context";
+import { withApplicationDatabase } from "@/lib/auth/session";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { AuthError, getCurrentProfile, requireApiRole } from "@/lib/auth/session";
@@ -14,8 +16,9 @@ export async function appointmentApi(
   request?: Request,
   mutation = false,
   successStatus = 200,
-) {
+): Promise<NextResponse> {
   try {
+    if (gatewayMode() && !hasDatabaseRequest()) return await withApplicationDatabase(()=>appointmentApi(role,work,request,mutation,successStatus));
     const actor = role === "PARTY"
       ? await getCurrentProfile()
       : await requireApiRole(role);
@@ -27,7 +30,9 @@ export async function appointmentApi(
     }
     return NextResponse.json({ success: true, data: await work({ id: actor.id, role: actor.role }) }, { status: successStatus, headers: privateHeaders });
   } catch (error) {
-    const safe = error instanceof AppointmentError
+    const safe = error instanceof DalError
+      ? new AppointmentError(error.code==="SLOT_NOT_AVAILABLE"?"SLOT_ALREADY_BOOKED":error.code,"Permintaan tidak dapat diproses.",error.code==="FORBIDDEN"?403:error.code==="DATABASE_UNAVAILABLE"||error.code==="SIGNER_UNAVAILABLE"?503:409)
+      : error instanceof AppointmentError
       ? error
       : error instanceof AuthError
         ? new AppointmentError(error.reason === "unauthenticated" ? "UNAUTHORIZED" : "FORBIDDEN", "Akses tidak diizinkan.", error.reason === "unauthenticated" ? 401 : 403)

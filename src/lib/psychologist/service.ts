@@ -1,4 +1,6 @@
 import "server-only";
+import { gatewayMode } from "@/lib/dal/context";
+import { runtimeDirectory, runtimePublicSlots } from "./runtime";
 import { prisma } from "@/lib/prisma";
 import { Prisma, type PsychologistAvailabilityStatus } from "@prisma/client";
 import type { psychologistProfilePatchSchema } from "@/lib/validations/psychologist";
@@ -50,6 +52,7 @@ function sortAvailability<T extends { date: string; sessionType: string }>(slots
 }
 
 export async function listPublicAvailability(psychologistId: string, range: AvailabilityRangeInput, now = new Date()) {
+  if (gatewayMode()) return runtimePublicSlots(psychologistId, range);
   const psychologist = await prisma.user.findFirst({
     where: { id: psychologistId, role: "PSYCHOLOGIST", isActive: true },
     select: { id: true },
@@ -133,6 +136,7 @@ export async function updatePsychologistProfile(userId: string, input: Psycholog
 }
 
 export async function listPsychologists(query: PsychologistDirectoryQuery) {
+  if (gatewayMode()) return runtimeDirectory(query);
   const profileFilter = query.focus || query.language
     ? { is: {
         ...(query.focus ? { areasOfFocus: { has: query.focus } } : {}),
@@ -163,6 +167,7 @@ export async function listPsychologists(query: PsychologistDirectoryQuery) {
 }
 
 export async function getPsychologistById(id: string) {
+  if (gatewayMode()) return (await runtimeDirectory({ page: 1, limit: 1 }, id)).items[0] ?? null;
   return prisma.user.findFirst({
     where: { id, role: "PSYCHOLOGIST", isActive: true },
     select: { id: true, fullName: true, psychologistProfile: { select: profileFields } },

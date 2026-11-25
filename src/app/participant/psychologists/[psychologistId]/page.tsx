@@ -1,17 +1,18 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requirePageRole } from "@/lib/auth/session";
+import { requirePageRole, withApplicationDatabase } from "@/lib/auth/session";
 import { getPsychologistById } from "@/lib/psychologist/service";
 import { psychologistIdSchema } from "@/lib/validations/psychologist";
 import { PsychologistAvailability } from "@/components/participant/psychologist-availability";
 import { jakartaDate } from "@/lib/psychologist/availability-config";
 
-export default async function PsychologistDetail({ params }: { params: Promise<{ psychologistId: string }> }) {
+async function PsychologistDetailContent({ params }: { params: Promise<{ psychologistId: string }> }) {
   await requirePageRole("PARTICIPANT");
   const { psychologistId } = await params;
   const parsedId = psychologistIdSchema.safeParse(psychologistId);
   if (!parsedId.success) notFound();
-  const psychologist = await getPsychologistById(parsedId.data);
+  const psychologist = await withApplicationDatabase(() => getPsychologistById(parsedId.data));
   if (!psychologist) notFound();
 
   return <>
@@ -26,3 +27,5 @@ export default async function PsychologistDetail({ params }: { params: Promise<{
     <PsychologistAvailability psychologistId={psychologist.id} psychologistName={psychologist.fullName} today={jakartaDate()}/>
   </>;
 }
+
+export default function PsychologistDetail(props: { params: Promise<{ psychologistId: string }> }) { return <Suspense fallback={<p role="status">Memuat profil...</p>}><PsychologistDetailContent {...props}/></Suspense>; }

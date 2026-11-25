@@ -17,6 +17,7 @@ const data: AssessmentReportPdfData = {
 
 it("embeds Indonesian Noto Sans fonts and creates a readable single-assessment PDF with the expected report fingerprint", async () => {
   const bytes = await generateAssessmentReportPdf(data);
+  expect(await generateAssessmentReportPdf(data)).toEqual(bytes); // stable byte identity for retry/read-back
   const pdf = await PDFDocument.load(bytes);
   expect(new TextDecoder().decode(bytes.subarray(0, 5))).toBe("%PDF-");
   expect(pdf.getTitle()).toBe("Laporan Hasil Asesmen");

@@ -288,3 +288,41 @@ test("PDF changing identity or unmounting during cooldown clears the old retry s
   await respond(page, 2, success({ status: "GENERATED" }));
   await expect(page.getByRole("link", { name: "Unduh laporan PDF" })).toHaveAttribute("href", `/api/reports/${reportB}/download`);
 });
+
+test("PDF pending acceptance keeps download hidden until a later GENERATED response", async ({ page }) => {
+  await page.clock.install();
+  await page.goto("/?view=report-download");
+  await requests(page, 1);
+  await respond(page, 0, success({ reportId: reportA, status: "PENDING" }), 202, { "Retry-After": "5" });
+  await expect(page.getByRole("status")).toContainText("Laporan masih diproses");
+  await expect(page.getByRole("status")).toHaveAttribute("aria-busy", "false");
+  await expect(page.getByRole("link", { name: "Unduh laporan PDF" })).toHaveCount(0);
+  const retry = page.getByRole("button", { name: "Periksa status laporan" });
+  await expect(retry).toBeDisabled();
+  await page.clock.runFor(5000);
+  await expect(retry).toBeEnabled();
+  await requests(page, 1); // No uncontrolled polling or duplicate POSTs.
+  await retry.evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
+  await page.clock.runFor(1);
+  await requests(page, 2);
+  await respond(page, 1, success({ reportId: reportA, status: "GENERATED" }));
+  await expect(page.getByRole("link", { name: "Unduh laporan PDF" })).toHaveAttribute("href", `/api/reports/${reportA}/download`);
+});
+
+for (const [label, body] of [
+  ["missing result", {}],
+  ["failed envelope", { success: false, data: { status: "GENERATED" } }],
+  ["unknown status", success({ status: "QUEUED" })],
+  ["wrong report", success({ reportId: reportB, status: "GENERATED" })],
+  ["non-object response", "not a report result"],
+] as const) {
+  test(`PDF HTTP 200 with ${label} does not claim a downloadable report`, async ({ page }) => {
+    await page.goto("/?view=report-download");
+    await requests(page, 1);
+    await respond(page, 0, body);
+    await expect(page.getByRole("status")).toContainText("Laporan belum dapat disiapkan");
+    await expect(page.getByRole("link", { name: "Unduh laporan PDF" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Coba lagi", exact: true })).toBeDisabled();
+    await requests(page, 1);
+  });
+}

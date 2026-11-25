@@ -1,4 +1,7 @@
 import "server-only";
+import { gatewayMode,assertDatabaseActor } from "@/lib/dal/context";
+import { runtimeBooking,runtimeStandalone,runtimeAppointmentConsent,runtimeRevoke,runtimeAppointmentViews,runtimeBookingReportReady } from "./runtime";
+export { authorizeReportGrant } from "./runtime";
 import { AppointmentStatus, ConsentAuditActorType, ConsentType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sessionStartsAt, type ConsultationSessionType } from "@/lib/psychologist/availability-config";
@@ -76,11 +79,13 @@ export async function getBookingContext(participantId: string) {
       reportId: latest.report.id,
       reportStatus: latest.report.status,
     },
-    canBook: latest.report.assessmentSessionId === latest.id && isGeneratedReport(latest.report),
+    canBook: latest.report.assessmentSessionId === latest.id && isGeneratedReport(latest.report)
+      && (!gatewayMode() || await runtimeBookingReportReady(latest.report.id)),
   };
 }
 
 export async function createAppointment(participantId: string, input: CreateAppointmentInput) {
+  if (gatewayMode()) return runtimeBooking(participantId,input);
   if (input.reportConsent !== true) throw new AppointmentError("REPORT_CONSENT_REQUIRED", "Persetujuan berbagi laporan diperlukan untuk pemesanan.", 403);
   try {
     return await prisma.$transaction(async (tx) => {
@@ -175,6 +180,7 @@ export async function createAppointment(participantId: string, input: CreateAppo
 }
 
 export async function listParticipantAppointments(participantId: string) {
+  if(gatewayMode())return runtimeAppointmentViews(participantId,"PARTICIPANT");
   const appointments = await prisma.appointment.findMany({
     where: { participantId },
     orderBy: [{ scheduledStartAt: "desc" }, { id: "desc" }],
@@ -198,6 +204,7 @@ export async function listParticipantAppointments(participantId: string) {
 }
 
 export async function listPsychologistAppointments(psychologistId: string) {
+  if(gatewayMode())return runtimeAppointmentViews(psychologistId,"PSYCHOLOGIST");
   const appointments = await prisma.appointment.findMany({
     where: { psychologistId },
     orderBy: [{ scheduledStartAt: "asc" }, { id: "asc" }],
@@ -238,6 +245,11 @@ export async function listPsychologistAppointments(psychologistId: string) {
 }
 
 export async function getAppointmentForParty(actorId: string, role: "PARTICIPANT" | "PSYCHOLOGIST", appointmentId: string) {
+  if(gatewayMode()){
+    const item=(await runtimeAppointmentViews(actorId,role,appointmentId))[0];
+    if(!item)throw new AppointmentError("APPOINTMENT_NOT_FOUND","Janji konsultasi tidak ditemukan.",404);
+    return item;
+  }
   const appointment = await prisma.appointment.findFirst({
     where: { id: appointmentId, ...(role === "PARTICIPANT" ? { participantId: actorId } : { psychologistId: actorId }) },
     select: {
@@ -261,6 +273,7 @@ export async function getAppointmentForParty(actorId: string, role: "PARTICIPANT
 }
 
 export async function grantStandaloneConsent(participantId: string, input: StandaloneConsentInput) {
+  if (gatewayMode()) return runtimeStandalone(participantId,input);
   if (input.consent !== true) throw new AppointmentError("CONSENT_REQUIRED", "Persetujuan berbagi laporan diperlukan.", 403);
   try {
     return await prisma.$transaction(async (tx) => {
@@ -292,6 +305,7 @@ export async function grantStandaloneConsent(participantId: string, input: Stand
 }
 
 export async function grantAppointmentConsent(participantId: string, appointmentId: string, affirmative: boolean) {
+  if (gatewayMode()) return runtimeAppointmentConsent(participantId,appointmentId,affirmative);
   if (!affirmative) throw new AppointmentError("CONSENT_REQUIRED", "Persetujuan berbagi laporan diperlukan.", 403);
   let outcome: { ok: true; data: { consentId: string; consentType: ConsentType; appointmentId: string; grantedAt: string; expiresAt: string | null } }
     | { ok: false; error: AppointmentError };
@@ -396,6 +410,7 @@ async function persistConsentExpiry(tx: DB, consent: ConsentWithAppointment, now
 // Called inside a lifecycle transaction after the appointment/session and grant locks.
 // Reuses the existing expiry resolver; standalone grants are never selected.
 export async function expireAppointmentConsents(tx: DB, appointmentId: string, now: Date) {
+  if (gatewayMode()) { await tx.$queryRaw`SELECT wb_guard.expire_consents(${appointmentId}::uuid)`; return; }
   const grants = await tx.consent.findMany({
     where: { appointmentId, consentType: ConsentType.APPOINTMENT_REPORT_ACCESS, revokedAt: null, expiredAt: null },
     include: { appointment: { include: { consultationSession: true } } },
@@ -405,6 +420,12 @@ export async function expireAppointmentConsents(tx: DB, appointmentId: string, n
 
 export async function listOwnConsents(participantId: string) {
   const consents = await prisma.$transaction(async (tx) => {
+    if(gatewayMode()) {
+      assertDatabaseActor(participantId,"PARTICIPANT");
+      const grants=await tx.consent.findMany({where:{participantId,revokedAt:null,expiredAt:null,appointmentId:{not:null}},select:{appointmentId:true},orderBy:{appointmentId:"asc"},distinct:["appointmentId"]});
+      for(const grant of grants)await tx.$queryRaw`SELECT wb_guard.expire_consents(${grant.appointmentId}::uuid)`;
+      return tx.consent.findMany({where:{participantId},orderBy:[{grantedAt:"desc"},{id:"desc"}],include:{appointment:{include:{consultationSession:true}}}});
+    }
     const locked = await tx.$queryRaw<Array<{ id: string }>>`
       SELECT id FROM public.consents
       WHERE participant_id = ${participantId}::uuid
@@ -439,6 +460,7 @@ export async function listOwnConsents(participantId: string) {
 }
 
 export async function revokeConsent(participantId: string, consentId: string) {
+  if (gatewayMode()) return runtimeRevoke(participantId,consentId);
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM public.consents WHERE id = ${consentId}::uuid AND participant_id = ${participantId}::uuid FOR UPDATE`;
     const consent = await tx.consent.findFirst({

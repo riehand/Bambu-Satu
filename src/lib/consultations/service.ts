@@ -1,4 +1,5 @@
 import "server-only";
+import { gatewayMode,assertDatabaseActor,databaseTransaction } from "@/lib/dal/context";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AppointmentError, expireAppointmentConsents } from "@/lib/appointments/service";
@@ -47,6 +48,19 @@ export type ConsultationDTO = ReturnType<typeof dto>;
 export type ConsultationList = { items: ConsultationDTO[]; serverNow: string; policyNotice: string };
 
 export async function listConsultations(actor: ConsultationActor): Promise<ConsultationList> {
+  if(gatewayMode())return databaseTransaction(async tx=>{
+    assertDatabaseActor(actor.id,actor.role);
+    const rows=await tx.appointment.findMany({where:scope(actor),include:{consultationSession:true},orderBy:[{scheduledStartAt:"asc"},{id:"asc"}]});
+    const [clock]=await tx.$queryRaw<Array<{now:Date}>>`SELECT clock_timestamp() AS now`;
+    const items=[];
+    for(const row of rows){
+      const [display]=await tx.$queryRaw<Array<{value:{counterpart:{fullName:string}}|null}>>`SELECT wb_guard.assignment_display(${row.id}::uuid) AS value`;
+      if(!display.value)throw new AppointmentError("CONSULTATION_UNAVAILABLE","Identitas pihak konsultasi tidak tersedia.",503);
+      const fullName=display.value.counterpart.fullName;
+      items.push(dto({...row,participant:{fullName},psychologist:{fullName}},actor,clock.now));
+    }
+    return {items,serverNow:clock.now.toISOString(),policyNotice:DEVELOPMENT_POLICY_NOTICE};
+  });
   await assertActor(prisma, actor);
   const rows = await prisma.appointment.findMany({ where: scope(actor), select, orderBy: [{ scheduledStartAt: "asc" }, { id: "asc" }] });
   const now = new Date();
@@ -56,6 +70,17 @@ export async function listConsultations(actor: ConsultationActor): Promise<Consu
 
 export async function transitionConsultation(actor: ConsultationActor, appointmentId: string, action: ConsultationAction) {
   scope(actor);
+  if (gatewayMode()) return databaseTransaction(async tx=>{
+    assertDatabaseActor(actor.id,actor.role);
+    if(action!=="end"&&!developmentPolicyEnabled())throw new AppointmentError("CONSULTATION_POLICY_PENDING","Kebijakan institusi belum disetujui.",403);
+    await tx.$queryRaw`SELECT wb_guard.transition_consultation(${appointmentId}::uuid,${action})`;
+    const row=await tx.appointment.findUniqueOrThrow({where:{id:appointmentId},include:{consultationSession:true}});
+    const [display]=await tx.$queryRaw<Array<{value:{counterpart:{fullName:string}}|null}>>`SELECT wb_guard.assignment_display(${appointmentId}::uuid) AS value`;
+    if(!display.value)throw new AppointmentError("FORBIDDEN","Akses tidak diizinkan.",403);
+    const fullName=display.value.counterpart.fullName;
+    const [clock]=await tx.$queryRaw<Array<{now:Date}>>`SELECT clock_timestamp() AS now`;
+    return dto({...row,participant:{fullName},psychologist:{fullName}},actor,clock.now);
+  });
   return prisma.$transaction(async tx => {
     // Stable lock order: actor profile -> scoped appointment -> session -> appointment grants.
     // Recheck the authoritative profile after waiting; never trust a role from the request body.

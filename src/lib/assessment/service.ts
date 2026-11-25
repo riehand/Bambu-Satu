@@ -1,4 +1,5 @@
 import "server-only";
+import { gatewayMode, assertDatabaseActor } from "@/lib/dal/context";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { calculateDass21 } from "./scoring/dass21";
@@ -23,6 +24,7 @@ const sessionSelect = {
 // Session revisions additionally protect competing browser tabs.
 async function participantTransaction<T>(participantId: string, work: (tx: DB) => Promise<T>) {
   return prisma.$transaction(async tx => {
+    if (gatewayMode()) assertDatabaseActor(participantId, "PARTICIPANT");
     await tx.$queryRaw`SELECT id FROM public.users WHERE id = ${participantId}::uuid FOR UPDATE`;
     return work(tx);
   }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, maxWait: 5000, timeout: 15000 });
@@ -142,6 +144,10 @@ export async function submitAssessment(sessionId: string, participantId: string,
   const parsed = submitAssessmentSchema.safeParse(input);
   if (!parsed.success) throw new AssessmentError("VALIDATION_ERROR", "Versi jawaban diperlukan sebelum mengirim asesmen.", 422);
   return participantTransaction(participantId, async tx => {
+    if (gatewayMode()) {
+      await tx.$queryRaw`SELECT wb_guard.submit_assessment(${sessionId}::uuid,${parsed.data.expectedRevision}::integer)`;
+      return submissionResult(await ownedSession(tx, sessionId, participantId));
+    }
     const session = await ownedSession(tx, sessionId, participantId);
     // A retry after a lost completion response returns the original result.
     if (session.status === "COMPLETED") return submissionResult(session);

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { consultationSessions, type ConsultationSessionType } from "@/lib/psychologist/availability-config";
 
 type PublicSlot = { availabilityId: string; date: string; sessionType: ConsultationSessionType; startTime: string; endTime: string; status: "AVAILABLE" };
@@ -25,8 +25,12 @@ export function PsychologistAvailability({ psychologistId, psychologistName, tod
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [reload, setReload] = useState(0);
+  const [contextReload, setContextReload] = useState(0);
+  const bookingPending = useRef(false);
 
   useEffect(() => {
+    if (!date) return;
     let active = true;
     void fetch(`/api/psychologists/${psychologistId}/availability?date=${date}`).then(async (response) => {
       const result = await response.json();
@@ -34,7 +38,7 @@ export function PsychologistAvailability({ psychologistId, psychologistName, tod
       if (active) setSlots(result.data as PublicSlot[]);
     }).catch(() => { if (active) setFailed(true); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [date, psychologistId]);
+  }, [date, psychologistId, reload]);
 
   useEffect(() => {
     let active = true;
@@ -44,10 +48,11 @@ export function PsychologistAvailability({ psychologistId, psychologistName, tod
       if (active) setContext(result.data as BookingContext);
     }).catch(() => { if (active) setContextFailed(true); });
     return () => { active = false; };
-  }, []);
+  }, [contextReload]);
 
   async function book(slot: PublicSlot) {
-    if (!context?.latestAssessment || !consent) return;
+    if (bookingPending.current || loading || failed || slot.date !== date || !context?.canBook || !context.latestAssessment || !consent) return;
+    bookingPending.current = true;
     setBookingId(slot.availabilityId);
     setConsent(false);
     setMessage("");
@@ -71,21 +76,23 @@ export function PsychologistAvailability({ psychologistId, psychologistName, tod
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Pemesanan belum berhasil. Silakan coba lagi.");
     } finally {
+      bookingPending.current = false;
       setBookingId(null);
     }
   }
 
   const available = new Map(slots.map((slot) => [slot.sessionType, slot]));
   return <section className="wb-card wb-availability" aria-labelledby="availability-title">
-    <div className="wb-section-meta"><div><h2 id="availability-title">Jadwal yang tersedia</h2><p>Pilih tanggal untuk melihat sesi konsultasi. Waktu menggunakan Asia/Jakarta.</p></div><label className="wb-availability-date"><span>Tanggal</span><input type="date" min={today} value={date} onChange={(event) => { setLoading(true); setFailed(false); setDate(event.target.value); }}/></label></div>
-    {failed ? <p className="wb-muted" role="status">Jadwal belum dapat dimuat. Silakan coba lagi nanti.</p> : loading ? <p className="wb-muted" role="status">Memuat jadwal...</p> : <>
+    <div className="wb-section-meta"><div><h2 id="availability-title">Jadwal yang tersedia</h2><p>Pilih tanggal untuk melihat sesi konsultasi. Waktu menggunakan Asia/Jakarta.</p></div><label className="wb-availability-date"><span>Tanggal</span><input type="date" min={today} value={date} disabled={bookingId !== null} onChange={(event) => { setSlots([]); setConsent(false); setLoading(Boolean(event.target.value)); setFailed(false); setDate(event.target.value); }}/></label></div>
+    <button className="wb-button secondary" type="button" disabled={!date || loading || bookingId !== null} onClick={() => { setSlots([]); setFailed(false); setLoading(true); setReload(value => value + 1); }}>Muat ulang jadwal</button>
+    {!date ? <p role="status">Pilih tanggal untuk memuat jadwal.</p> : failed ? <p className="wb-muted" role="status">Jadwal belum dapat dimuat. Gunakan tombol muat ulang jadwal.</p> : loading ? <p className="wb-muted" role="status">Memuat jadwal...</p> : <>
       <p className="wb-muted wb-availability-day">{dateLabel(date)}</p>
       <div className="wb-availability-list">{consultationSessions.map(({ type, startTime, endTime }) => {
         const slot = available.get(type);
         return <div className="wb-availability-row" key={type}><div><strong>{type === "MORNING" ? "Pagi" : type === "AFTERNOON" ? "Siang" : "Sore"}</strong><small>{startTime}–{endTime} WIB</small></div>{slot ? <button className="wb-book-button" type="button" disabled={!context?.canBook || !consent || bookingId !== null} onClick={() => void book(slot)}>{bookingId === slot.availabilityId ? "Memesan..." : "Pesan sesi"}</button> : <span>Tidak tersedia</span>}</div>;
       })}</div>
     </>}
-    {contextFailed ? <p className="wb-muted" role="status">Persyaratan pemesanan belum dapat dimuat.</p> : context?.latestAssessment && !context.canBook ? <p className="wb-notice" role="status">Pemesanan memerlukan asesmen DASS-21 dan WEMWBS terbaru yang selesai serta laporan privat berstatus GENERATED. Laporan Anda belum siap.</p> : null}
+    {contextFailed ? <div><p className="wb-muted" role="status">Persyaratan pemesanan belum dapat dimuat.</p><button type="button" className="wb-button secondary" onClick={() => { setContextFailed(false); setContextReload(value => value + 1); }}>Muat ulang persyaratan</button></div> : context?.latestAssessment && !context.canBook ? <p className="wb-notice" role="status">Pemesanan memerlukan asesmen DASS-21 dan WEMWBS terbaru yang selesai serta laporan privat berstatus GENERATED. Laporan Anda belum siap. <Link href={`/participant/assessment/${context.latestAssessment.assessmentSessionId}/results`}>Buka hasil asesmen</Link></p> : null}
     {context?.canBook && context.latestAssessment && <label className="wb-report-consent"><input type="checkbox" checked={consent} disabled={bookingId !== null} onChange={(event) => setConsent(event.target.checked)}/><span>Saya setuju membagikan laporan asesmen terbaru yang selesai kepada {psychologistName} untuk konsultasi ini. Persetujuan ini khusus untuk laporan, psikolog, dan janji yang dibuat; dapat dicabut kapan saja.</span></label>}
     {context && !context.latestAssessment && <p className="wb-notice">Selesaikan asesmen DASS-21 dan WEMWBS sebelum membuat janji.</p>}
     {error && <p className="wb-error" role="alert">{error}</p>}

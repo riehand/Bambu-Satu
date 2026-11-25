@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import Loading from "@/app/participant/loading";
 import { notFound, redirect } from "next/navigation";
 import { requirePageRole } from "@/lib/auth/session";
 import { getAssessmentHistory, getSession } from "@/lib/assessment/service";
@@ -5,7 +7,7 @@ import { loadAssessmentData } from "@/lib/assessment/page-data";
 import { sessionIdSchema } from "@/lib/validations/assessment";
 import { ResultsView } from "@/components/participant/results";
 import { DataError } from "@/components/participant/ui";
-export default async function ResultsPage({ params }: { params: Promise<{ sessionId: string }> }) {
+async function ResultsPageContent({ params }: { params: Promise<{ sessionId: string }> }) {
   const profile = await requirePageRole("PARTICIPANT");
   const id = sessionIdSchema.safeParse((await params).sessionId);
   if (!id.success) notFound();
@@ -18,4 +20,8 @@ export default async function ResultsPage({ params }: { params: Promise<{ sessio
   const { session, history } = loaded.data;
   if (!session.score || !session.completedAt || !session.report) return <DataError message="Hasil untuk sesi ini belum tersedia."/>;
   return <ResultsView sessionId={session.id} completedAt={session.completedAt.toISOString()} reportId={session.report.id} reportStatus={session.report.status} scores={session.score} history={history}/>;
+}
+
+export default function ResultsPage(props: { params: Promise<{ sessionId: string }> }) {
+  return <Suspense fallback={<Loading/>}><ResultsPageContent {...props}/></Suspense>;
 }

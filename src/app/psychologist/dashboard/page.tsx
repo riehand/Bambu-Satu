@@ -1,4 +1,5 @@
-import { requirePageRole } from "@/lib/auth/session";
+import { Suspense } from "react";
+import { requirePageRole, withApplicationDatabase } from "@/lib/auth/session";
 import { getPsychologistProfile } from "@/lib/psychologist/service";
 import { PsychologistProfileEditor } from "@/components/psychologist/profile-editor";
 import { PsychologistAvailabilityEditor } from "@/components/psychologist/availability-editor";
@@ -9,9 +10,9 @@ import { Brand } from "@/components/participant/icons";
 import { jakartaDate } from "@/lib/psychologist/availability-config";
 import "../psychologist.css";
 
-export default async function PsychologistDashboard() {
+async function PsychologistDashboardContent() {
   const profile = await requirePageRole("PSYCHOLOGIST");
-  const psychologistProfile = await getPsychologistProfile(profile.id);
+  const psychologistProfile = await withApplicationDatabase(() => getPsychologistProfile(profile.id));
   return <div className="ph-page">
     <header className="ph-header"><Brand/><span>Ruang profesional psikolog</span><div className="ph-logout"><LogoutButton/></div></header>
     <main className="ph-main">
@@ -24,3 +25,5 @@ export default async function PsychologistDashboard() {
     </main>
   </div>;
 }
+
+export default function PsychologistDashboard() { return <Suspense fallback={<p role="status">Memuat dashboard...</p>}><PsychologistDashboardContent/></Suspense>; }

@@ -1,4 +1,5 @@
 import "server-only";
+import { gatewayMode } from "@/lib/dal/context";
 import { ReportStatus, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isExpectedAssessmentReportPdf, generateAssessmentReportPdf, type AssessmentReportPdfData } from "./pdf";
@@ -88,6 +89,9 @@ async function readExistingArtifact(reportId: string, data: AssessmentReportPdfD
 }
 
 async function finalizeReport(report: ReportRow, path: string) {
+  if (gatewayMode()) {
+    throw new ReportError("REPORT_FINALIZATION_UNAVAILABLE", 503, 10);
+  }
   let updated;
   try {
     updated = await prisma.report.updateMany({
@@ -128,6 +132,11 @@ export async function generateReportForParticipant(participantId: string, report
 
   const retryAfter = takeAttempt(participantId, reportId);
   if (retryAfter) throw new ReportError("REPORT_GENERATION_RATE_LIMITED", 429, retryAfter);
+
+  if (gatewayMode()) {
+    const { generateWithReportWorker } = await import("./runtime");
+    return generateWithReportWorker(participantId, reportId);
+  }
 
   const path = reportObjectKeyFor(report.id);
   if (await readExistingArtifact(report.id, data)) return finalizeReport(report, path);

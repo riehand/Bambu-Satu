@@ -1,4 +1,6 @@
 import "server-only";
+import { gatewayMode } from "@/lib/dal/context";
+import { runtimeChatRead,runtimeChatSend } from "./chat-runtime";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AppointmentError } from "@/lib/appointments/service";
@@ -64,6 +66,7 @@ const transactionOptions = { isolationLevel: Prisma.TransactionIsolationLevel.Re
 export async function listChatMessages(actor: ConsultationActor, appointmentId: string, input: ChatQuery) {
   assertEnabled(actor);
   const query = chatQuery.parse(input), cursor = decode(query.before ?? query.after, appointmentId);
+  if (gatewayMode()) return runtimeChatRead(actor,appointmentId,query,cursor);
   return prisma.$transaction(async tx => {
     const row = await locked(tx, actor, appointmentId, false);
     const direction = query.after ? "asc" : "desc";
@@ -89,6 +92,7 @@ export type ChatPage = Awaited<ReturnType<typeof listChatMessages>>;
 export async function sendChatMessage(actor: ConsultationActor, appointmentId: string, input: ChatCommand) {
   assertEnabled(actor);
   const command = chatCommand.parse(input);
+  if (gatewayMode()) return runtimeChatSend(actor,appointmentId,command);
   try {
     const result = await prisma.$transaction(async tx => {
       const row = await locked(tx, actor, appointmentId, true);

@@ -1,4 +1,6 @@
 import "server-only";
+import { gatewayMode, hasDatabaseRequest, DalError } from "@/lib/dal/context";
+import { withApplicationDatabase } from "@/lib/auth/session";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { AuthError, requireApiRole } from "@/lib/auth/session";
@@ -7,10 +9,12 @@ import { AssessmentError } from "./errors";
 
 export function publicAssessmentError(error: unknown) {
   if (error instanceof AssessmentError) return error;
+  if(error instanceof DalError && ["STALE_REVISION","FORBIDDEN"].includes(error.code))return new AssessmentError(error.code,"Permintaan asesmen tidak diizinkan.",error.code==="FORBIDDEN"?403:409);
   return new AssessmentError("ASSESSMENT_UNAVAILABLE", "Layanan asesmen belum dapat dimuat. Silakan coba lagi nanti.", 503);
 }
-export async function assessmentApi(work: (participantId: string) => Promise<unknown>, request?: Request) {
+export async function assessmentApi(work: (participantId: string) => Promise<unknown>, request?: Request): Promise<NextResponse> {
   try {
+    if (gatewayMode() && !hasDatabaseRequest()) return await withApplicationDatabase(()=>assessmentApi(work,request));
     const profile = await requireApiRole("PARTICIPANT");
     if (request && !isSameOrigin(request)) throw new AssessmentError("INVALID_ORIGIN", "Permintaan tidak diizinkan.", 403);
     const data = await work(profile.id);

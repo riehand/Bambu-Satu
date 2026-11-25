@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { AppointmentDetails } from "@/components/appointments/details";
 
 type Appointment = {
   appointmentId: string; status: string; scheduledStartAt: string; scheduledEndAt: string;
@@ -28,21 +29,25 @@ export function AppointmentCenter() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  const [optionsUnavailable, setOptionsUnavailable] = useState(false);
 
   const fetchCenterData = useCallback(async () => {
-    const responses = await Promise.all([
-      fetch("/api/appointments"),
-      fetch("/api/consents"),
-      fetch("/api/appointments/booking-context"),
-      fetch("/api/psychologists?page=1&limit=50"),
+    const read = async (url: string) => {
+      const response = await fetch(url, { cache: "no-store" });
+      const body = await response.json();
+      if (!response.ok || !body.success) throw new Error("Data janji atau persetujuan belum dapat dimuat.");
+      return body.data;
+    };
+    const [appointments, consents, options] = await Promise.all([
+      read("/api/appointments"), read("/api/consents"),
+      Promise.allSettled([read("/api/appointments/booking-context"), read("/api/psychologists?page=1&limit=50")]),
     ]);
-    const results = await Promise.all(responses.map(async (response) => ({ response, body: await response.json() })));
-    if (results.some(({ response, body }) => !response.ok || !body.success)) throw new Error("Data janji atau persetujuan belum dapat dimuat.");
     return {
-      appointments: results[0].body.data as Appointment[],
-      consents: results[1].body.data as Consent[],
-      context: results[2].body.data as BookingContext,
-      psychologists: results[3].body.data.items as Psychologist[],
+      appointments: appointments as Appointment[], consents: consents as Consent[],
+      context: options[0].status === "fulfilled" ? options[0].value as BookingContext : null,
+      psychologists: options[1].status === "fulfilled" ? options[1].value as Psychologist[] : [],
+      optionsUnavailable: options.some(result => result.status === "rejected"),
     };
   }, []);
 
@@ -51,6 +56,9 @@ export function AppointmentCenter() {
     setConsents(data.consents);
     setContext(data.context);
     setPsychologists(data.psychologists);
+    setOptionsUnavailable(data.optionsUnavailable);
+    setLoaded(true);
+    setError("");
   }, []);
 
   const refresh = useCallback(async () => {
@@ -114,9 +122,11 @@ export function AppointmentCenter() {
 
   const isActive = (consent: Consent) => consent.active;
   if (loading) return <p className="wb-muted" role="status">Memuat janji konsultasi...</p>;
+  if (!loaded) return <div><p className="wb-error" role="alert">{error || "Data janji belum dapat dimuat."}</p><button type="button" className="wb-button secondary" onClick={() => void refresh()}>Muat ulang janji</button></div>;
   return <div className="wb-appointment-center">
     {error && <p className="wb-error" role="alert">{error}</p>}
     {message && <p className="wb-success" role="status">{message}</p>}
+    <button type="button" className="wb-button secondary" disabled={pending !== ""} onClick={() => void refresh()}>Muat ulang janji</button>
 
     <section className="wb-card">
       <h2>Janji konsultasi</h2>
@@ -124,7 +134,8 @@ export function AppointmentCenter() {
         const grant = consents.find((item) => item.appointmentId === appointment.appointmentId && item.consentType === "APPOINTMENT_REPORT_ACCESS");
         const active = grant ? isActive(grant) : false;
         const eligible = appointment.canReconsent;
-        return <article className="wb-appointment-row" key={appointment.appointmentId}>
+        return <article className="wb-appointment-row" key={appointment.appointmentId} data-appointment-id={appointment.appointmentId}>
+          <AppointmentDetails appointmentId={appointment.appointmentId}/>
           <div><h3>{appointment.psychologist.fullName}</h3><p>{indonesiaTime(appointment.scheduledStartAt)} · {appointment.sessionType}</p><small>Status janji: {appointment.status} · Akses laporan {active ? "aktif" : "tidak aktif"}</small></div>
           {grant && active ? <button className="wb-button secondary" type="button" disabled={pending === grant.consentId} onClick={() => void revoke(grant)}>Cabut persetujuan laporan</button> : grant && !grant.revokedAt && !grant.expiredAt ? <span className="wb-muted">Akses laporan berakhir pada waktu yang dijadwalkan.</span> : null}
           {grant?.revokedAt && eligible && <div className="wb-reconsent"><label><input type="checkbox" checked={Boolean(reconsentChecks[appointment.appointmentId])} disabled={pending === appointment.appointmentId} onChange={(event) => setReconsentChecks((current) => ({ ...current, [appointment.appointmentId]: event.target.checked }))}/>Saya setuju kembali membagikan laporan ini kepada {appointment.psychologist.fullName} untuk janji ini.</label><button className="wb-button secondary" type="button" disabled={!reconsentChecks[appointment.appointmentId] || pending === appointment.appointmentId} onClick={() => void reconsent(appointment)}>Berikan persetujuan baru</button></div>}
@@ -135,7 +146,7 @@ export function AppointmentCenter() {
     <section className="wb-card">
       <h2>Persetujuan laporan mandiri</h2>
       <p className="wb-muted">Izin ini berdiri sendiri dan tidak membuat atau mengubah janji konsultasi.</p>
-      {context?.canBook && context.latestAssessment ? <div className="wb-standalone-form">
+      {optionsUnavailable ? <p role="status">Pilihan laporan atau psikolog belum dapat dimuat. Gunakan muat ulang janji; persetujuan yang sudah ada tetap dapat dicabut.</p> : context?.canBook && context.latestAssessment ? <div className="wb-standalone-form">
         <label className="wb-availability-date"><span>Psikolog penerima</span><select value={psychologistId} onChange={(event) => setPsychologistId(event.target.value)}><option value="">Pilih psikolog</option>{psychologists.map((person) => <option key={person.id} value={person.id}>{person.fullName}</option>)}</select></label>
         <label className="wb-report-consent"><input type="checkbox" checked={standaloneConsent} disabled={pending === "standalone"} onChange={(event) => setStandaloneConsent(event.target.checked)}/><span>Saya setuju membagikan laporan asesmen terbaru secara mandiri kepada psikolog yang dipilih. Izin ini tidak terkait janji dan tetap berlaku sampai saya mencabutnya.</span></label>
         <button className="wb-button" type="button" disabled={!psychologistId || !standaloneConsent || pending === "standalone"} onClick={() => void grantStandalone()}>{pending === "standalone" ? "Menyimpan..." : "Berikan akses mandiri"}</button>
