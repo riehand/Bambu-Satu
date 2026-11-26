@@ -137,7 +137,7 @@ export type PeriodDetail = Awaited<ReturnType<typeof adminPeriod>>;
 export type PsychologistPage = Awaited<ReturnType<typeof adminPsychologists>>;
 export type AppointmentPage = Awaited<ReturnType<typeof adminAppointments>>;
 
-/** Isolated least-privilege integration; no production route calls this entrypoint. */
+/** Approved operational aggregates only; no participant identities or clinical data. */
 export async function adminRestrictedOverview(actorId: string, input: OverviewQuery) {
   const query = overviewQuery.parse(input);
   if (query.periodId) throw new AdminError("FILTER_NOT_SUPPORTED", "Agregat terbatas belum mendukung filter periode.", 422);

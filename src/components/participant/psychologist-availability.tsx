@@ -22,6 +22,7 @@ export function PsychologistAvailability({ psychologistId, psychologistName, tod
   const [context, setContext] = useState<BookingContext | null>(null);
   const [contextFailed, setContextFailed] = useState(false);
   const [consent, setConsent] = useState(false);
+  const [note, setNote] = useState("");
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -67,6 +68,7 @@ export function PsychologistAvailability({ psychologistId, psychologistName, tod
           reportId: context.latestAssessment.reportId,
           availabilityId: slot.availabilityId,
           reportConsent: true,
+          ...(note.trim() ? { participantNote: note.trim() } : {}),
         }),
       });
       const result = await response.json();
@@ -93,8 +95,9 @@ export function PsychologistAvailability({ psychologistId, psychologistName, tod
       })}</div>
     </>}
     {contextFailed ? <div><p className="wb-muted" role="status">Persyaratan pemesanan belum dapat dimuat.</p><button type="button" className="wb-button secondary" onClick={() => { setContextFailed(false); setContextReload(value => value + 1); }}>Muat ulang persyaratan</button></div> : context?.latestAssessment && !context.canBook ? <p className="wb-notice" role="status">Pemesanan memerlukan asesmen DASS-21 dan WEMWBS terbaru yang selesai serta laporan privat berstatus GENERATED. Laporan Anda belum siap. <Link href={`/participant/assessment/${context.latestAssessment.assessmentSessionId}/results`}>Buka hasil asesmen</Link></p> : null}
+    {context?.canBook && <label className="wb-booking-note">Catatan untuk psikolog (opsional)<textarea maxLength={500} rows={3} value={note} disabled={bookingId !== null} onChange={event => setNote(event.target.value)} placeholder="Hal yang ingin Anda sampaikan sebelum sesi"/><small>{note.length}/500 karakter</small></label>}
     {context?.canBook && context.latestAssessment && <label className="wb-report-consent"><input type="checkbox" checked={consent} disabled={bookingId !== null} onChange={(event) => setConsent(event.target.checked)}/><span>Saya setuju membagikan laporan asesmen terbaru yang selesai kepada {psychologistName} untuk konsultasi ini. Persetujuan ini khusus untuk laporan, psikolog, dan janji yang dibuat; dapat dicabut kapan saja.</span></label>}
-    {context && !context.latestAssessment && <p className="wb-notice">Selesaikan asesmen DASS-21 dan WEMWBS sebelum membuat janji.</p>}
+    {context && !context.latestAssessment && <p className="wb-notice">Selesaikan asesmen DASS-21 dan WEMWBS sebelum membuat janji. <Link href="/participant/assessment">Mulai asesmen</Link></p>}
     {error && <p className="wb-error" role="alert">{error}</p>}
     {message && <p className="wb-success" role="status">{message} <Link href="/participant/appointments">Lihat janji konsultasi</Link></p>}
   </section>;

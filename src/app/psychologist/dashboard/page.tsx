@@ -5,25 +5,25 @@ import { PsychologistProfileEditor } from "@/components/psychologist/profile-edi
 import { PsychologistAvailabilityEditor } from "@/components/psychologist/availability-editor";
 import { PsychologistAppointmentList } from "@/components/psychologist/appointment-list";
 import { ConsultationDashboard } from "@/components/consultations/dashboard";
-import { LogoutButton } from "@/components/logout-button";
-import { Brand } from "@/components/participant/icons";
+import { WorkspaceShell } from "@/components/workspace-shell";
+import { ServiceUnavailable } from "@/components/service-unavailable";
 import { jakartaDate } from "@/lib/psychologist/availability-config";
 import "../psychologist.css";
 
 async function PsychologistDashboardContent() {
   const profile = await requirePageRole("PSYCHOLOGIST");
-  const psychologistProfile = await withApplicationDatabase(() => getPsychologistProfile(profile.id));
-  return <div className="ph-page">
-    <header className="ph-header"><Brand/><span>Ruang profesional psikolog</span><div className="ph-logout"><LogoutButton/></div></header>
-    <main className="ph-main">
-      <div className="ph-heading"><h1>Profil profesional</h1><p>Halo, {profile.fullName}. Lengkapi informasi profesional yang ingin Anda bagikan kepada peserta.</p></div>
+  let psychologistProfile;
+  let profileUnavailable = false;
+  try { psychologistProfile = await withApplicationDatabase(() => getPsychologistProfile(profile.id)); }
+  catch { profileUnavailable = true; }
+  return <WorkspaceShell fullName={profile.fullName}>
+      <div id="overview" className="ph-heading"><h1>Selamat datang, {profile.fullName}.</h1><p>Kelola janji, jadwal ketersediaan, dan profil profesional Anda.</p></div>
       <div className="ph-notice"><strong>Privasi profil</strong>Informasi profesional di bawah ini dapat dilihat peserta yang masuk ke direktori. Profil ini tidak memberikan akses ke hasil asesmen peserta.</div>
       <ConsultationDashboard role="PSYCHOLOGIST"/>
-      <PsychologistAppointmentList/>
-      <PsychologistProfileEditor initialProfile={psychologistProfile}/>
-      <PsychologistAvailabilityEditor today={jakartaDate()}/>
-    </main>
-  </div>;
+      <section id="appointments"><PsychologistAppointmentList/></section>
+      <section id="availability"><PsychologistAvailabilityEditor today={jakartaDate()}/></section>
+      <section id="profile">{profileUnavailable ? <ServiceUnavailable title="Profil profesional belum dapat dimuat" message="Informasi profil belum tersedia. Coba lagi nanti; profil lama Anda tidak diubah."/> : <PsychologistProfileEditor initialProfile={psychologistProfile ?? null}/>}</section>
+  </WorkspaceShell>;
 }
 
 export default function PsychologistDashboard() { return <Suspense fallback={<p role="status">Memuat dashboard...</p>}><PsychologistDashboardContent/></Suspense>; }

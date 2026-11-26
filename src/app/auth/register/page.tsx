@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -57,69 +58,69 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 py-12">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+      <AuthShell registration>
+        <div className="text-center">
           <h2 className="text-2xl font-bold text-brand-dark mb-4">Periksa Pendaftaran Anda</h2>
           <p role="status" className="text-gray-600 mb-6">{successMessage}</p>
           <Link href="/auth/login" className="block w-full py-3 px-4 bg-brand-dark hover:bg-brand-soft text-white font-medium rounded-lg transition-colors">
             Menuju Halaman Login
           </Link>
         </div>
-      </div>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 py-12">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        <div className="text-center mb-8">
+    <AuthShell registration>
+      <div>
+        <div className="mb-8">
           <h1 className="text-3xl font-bold text-brand-dark">Daftar Akun</h1>
           <p className="text-gray-500 mt-2">WellBeing Hub - Telkom University</p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg text-sm border border-red-100">
+          <div role="alert" className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg text-sm border border-red-100">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
-            <input type="text" name="fullName" required value={formData.fullName} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-soft focus:border-transparent outline-none transition-all" placeholder="Masukkan nama lengkap" />
+            <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+            <input id="fullName" type="text" name="fullName" autoComplete="name" required value={formData.fullName} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-soft focus:border-transparent outline-none transition-all" placeholder="Masukkan nama lengkap" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tipe Pengguna</label>
-            <select name="userType" value={formData.userType} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-soft outline-none">
+            <label htmlFor="userType" className="block text-sm font-medium text-gray-700 mb-1">Tipe Pengguna</label>
+            <select id="userType" name="userType" value={formData.userType} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-soft outline-none">
               <option value="STUDENT">Mahasiswa</option>
               <option value="LECTURER">Dosen</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{formData.userType === "STUDENT" ? "NIM" : "NIP"}</label>
-            <input type="text" name="institutionalId" required value={formData.institutionalId} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-soft outline-none" placeholder={`Masukkan ${formData.userType === "STUDENT" ? "NIM" : "NIP"} Anda`} />
+            <label htmlFor="institutionalId" className="block text-sm font-medium text-gray-700 mb-1">{formData.userType === "STUDENT" ? "NIM" : "NIP"}</label>
+            <input id="institutionalId" type="text" name="institutionalId" required value={formData.institutionalId} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-soft outline-none" placeholder={`Masukkan ${formData.userType === "STUDENT" ? "NIM" : "NIP"} Anda`} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input type="email" name="email" required value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-soft outline-none" placeholder="alamat@email.com" />
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input id="email" type="email" name="email" autoComplete="email" required value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-soft outline-none" placeholder="alamat@email.com" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon</label>
-            <input type="tel" name="phoneNumber" required value={formData.phoneNumber} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-soft outline-none" placeholder="08xxxxxxxxxx" />
+            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon</label>
+            <input id="phoneNumber" type="tel" name="phoneNumber" autoComplete="tel" required value={formData.phoneNumber} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-soft outline-none" placeholder="08xxxxxxxxxx" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input type="password" name="password" autoComplete="new-password" minLength={8} maxLength={128} required value={formData.password} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-soft outline-none" placeholder="Minimal 8 karakter" />
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input id="password" type="password" name="password" autoComplete="new-password" minLength={8} maxLength={128} required value={formData.password} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-soft outline-none" placeholder="Minimal 8 karakter" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Konfirmasi Password</label>
-            <input type="password" name="confirmPassword" required value={formData.confirmPassword} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-soft outline-none" placeholder="Ketik ulang password" />
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Konfirmasi Password</label>
+            <input id="confirmPassword" type="password" name="confirmPassword" autoComplete="new-password" required value={formData.confirmPassword} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-soft outline-none" placeholder="Ketik ulang password" />
           </div>
 
           <button type="submit" disabled={loading} className="w-full py-3 px-4 bg-brand-dark hover:bg-brand-soft text-white font-medium rounded-lg transition-colors disabled:opacity-70 mt-6">
@@ -131,6 +132,6 @@ export default function RegisterPage() {
           Sudah punya akun? <Link href="/auth/login" className="text-brand-dark hover:underline font-medium">Masuk di sini</Link>
         </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }

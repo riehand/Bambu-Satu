@@ -2,8 +2,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { AppointmentPage, Overview, PeriodDetail, PeriodPage, PsychologistPage } from "@/lib/admin/service";
 import "./console.css";
-type Tab = "overview" | "periods" | "psychologists" | "appointments";
-const tabs: { key: Tab; label: string }[] = [{ key: "overview", label: "Ringkasan" }, { key: "periods", label: "Periode akademik" }, { key: "psychologists", label: "Pemantauan psikolog" }, { key: "appointments", label: "Pengawasan janji" }];
+type Tab = "overview" | "periods" | "psychologists" | "appointments" | "users" | "audit" | "monitor";
+const tabs: { key: Tab; label: string }[] = [{ key: "overview", label: "Ringkasan" }, { key: "monitor", label: "Statistik layanan" }, { key: "periods", label: "Periode akademik" }, { key: "psychologists", label: "Pemantauan psikolog" }, { key: "appointments", label: "Pengawasan janji" }, { key: "users", label: "Pengguna & peran" }, { key: "audit", label: "Consent & audit" }];
 const labels: Record<string, string> = { ACTIVE: "Aktif", INACTIVE: "Nonaktif", CONFIRMED: "Dikonfirmasi", IN_PROGRESS: "Berlangsung", COMPLETED: "Selesai", CANCELLED: "Dibatalkan", RESCHEDULED: "Dijadwalkan ulang", NO_SHOW: "Tidak hadir", SCHEDULED: "Terjadwal", READY: "Siap", CLOSED: "Ditutup", PARTICIPANT_LATE: "Peserta terlambat", PSYCHOLOGIST_LATE: "Psikolog terlambat", AVAILABLE: "Tersedia", BOOKED: "Dipesan", UNAVAILABLE: "Tidak tersedia" };
 const dateTime = (value: string) => new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Jakarta" }).format(new Date(value));
 const date = (value: string) => new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeZone: "Asia/Jakarta" }).format(new Date(`${value}T00:00:00+07:00`));
@@ -40,6 +40,10 @@ function OverviewView({ url }: { url: string }) {
     <div className="admin-summaries"><CountTable title="Janji berdasarkan status" rows={result.data.appointments}/><CountTable title="Status konsultasi tersimpan" rows={result.data.consultations}/><CountTable title="Ketersediaan psikolog aktif" rows={result.data.availability}/></div>
     <p>Ketersediaan mengikuti tanggal, tanpa filter periode asesmen. Status konsultasi tersimpan dapat menunggu rekonsiliasi setelah jadwal berakhir.</p>
   </>}</section>;
+}
+function MonitorView({ url }: { url: string }) {
+  const result = useResource<{ activeParticipants: number; activePsychologists: number; assessmentsStarted: number; assessmentsCompleted: number; appointments: number }>(url);
+  return <section aria-busy={result.loading}><h2>Statistik layanan</h2><p>Jumlah operasional tanpa identitas peserta atau hasil klinis. Rentang tanggal berlaku pada asesmen dan jadwal janji; jumlah akun aktif adalah jumlah saat ini. Filter periode belum didukung.</p><Feedback {...result}/>{result.data && <dl className="admin-kpis">{[["Peserta aktif", result.data.activeParticipants], ["Psikolog aktif", result.data.activePsychologists], ["Asesmen dimulai", result.data.assessmentsStarted], ["Asesmen selesai", result.data.assessmentsCompleted], ["Janji konsultasi", result.data.appointments]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>}</section>;
 }
 function PeriodPicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const [cursor, setCursor] = useState("");
@@ -113,16 +117,17 @@ export function AdminConsole({ today, from }: { today: string; from: string }) {
   if ((tab === "overview" || tab === "appointments") && filters.periodId) params.set("periodId", filters.periodId);
   if (tab === "psychologists") params.set("active", filters.active);
   if (tab === "appointments" && filters.status) params.set("status", filters.status);
-  if (tab !== "overview") params.set("limit", "10");
-  if (cursor && tab !== "overview") params.set("cursor", cursor);
+  if (tab !== "overview" && tab !== "monitor") params.set("limit", "10");
+  if (cursor && tab !== "overview" && tab !== "monitor") params.set("cursor", cursor);
   const url = `/api/admin/${tab}?${params}`, paging = { onNext: setCursor, onFirst: () => setCursor("") };
   return <main className="admin-console"><h1>Operasional KKA</h1><p>Ringkasan layanan dan pengelolaan jadwal WellBeing Hub.</p><div className="admin-notice">Indikator kesehatan mental dinonaktifkan sampai ambang privasi dan aturan pengungkapan disetujui. Tidak ada akses otomatis ke hasil individual, PDF atau chat.</div>
     <nav aria-label="Navigasi administrator">{tabs.map(item => <button key={item.key} type="button" aria-current={tab === item.key ? "page" : undefined} onClick={() => changeTab(item.key)}>{item.label}</button>)}</nav>
-    {tab !== "periods" && <form key={tab} className="admin-filters" onSubmit={apply}><label>Dari tanggal<input name="from" type="date" required defaultValue={filters.from}/></label><label>Sampai tanggal<input name="to" type="date" required defaultValue={filters.to}/></label>
+    {!["periods", "users", "audit"].includes(tab) && <form key={tab} className="admin-filters" onSubmit={apply}><label>Dari tanggal<input name="from" type="date" required defaultValue={filters.from}/></label><label>Sampai tanggal<input name="to" type="date" required defaultValue={filters.to}/></label>
       {(tab === "overview" || tab === "appointments") && <PeriodPicker value={period} onChange={setPeriod}/>}
       {tab === "psychologists" && <div><label htmlFor="admin-account-status">Status akun</label><select id="admin-account-status" name="active" defaultValue={filters.active}><option value="all">Semua akun</option><option value="true">Aktif</option><option value="false">Nonaktif</option></select></div>}
       {tab === "appointments" && <div><label htmlFor="admin-appointment-status">Status janji</label><select id="admin-appointment-status" name="status" defaultValue={filters.status}><option value="">Semua status</option>{["CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED", "RESCHEDULED", "NO_SHOW"].map(status => <option key={status} value={status}>{labels[status]}</option>)}</select></div>}
       <button type="submit">Terapkan filter</button><small>Maksimal 93 hari, batas hari inklusif dalam WIB. Filter periode berlaku pada asesmen serta janji/konsultasi yang terkait asesmen tersebut.</small></form>}
-    {tab === "overview" ? <OverviewView key={url} url={url}/> : tab === "periods" ? <PeriodsView key={url} url={url} {...paging}/> : tab === "psychologists" ? <PsychologistsView key={url} url={url} {...paging}/> : <AppointmentsView key={url} url={url} {...paging}/>}
+    {tab === "overview" && <div className="admin-notice">Ringkasan lengkap membutuhkan proyeksi operasional tambahan. <button type="button" onClick={() => changeTab("monitor")}>Lihat statistik layanan</button></div>}
+    {tab === "monitor" ? <MonitorView key={url} url={url}/> : tab === "users" ? <section><h2>Kelola akun, bukan laporan pribadi.</h2><p>Perubahan peran, undangan psikolog, dan aktivasi akun membutuhkan proses persetujuan institusi. Tindakan ini belum tersedia melalui aplikasi.</p><div className="admin-notice">Akses administrator tidak mencakup hasil asesmen individual. Tidak ada perubahan akun yang dilakukan dari halaman ini.</div><button onClick={() => changeTab("psychologists")}>Lihat pemantauan psikolog</button></section> : tab === "audit" ? <section><h2>Akuntabilitas tanpa membuka data pribadi.</h2><p>UI pengawasan consent dan ekspor metadata audit menunggu gateway yang disetujui. Tidak ada isi laporan, jawaban asesmen, atau percakapan yang ditampilkan.</p><div className="admin-notice">Administrator tidak dapat memberikan persetujuan atas nama peserta atau memulihkan izin yang dicabut.</div><button onClick={() => changeTab("appointments")}>Lihat pengawasan janji</button></section> : tab === "overview" ? <OverviewView key={url} url={url}/> : tab === "periods" ? <PeriodsView key={url} url={url} {...paging}/> : tab === "psychologists" ? <PsychologistsView key={url} url={url} {...paging}/> : <AppointmentsView key={url} url={url} {...paging}/>}
   </main>;
 }

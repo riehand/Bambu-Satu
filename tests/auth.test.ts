@@ -8,6 +8,10 @@ const mocks = vi.hoisted(() => ({
 vi.mock("next/server", async importOriginal => ({ ...await importOriginal<typeof import("next/server")>(), connection: async () => {} }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ auth: mocks }) }));
 vi.mock("@/lib/prisma", () => ({ prisma: { user: { findUnique: mocks.findUnique } } }));
+// These existing assertions exercise the isolated DAL profile adapter.
+vi.mock("@/lib/dal/context", async importOriginal => ({
+  ...await importOriginal<typeof import("@/lib/dal/context")>(), gatewayMode: () => true, hasDatabaseRequest: () => true,
+}));
 vi.mock("next/navigation", () => ({ unstable_rethrow: () => {}, redirect: (url: string) => { throw new Error(`REDIRECT:${url}`); } }));
 
 import { getCurrentProfile, requireApiRole, requirePageRole } from "@/lib/auth/session";

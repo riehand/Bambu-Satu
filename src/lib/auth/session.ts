@@ -1,4 +1,5 @@
 import "server-only";
+import type { User } from "@prisma/client";
 import { gatewayMode, hasDatabaseRequest, withVerifiedDatabaseRequest, DalError } from "@/lib/dal/context";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { connection } from "next/server";
@@ -12,8 +13,7 @@ export class AuthError extends Error {
   }
 }
 
-// Never accept a user ID or role from a caller. Prisma may bypass RLS, so
-// ownership comes exclusively from a fresh Auth server verification.
+// Identity comes from verified Auth; role/active status come from the database.
 export async function getCurrentProfile() {
   return withApplicationDatabase(readCurrentProfile);
 }
@@ -22,16 +22,28 @@ async function readCurrentProfile() {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user || !data.user.email_confirmed_at) throw new AuthError("unauthenticated");
-  const profile = await prisma.user.findUnique({
+  const profile = gatewayMode() ? await prisma.user.findUnique({
     where: { id: data.user.id },
     select: {
       id: true, fullName: true, email: true, phoneNumber: true,
       institutionalId: true, userType: true, role: true, isActive: true,
     },
-  });
+  }) : await readSessionProfile(supabase, data.user.id);
   if (!profile || !isAppRole(profile.role)) throw new AuthError("profile");
   if (!profile.isActive) throw new AuthError("inactive");
   return profile;
+}
+
+type Profile = Pick<User, "id" | "fullName" | "email" | "phoneNumber" | "institutionalId" | "userType" | "role" | "isActive">;
+async function readSessionProfile(supabase: Awaited<ReturnType<typeof createClient>>, verifiedId: string): Promise<Profile | null> {
+  // Publishable key + user's cookie session; never a service-role or owner client.
+  // Supabase aliases preserve the canonical profile DTO used by all three roles.
+  const { data, error } = await supabase.from("users")
+    .select("id,fullName:full_name,email,phoneNumber:phone_number,institutionalId:institutional_id,userType:user_type,role,isActive:is_active")
+    .eq("id", verifiedId).maybeSingle();
+  if (error) throw new DalError("PROFILE_UNAVAILABLE");
+  if (data && data.id !== verifiedId) throw new AuthError("forbidden");
+  return data;
 }
 
 // Use inside every protected backend operation, not only page layouts.

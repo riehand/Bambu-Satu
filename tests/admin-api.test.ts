@@ -1,8 +1,12 @@
 import { beforeEach, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ getUser: vi.fn(), profile: vi.fn(), overview: vi.fn(), periods: vi.fn(), period: vi.fn(), create: vi.fn(), psychologists: vi.fn(), appointments: vi.fn() }));
+const mocks = vi.hoisted(() => ({ getUser: vi.fn(), profile: vi.fn(), overview: vi.fn(), monitor: vi.fn(), periods: vi.fn(), period: vi.fn(), create: vi.fn(), psychologists: vi.fn(), appointments: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ auth: { getUser: mocks.getUser } }) }));
 vi.mock("@/lib/prisma", () => ({ prisma: { user: { findUnique: mocks.profile } } }));
-vi.mock("@/lib/admin/service", () => ({ adminOverview: mocks.overview, adminPeriods: mocks.periods, adminPeriod: mocks.period, createInactivePeriod: mocks.create, adminPsychologists: mocks.psychologists, adminAppointments: mocks.appointments }));
+vi.mock("@/lib/dal/context", async importOriginal => ({
+  ...await importOriginal<typeof import("@/lib/dal/context")>(), gatewayMode: () => true, hasDatabaseRequest: () => true,
+}));
+vi.mock("@/lib/admin/service", () => ({ adminOverview: mocks.overview, adminRestrictedOverview: mocks.monitor, adminPeriods: mocks.periods, adminPeriod: mocks.period, createInactivePeriod: mocks.create, adminPsychologists: mocks.psychologists, adminAppointments: mocks.appointments }));
+import { GET as monitor } from "@/app/api/admin/monitor/route";
 import { GET as overview } from "@/app/api/admin/overview/route";
 import { GET as periods, POST } from "@/app/api/admin/periods/route";
 import { GET as detail } from "@/app/api/admin/periods/[periodId]/route";
@@ -15,12 +19,12 @@ const id = "00000000-0000-4000-8000-000000000001", origin = "http://localhost:30
 const payload = { name: "Periode sintetis", startDate: "2031-01-01", endDate: "2031-06-01", assessmentLimit: 3 };
 const request = (path: string) => new Request(`${origin}/api/admin/${path}`);
 const post = (body: unknown = payload, from = origin) => new Request(`${origin}/api/admin/periods`, { method: "POST", headers: { "content-type": "application/json", origin: from }, body: JSON.stringify(body) });
-const reads = [() => overview(request("overview?from=2030-01-01&to=2030-01-31")), () => periods(request("periods")), () => detail(request(`periods/${id}`), { params: Promise.resolve({ periodId: id }) }), () => psychologists(request("psychologists?from=2030-01-01&to=2030-01-31")), () => appointments(request("appointments?from=2030-01-01&to=2030-01-31"))];
+const reads = [() => monitor(request("monitor?from=2030-01-01&to=2030-01-31")),() => overview(request("overview?from=2030-01-01&to=2030-01-31")), () => periods(request("periods")), () => detail(request(`periods/${id}`), { params: Promise.resolve({ periodId: id }) }), () => psychologists(request("psychologists?from=2030-01-01&to=2030-01-31")), () => appointments(request("appointments?from=2030-01-01&to=2030-01-31"))];
 beforeEach(() => {
   vi.resetAllMocks(); process.env.SITE_URL = origin;
   mocks.getUser.mockResolvedValue({ data: { user: { id, email_confirmed_at: "2030-01-01", user_metadata: { role: "PARTICIPANT" } } }, error: null });
   mocks.profile.mockResolvedValue({ id, role: "SUPERADMIN", isActive: true });
-  for (const name of ["overview", "periods", "period", "create", "psychologists", "appointments"] as const) mocks[name].mockResolvedValue({ items: [] });
+  for (const name of ["overview", "monitor", "periods", "period", "create", "psychologists", "appointments"] as const) mocks[name].mockResolvedValue({ items: [] });
 });
 it.each(["PARTICIPANT", "PSYCHOLOGIST"])("all admin routes reject %s despite forged JWT metadata", async role => {
   mocks.profile.mockResolvedValue({ id, role, isActive: true });
@@ -51,10 +55,18 @@ it("validates detail path/query, content type and oversized bodies", async () =>
   expect((await POST(post({ ...payload, name: "x".repeat(3000) }))).status).toBe(413);
 });
 it("raw SQL errors are safe and responses remain no-store", async () => {
-  mocks.overview.mockRejectedValue(new Error("secret raw query")); const response = await reads[0](); expect(response.status).toBe(503); expect(await response.text()).not.toContain("secret"); expect(response.headers.get("cache-control")).toContain("no-store");
+  mocks.overview.mockRejectedValue(new Error("secret raw query")); const response = await overview(request("overview?from=2030-01-01&to=2030-01-31")); expect(response.status).toBe(503); expect(await response.text()).not.toContain("secret"); expect(response.headers.get("cache-control")).toContain("no-store");
 });
 it("SUPERADMIN cannot read private chat, assessment history or PDF through existing routes", async () => {
   expect((await privateChat(new Request(`${origin}/api/consultations/${id}/messages`), { params: Promise.resolve({ appointmentId: id }) })).status).toBe(403);
   expect((await assessmentHistory()).status).toBe(403);
   expect((await reportDownload(new Request(`${origin}/api/reports/${id}/download`), { params: Promise.resolve({ reportId: id }) })).status).toBe(403);
+});
+
+it("monitor uses the verified actor and returns operational counts only", async () => {
+  const counts = { activeParticipants: 2, activePsychologists: 1, assessmentsStarted: 3, assessmentsCompleted: 2, appointments: 1, clinicalIndicatorsEnabled: false };
+  mocks.monitor.mockResolvedValue(counts);
+  const response = await monitor(request("monitor?from=2030-01-01&to=2030-01-31"));
+  expect(response.status).toBe(200); expect((await response.json()).data).toEqual(counts);
+  expect(mocks.monitor).toHaveBeenCalledWith(id, { from: "2030-01-01", to: "2030-01-31" });
 });

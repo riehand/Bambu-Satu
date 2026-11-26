@@ -39,6 +39,7 @@ else if(view==="report-download") content=<ReportDownloadFixture initiallyGenera
 else if(view==="psychologist-appointments") content=<PsychologistAppointmentList/>;
 else if(view==="availability") content=<PsychologistAvailability psychologistId={fixtureId(902)} psychologistName="Psikolog Uji Sintetis" today={query.get("today")??"2030-01-01"}/>;
 else if(view==="appointments") content=<AppointmentCenter/>;
+else if(view==="privacy") content=<AppointmentCenter privacyOnly/>;
 else if(view==="availability-editor") content=<PsychologistAvailabilityEditor today={query.get("today")??"2030-01-01"}/>;
 else if(view==="introduction") content=<Introduction quota={unavailable?null:quota} error={unavailable}/>;
 else if(view==="questionnaire") content=<Questionnaire sessionId={fixtureId(300)} initialRevision={Number(sessionStorage.getItem("synthetic-revision")??0)} initialAnswers={persisted??answers} questions={set.questions} dassInstructions={set.dassInstructions} wemwbsInstructions={set.wemwbsInstructions} dassOptions={set.dassOptions as {value:number;label:string}[]} wemwbsOptions={set.wemwbsOptions as {value:number;label:string}[]}/>;

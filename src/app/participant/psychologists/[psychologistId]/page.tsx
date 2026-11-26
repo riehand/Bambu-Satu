@@ -1,3 +1,4 @@
+import { ServiceUnavailable } from "@/components/service-unavailable";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -12,7 +13,9 @@ async function PsychologistDetailContent({ params }: { params: Promise<{ psychol
   const { psychologistId } = await params;
   const parsedId = psychologistIdSchema.safeParse(psychologistId);
   if (!parsedId.success) notFound();
-  const psychologist = await withApplicationDatabase(() => getPsychologistById(parsedId.data));
+  let psychologist;
+  try { psychologist = await withApplicationDatabase(() => getPsychologistById(parsedId.data)); }
+  catch { return <ServiceUnavailable title="Profil psikolog belum tersedia" message="Informasi profesional dan jadwal belum dapat dimuat. Coba lagi nanti atau kembali ke direktori."/>; }
   if (!psychologist) notFound();
 
   return <>

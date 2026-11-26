@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 export default function LoginPage() {
   return <Suspense fallback={<p className="p-8 text-center">Memuat...</p>}><LoginForm /></Suspense>;
@@ -73,9 +74,9 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 py-12">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        <div className="text-center mb-8">
+    <AuthShell>
+      <div>
+        <div className="mb-8">
           <h1 className="text-3xl font-bold text-brand-dark">Selamat Datang</h1>
           <p className="text-gray-500 mt-2">Masuk ke WellBeing Hub</p>
         </div>
@@ -95,11 +96,11 @@ function LoginForm() {
 
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
             </div>
             <div className="relative">
-              <input type={showPassword ? "text" : "password"} name="password" autoComplete="current-password" required value={formData.password} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-soft outline-none" placeholder="Masukkan password Anda" />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm font-medium">
+              <input id="password" type={showPassword ? "text" : "password"} name="password" autoComplete="current-password" required value={formData.password} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-soft outline-none" placeholder="Masukkan password Anda" />
+              <button type="button" aria-pressed={showPassword} aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm font-medium">
                 {showPassword ? "Sembunyikan" : "Tampilkan"}
               </button>
             </div>
@@ -109,12 +110,12 @@ function LoginForm() {
             {loading ? "Memverifikasi..." : "Masuk"}
           </button>
         </form>
-        <button type="button" disabled={loading} onClick={resendConfirmation} className="mt-4 text-sm text-brand-dark hover:underline disabled:opacity-70">Kirim ulang email konfirmasi</button>
+        <button type="button" disabled={loading || !formData.email.trim()} onClick={resendConfirmation} className="mt-4 text-sm text-brand-dark hover:underline disabled:opacity-70">Kirim ulang email konfirmasi</button>
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Belum punya akun? <Link href="/auth/register" className="text-brand-dark hover:underline font-medium">Daftar di sini</Link>
         </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }

@@ -1,18 +1,18 @@
 import Link from "next/link";
+import Image from "next/image";
+import { Brand } from "@/components/participant/icons";
+import "./landing.css";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-[#2D6A4F] selection:text-white">
+    <div lang="en" className="landing min-h-screen bg-white font-sans text-gray-900 selection:bg-[#2D6A4F] selection:text-white">
       
       {/* WRAPPER UNTUK NAVBAR & HERO DENGAN BACKGROUND PALE GREEN */}
       <div className="bg-[#F4F8F5]">
         
         {/* 1. NAVBAR */}
-        <nav className="flex items-center justify-between px-8 py-6 max-w-[1400px] mx-auto">
-          <div className="flex items-center gap-2 text-xl font-bold text-[#1B4332]">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            WellBeing Hub
-          </div>
+        <a href="#landing-main" className="landing-skip">Skip to content</a><nav aria-label="Main navigation" className="flex items-center justify-between px-8 py-6 max-w-[1400px] mx-auto">
+          <Link href="/" aria-label="WellBeing Hub home"><Brand/></Link>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
             <Link href="#how-it-works" className="hover:text-[#1B4332]">How it works</Link>
             <Link href="#psychologist" className="hover:text-[#1B4332]">Find a psychologist</Link>
@@ -26,7 +26,7 @@ export default function LandingPage() {
         </nav>
 
         {/* 2. HERO SECTION */}
-        <section className="max-w-[1400px] mx-auto px-8 pt-10 pb-24 grid lg:grid-cols-2 gap-12 items-center">
+        <section id="landing-main" className="max-w-[1400px] mx-auto px-8 pt-10 pb-24 grid lg:grid-cols-2 gap-12 items-center">
           <div className="max-w-xl">
             <p className="text-xs font-bold text-[#2D6A4F] mb-4">A little clarity. A step toward care.</p>
             <h1 className="text-5xl lg:text-[4rem] font-bold text-[#1B4332] leading-[1.1] mb-6 tracking-tight">
@@ -36,7 +36,7 @@ export default function LandingPage() {
               A calmer space for students and lecturers at Telkom University to reflect, understand their wellbeing, and connect with support.
             </p>
             <div className="flex flex-wrap gap-4 mb-8">
-              <Link href="/auth/register" className="px-6 py-3.5 bg-[#1B4332] text-white font-medium rounded-full hover:bg-[#2D6A4F] transition-colors flex items-center gap-2">
+              <Link href="/participant/assessment" className="px-6 py-3.5 bg-[#1B4332] text-white font-medium rounded-full hover:bg-[#2D6A4F] transition-colors flex items-center gap-2">
                 &rarr; Start Assessment
               </Link>
               <Link href="#psychologist" className="px-6 py-3.5 bg-white text-[#1B4332] font-medium rounded-full border border-gray-300 hover:bg-gray-50 transition-colors">
@@ -51,7 +51,7 @@ export default function LandingPage() {
           
           <div className="relative w-full h-[500px] rounded-[2.5rem] overflow-hidden bg-gray-200">
             {/* Ganti dengan gambar aslinya */}
-            <img src="/images/hero.jpg" alt="Student smiling" className="w-full h-full object-cover" />
+            <Image width={800} height={700} preload src="/images/wellbeing-space.svg" alt="A quiet space for reflection" className="w-full h-full object-cover" />
             <div className="absolute bottom-6 left-6 right-6 bg-white/95 backdrop-blur rounded-2xl p-5 shadow-sm flex items-start gap-4">
               <div className="text-[#2D6A4F] mt-1"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg></div>
               <div>
@@ -99,13 +99,13 @@ export default function LandingPage() {
             { title: "Check in with yourself", desc: "Reflect on feelings and everyday wellbeing with two structured questionnaires.", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" },
             { title: "See the bigger picture", desc: "Understand your results, revisit your history, and take a report with you.", icon: "M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" },
             { title: "Find your kind of support", desc: "Explore psychologist profiles and choose a session that fits your schedule.", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" },
-            { title: "A space to reflect", desc: "An optional AI companion for everyday reflection. Always your choice to share.", icon: "M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" }
+            { title: "A space to reflect", desc: "AI companion integration is awaiting institutional approval. Sharing stays off.", icon: "M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" }
           ].map((feature, i) => (
             <div key={i} className="border border-gray-200 rounded-3xl p-8 flex flex-col hover:border-gray-300 transition-colors bg-white">
               <svg className="w-6 h-6 text-[#2D6A4F] mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={feature.icon} /></svg>
               <h3 className="font-bold text-lg text-[#1B4332] mb-3">{feature.title}</h3>
               <p className="text-gray-500 text-sm flex-grow mb-8">{feature.desc}</p>
-              <Link href="#" className="text-[#2D6A4F] font-bold text-sm hover:underline">Explore feature &rarr;</Link>
+              <Link href={["/participant/assessment", "/participant/history", "/participant/psychologists", "/participant/privacy#ai"][i]} className="text-[#2D6A4F] font-bold text-sm hover:underline">Explore feature &rarr;</Link>
             </div>
           ))}
         </div>
@@ -157,7 +157,7 @@ export default function LandingPage() {
         <div className="grid lg:grid-cols-2 gap-16 items-center mb-24">
           <div className="rounded-[2.5rem] overflow-hidden bg-gray-200 h-[450px]">
              {/* Ganti dengan gambar aslinya */}
-            <img src="/images/human-connection.jpg" alt="Psychologist laughing" className="w-full h-full object-cover" />
+            <Image width={800} height={640} src="/images/listening.svg" alt="Illustration of a supportive conversation" className="w-full h-full object-cover" />
           </div>
           <div>
             <p className="text-xs font-bold tracking-widest text-[#2D6A4F] uppercase mb-4">Human Connection</p>
@@ -165,17 +165,17 @@ export default function LandingPage() {
             <p className="text-gray-600 mb-8 text-sm leading-relaxed">Find a psychologist whose experience fits your needs. Read their profile, explore available sessions, and decide what feels right for you.</p>
             
             <ul className="space-y-4 mb-8">
-              {['Student wellbeing and work-life expertise', 'Private online sessions in clear time windows', 'Report sharing only with your permission'].map((item, i) => (
+              {['Student wellbeing and work-life expertise', 'Fixed consultation windows and clear schedules', 'Report sharing only with your permission'].map((item, i) => (
                 <li key={i} className="flex items-center gap-3 text-sm text-gray-600">
                   <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                   {item}
                 </li>
               ))}
             </ul>
-            <Link href="/auth/register" className="inline-flex px-6 py-3 bg-[#1B4332] text-white font-medium rounded-full hover:bg-[#2D6A4F] transition-colors items-center gap-2 text-sm">
+            <Link href="/participant/psychologists" className="inline-flex px-6 py-3 bg-[#1B4332] text-white font-medium rounded-full hover:bg-[#2D6A4F] transition-colors items-center gap-2 text-sm">
               &rarr; Find a psychologist
             </Link>
-            <p className="text-[10px] text-gray-400 mt-4">Profiles shown in this design are fictional examples.</p>
+            <p className="text-[10px] text-gray-400 mt-4">Explore current professional profiles in the directory.</p>
           </div>
         </div>
 
@@ -198,9 +198,9 @@ export default function LandingPage() {
             </div>
             <div>
               <h3 className="font-bold text-[#1B4332] mb-1 text-sm">Clear controls</h3>
-              <p className="text-sm text-gray-500">Review consent history and revoke access from your privacy settings.</p>
+              <p className="text-sm text-gray-500">Review report permissions and revoke access from Consent & privacy.</p>
             </div>
-            <Link href="#" className="inline-block text-[#2D6A4F] font-bold text-sm hover:underline mt-2">
+            <Link href="/privacy" className="inline-block text-[#2D6A4F] font-bold text-sm hover:underline mt-2">
               Read our privacy approach &rarr;
             </Link>
           </div>
@@ -224,7 +224,7 @@ export default function LandingPage() {
               <p className="text-[10px] font-bold tracking-widest text-gray-400 uppercase mb-3">PAUSE &middot; {article.read}</p>
               <h3 className="font-bold text-lg text-[#1B4332] mb-2">{article.title}</h3>
               <p className="text-gray-500 text-sm flex-grow mb-8">{article.desc}</p>
-              <Link href="#" className="text-[#2D6A4F] font-bold text-sm hover:underline">Read article &rarr;</Link>
+              <Link href={`/help#${["pause", "rest", "conversation"][i]}`} className="text-[#2D6A4F] font-bold text-sm hover:underline">Explore this idea &rarr;</Link>
             </div>
           ))}
         </div>
@@ -235,7 +235,7 @@ export default function LandingPage() {
             <p className="text-xs font-bold tracking-widest text-[#2D6A4F] uppercase mb-4">A Little More Clarity</p>
             <h2 className="text-4xl font-bold text-[#1B4332] mb-4">Questions are welcome.</h2>
             <p className="text-gray-500 text-sm mb-8">Here are a few things you may want to know before getting started.</p>
-            <Link href="#" className="text-[#2D6A4F] font-bold text-sm hover:underline">Visit the help center &rarr;</Link>
+            <Link href="/help" className="text-[#2D6A4F] font-bold text-sm hover:underline">Visit the help center &rarr;</Link>
           </div>
           
           <div className="lg:col-span-8 space-y-6">
@@ -245,12 +245,10 @@ export default function LandingPage() {
               </h4>
               <p className="text-gray-500 text-sm">No. Results describe your responses and can support reflection or a conversation with a professional. They do not provide a diagnosis.</p>
             </div>
-            {['Who can see my results?', 'Do I have to use the AI companion?', 'Can I pause an assessment?', 'What if I need urgent help?'].map((faq, i) => (
-              <div key={i} className="border-b border-gray-200 pb-6">
-                <h4 className="font-bold text-[#1B4332] flex justify-between items-center cursor-pointer">
-                  {faq} <span className="text-gray-400">+</span>
-                </h4>
-              </div>
+            {[['Who can see my results?', 'Your results are private. A psychologist can access a report only with your specific permission. You can revoke it from Consent & privacy.'], ['Do I have to use the AI companion?', 'No. AI sharing stays off. This integration is awaiting institutional approval.'], ['Can I pause an assessment?', 'Yes. Wait for the saved confirmation, then use Save & continue later. You can return using the same account.'], ['What if I need urgent help?', 'This is not an emergency service. For immediate danger, contact local emergency services or your nearest emergency department.']].map(([faq, answer], i) => (
+              <details key={i} className="border-b border-gray-200 pb-6">
+                <summary className="font-bold text-[#1B4332] cursor-pointer">{faq}</summary><p className="text-gray-500 text-sm mt-4">{answer}</p>
+              </details>
             ))}
           </div>
         </div>
@@ -262,7 +260,7 @@ export default function LandingPage() {
           A moment for yourself<br/>can be a meaningful beginning.
         </h2>
         <p className="text-gray-500 mb-10 text-sm">Start with a private check-in. Choose your next step when you&apos;re ready.</p>
-        <Link href="/auth/register" className="inline-flex px-8 py-3.5 bg-[#1B4332] text-white font-medium rounded-full hover:bg-[#2D6A4F] transition-colors items-center gap-2">
+        <Link href="/participant/assessment" className="inline-flex px-8 py-3.5 bg-[#1B4332] text-white font-medium rounded-full hover:bg-[#2D6A4F] transition-colors items-center gap-2">
           &rarr; Start Assessment
         </Link>
       </section>
@@ -280,24 +278,24 @@ export default function LandingPage() {
           <div className="md:col-span-2">
             <h5 className="font-bold text-[#1B4332] mb-4 text-xs">Explore</h5>
             <ul className="space-y-3 text-xs text-gray-400">
-              <li><Link href="#" className="hover:text-[#1B4332]">Assessment</Link></li>
-              <li><Link href="#" className="hover:text-[#1B4332]">Psychologists</Link></li>
-              <li><Link href="#" className="hover:text-[#1B4332]">Resources</Link></li>
+              <li><Link href="/participant/assessment" className="hover:text-[#1B4332]">Assessment</Link></li>
+              <li><Link href="/participant/psychologists" className="hover:text-[#1B4332]">Psychologists</Link></li>
+              <li><Link href="/help" className="hover:text-[#1B4332]">Resources</Link></li>
             </ul>
           </div>
           
           <div className="md:col-span-2">
             <h5 className="font-bold text-[#1B4332] mb-4 text-xs">Trust & help</h5>
             <ul className="space-y-3 text-xs text-gray-400">
-              <li><Link href="#" className="hover:text-[#1B4332]">Privacy policy</Link></li>
-              <li><Link href="#" className="hover:text-[#1B4332]">Terms of use</Link></li>
-              <li><Link href="#" className="hover:text-[#1B4332]">Help center</Link></li>
+              <li><Link href="/privacy" className="hover:text-[#1B4332]">Privacy policy</Link></li>
+              <li><Link href="/help#terms" className="hover:text-[#1B4332]">Terms of use</Link></li>
+              <li><Link href="/help" className="hover:text-[#1B4332]">Help center</Link></li>
             </ul>
           </div>
         </div>
 
         <div className="text-[10px] text-gray-400 text-center md:text-left">
-          &copy; 2026 WellBeing Hub &middot; Fictional product design. Not an emergency service. For urgent concerns, contact local emergency services or your nearest emergency department.
+          &copy; 2026 WellBeing Hub &middot; Not an emergency service. For urgent concerns, contact local emergency services or your nearest emergency department.
         </div>
       </footer>
 

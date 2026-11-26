@@ -1,10 +1,9 @@
 import "server-only";
-import { PrismaClient } from "@prisma/client";
-import { contextualPrisma } from "./dal/context";
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
-let legacy:PrismaClient|undefined;
+import { contextualPrisma, DalError } from "./dal/context";
+// The only installed database adapter is currently the isolated restricted DAL.
+// Auth/profile in standard development use the user's Supabase session and RLS.
+// Do not silently use DATABASE_URL (which may be a migration owner) for features
+// awaiting an approved hosted request identity adapter and SQL gateways.
 export const prisma=contextualPrisma(()=>{
- legacy??=globalForPrisma.prisma??new PrismaClient();
- if(process.env.NODE_ENV!=="production")globalForPrisma.prisma=legacy;
- return legacy;
+ throw new DalError("RESTRICTED_RUNTIME_REQUIRED");
 });

@@ -17,7 +17,7 @@ type Psychologist = { id: string; fullName: string };
 
 const indonesiaTime = (value: string) => new Intl.DateTimeFormat("id-ID", { dateStyle: "full", timeStyle: "short", timeZone: "Asia/Jakarta" }).format(new Date(value));
 
-export function AppointmentCenter() {
+export function AppointmentCenter({ privacyOnly = false }: { privacyOnly?: boolean }) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [consents, setConsents] = useState<Consent[]>([]);
   const [context, setContext] = useState<BookingContext | null>(null);
@@ -128,7 +128,7 @@ export function AppointmentCenter() {
     {message && <p className="wb-success" role="status">{message}</p>}
     <button type="button" className="wb-button secondary" disabled={pending !== ""} onClick={() => void refresh()}>Muat ulang janji</button>
 
-    <section className="wb-card">
+    {!privacyOnly && <section className="wb-card">
       <h2>Janji konsultasi</h2>
       {appointments.length ? <div className="wb-appointment-list">{appointments.map((appointment) => {
         const grant = consents.find((item) => item.appointmentId === appointment.appointmentId && item.consentType === "APPOINTMENT_REPORT_ACCESS");
@@ -141,7 +141,7 @@ export function AppointmentCenter() {
           {grant?.revokedAt && eligible && <div className="wb-reconsent"><label><input type="checkbox" checked={Boolean(reconsentChecks[appointment.appointmentId])} disabled={pending === appointment.appointmentId} onChange={(event) => setReconsentChecks((current) => ({ ...current, [appointment.appointmentId]: event.target.checked }))}/>Saya setuju kembali membagikan laporan ini kepada {appointment.psychologist.fullName} untuk janji ini.</label><button className="wb-button secondary" type="button" disabled={!reconsentChecks[appointment.appointmentId] || pending === appointment.appointmentId} onClick={() => void reconsent(appointment)}>Berikan persetujuan baru</button></div>}
         </article>;
       })}</div> : <p className="wb-muted">Belum ada janji konsultasi.</p>}
-    </section>
+    </section>}
 
     <section className="wb-card">
       <h2>Persetujuan laporan mandiri</h2>
@@ -150,10 +150,10 @@ export function AppointmentCenter() {
         <label className="wb-availability-date"><span>Psikolog penerima</span><select value={psychologistId} onChange={(event) => setPsychologistId(event.target.value)}><option value="">Pilih psikolog</option>{psychologists.map((person) => <option key={person.id} value={person.id}>{person.fullName}</option>)}</select></label>
         <label className="wb-report-consent"><input type="checkbox" checked={standaloneConsent} disabled={pending === "standalone"} onChange={(event) => setStandaloneConsent(event.target.checked)}/><span>Saya setuju membagikan laporan asesmen terbaru secara mandiri kepada psikolog yang dipilih. Izin ini tidak terkait janji dan tetap berlaku sampai saya mencabutnya.</span></label>
         <button className="wb-button" type="button" disabled={!psychologistId || !standaloneConsent || pending === "standalone"} onClick={() => void grantStandalone()}>{pending === "standalone" ? "Menyimpan..." : "Berikan akses mandiri"}</button>
-      </div> : <p className="wb-muted">Laporan asesmen terbaru belum berstatus GENERATED. Akses mandiri dapat diberikan setelah artifact laporan privat tersedia.</p>}
-      <div className="wb-consent-list">{consents.filter((item) => item.consentType === "STANDALONE_REPORT_ACCESS").map((consent) => {
+      </div> : <p className="wb-muted">PDF asesmen terbaru belum siap. Akses mandiri dapat diberikan setelah laporan privat berhasil disiapkan.</p>}
+      <h3 style={{marginTop:24}}>Riwayat izin laporan</h3>{consents.length === 0 && <p className="wb-muted">Belum ada izin laporan yang dicatat.</p>}<div className="wb-consent-list">{consents.filter((item) => privacyOnly || item.consentType === "STANDALONE_REPORT_ACCESS").map((consent) => {
         const person = psychologists.find(({ id }) => id === consent.targetUserId);
-        return <article className="wb-consent-row" key={consent.consentId}><div><strong>{person?.fullName ?? "Psikolog"}</strong><small>Laporan {consent.reportId} · {isActive(consent) ? "Aktif" : consent.revokedAt ? "Dicabut" : "Berakhir"}</small></div>{isActive(consent) && <button className="wb-button secondary" type="button" disabled={pending === consent.consentId} onClick={() => void revoke(consent)}>Cabut akses</button>}</article>;
+        return <article className="wb-consent-row" key={consent.consentId}><div><strong>{person?.fullName ?? "Psikolog"}</strong><small>{consent.consentType === "APPOINTMENT_REPORT_ACCESS" ? "Izin janji konsultasi" : "Izin mandiri"} ? {indonesiaTime(consent.grantedAt)}</small><small>Laporan {consent.reportId} · {isActive(consent) ? "Aktif" : consent.revokedAt ? "Dicabut" : "Berakhir"}</small></div>{isActive(consent) && <button className="wb-button secondary" type="button" disabled={pending === consent.consentId} onClick={() => void revoke(consent)}>Cabut akses</button>}</article>;
       })}</div>
     </section>
   </div>;

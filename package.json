@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --hostname localhost --port 3000",
     "build": "next build",
+    "build:vercel": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",

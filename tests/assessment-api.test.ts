@@ -2,6 +2,9 @@ import { beforeEach, expect, it, vi } from "vitest";
 const mocks=vi.hoisted(()=>({getUser:vi.fn(),findUnique:vi.fn(),getQuota:vi.fn(),getQuestions:vi.fn(),getSession:vi.fn(),startAssessmentSession:vi.fn(),saveAnswers:vi.fn(),submitAssessment:vi.fn(),getAssessmentHistory:vi.fn()}));
 vi.mock("@/lib/supabase/server",()=>({createClient:async()=>({auth:{getUser:mocks.getUser}})}));
 vi.mock("@/lib/prisma",()=>({prisma:{user:{findUnique:mocks.findUnique}}}));
+vi.mock("@/lib/dal/context", async importOriginal => ({
+  ...await importOriginal<typeof import("@/lib/dal/context")>(), gatewayMode: () => true, hasDatabaseRequest: () => true,
+}));
 vi.mock("@/lib/assessment/service",()=>mocks);
 import {GET as quota} from "@/app/api/assessment/quota/route";
 import {GET as questions} from "@/app/api/assessment/questions/route";

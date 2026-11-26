@@ -9,6 +9,7 @@ import { AssessmentError } from "./errors";
 
 export function publicAssessmentError(error: unknown) {
   if (error instanceof AssessmentError) return error;
+  if (error instanceof DalError && error.code === "RESTRICTED_RUNTIME_REQUIRED") return new AssessmentError("ASSESSMENT_RUNTIME_UNAVAILABLE", "Layanan asesmen belum dikonfigurasi untuk lingkungan ini. Hubungi pengelola.", 503);
   if(error instanceof DalError && ["STALE_REVISION","FORBIDDEN"].includes(error.code))return new AssessmentError(error.code,"Permintaan asesmen tidak diizinkan.",error.code==="FORBIDDEN"?403:409);
   return new AssessmentError("ASSESSMENT_UNAVAILABLE", "Layanan asesmen belum dapat dimuat. Silakan coba lagi nanti.", 503);
 }
