@@ -13,3 +13,5 @@ Preview UI/Auth tidak berarti fitur klinis hosted siap. Dependensi sebelum accep
 Tetap nonaktif: human chat/lifecycle produksi, perubahan role/aktivasi akun, aktivasi periode dan perubahan kuota produksi, ekspor audit/data, serta AI handoff sampai kebijakan KKA dan gateway terkait disetujui. Kode UI menampilkan keterbatasan ini tanpa data fiktif.
 
 Sebelum deployment yang diinstruksikan: satu full regression milestone, build production, dan acceptance dengan akun preview yang disetujui. Untuk kembali ke versi sebelumnya, gunakan artifact aplikasi sebelumnya; jangan reset database atau menghapus volume. Deployment tidak dijalankan oleh perubahan ini.
+
+Implementasi staging terbaru dan langkah Dashboard: [STAGING-FIRST-TIME.md](STAGING-FIRST-TIME.md). Belum ada deployment hosted.

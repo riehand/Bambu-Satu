@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { httpsService, stagingProject } from "@/lib/dal/staging-config";
 import { prisma } from "@/lib/prisma";
 import { DalError, databaseTransaction, assertDatabaseActor } from "@/lib/dal/context";
 import { ReportError } from "./service";
@@ -7,10 +8,16 @@ import { ReportError } from "./service";
 async function callWorker(path: "generate" | "download", input: { jobId: string } | { ticketId: string }) {
   const endpoint = process.env.WELLBEING_PDF_WORKER_URL;
   const token = process.env.WELLBEING_PDF_WORKER_TOKEN;
-  if ((process.env.NODE_ENV !== "test" && process.env.NODE_ENV !== "development")
-    || !process.env.WELLBEING_LOCAL_RUNTIME_FILE || !endpoint || !token || !/^[a-f0-9]{64}$/.test(token)) throw new ReportError("REPORT_UNAVAILABLE", 503, 10);
-  const url = new URL(endpoint);
-  if (url.protocol !== "http:" || url.hostname !== "127.0.0.1" || url.username || url.password || url.pathname !== "/" || url.search || url.hash) throw new ReportError("REPORT_UNAVAILABLE", 503, 10);
+  if (!endpoint || !token || !/^[a-f0-9]{64}$/.test(token)) throw new ReportError("REPORT_UNAVAILABLE", 503, 10);
+  let url: URL;
+  try {
+    if (process.env.WELLBEING_RUNTIME === "staging") { stagingProject(); url = httpsService(endpoint); }
+    else {
+      if ((process.env.NODE_ENV !== "test" && process.env.NODE_ENV !== "development") || !process.env.WELLBEING_LOCAL_RUNTIME_FILE) throw new Error();
+      url = new URL(endpoint);
+      if (url.protocol !== "http:" || url.hostname !== "127.0.0.1" || url.username || url.password || url.pathname !== "/" || url.search || url.hash) throw new Error();
+    }
+  } catch { throw new ReportError("REPORT_UNAVAILABLE", 503, 10); }
   try {
     const response = await fetch(new URL(path, url), { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify(input), cache: "no-store", signal: AbortSignal.timeout(40000), redirect: "error" });

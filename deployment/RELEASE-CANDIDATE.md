@@ -1,5 +1,7 @@
 # Release candidate — 26 November 2026
 
+> Catatan ini merekam commit RC ced3f1d. Adaptasi staging selanjutnya tersedia di [STAGING-FIRST-TIME.md](STAGING-FIRST-TIME.md); status lama ?adapter belum ada? di bawah adalah baseline RC, bukan status kode terbaru.
+
 Target Git: `riehand_branch`. Vercel belum terhubung pada sesi ini; belum ada URL deployment. Tidak ada proyek Supabase dibuat atau SQL hosted dijalankan.
 
 ## Preview Vercel

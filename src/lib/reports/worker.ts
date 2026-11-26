@@ -15,8 +15,8 @@ const inputSchema = z.object({
 });
 export const digestPdf = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 
-// Runs in the separate local worker process, never inside the interactive website.
-export function reportWorker(db: PrismaClient, signingKey: string) {
+// Runs in a separate worker process. Staging supplies its own issuer/kid and key.
+export function reportWorker(db: PrismaClient, signingKey: string, identity = { kid: "local-v1", issuer: "wellbeing-local-pdf-worker" }) {
   const running = new Map<string, Promise<{ reportId: string; status: "GENERATED" }>>();
   async function generate(jobId: string) {
     const [row] = await db.$queryRaw<Array<{ data: unknown }>>`SELECT wb_pdf.worker_input(${jobId}::uuid) AS data`;
@@ -38,10 +38,10 @@ export function reportWorker(db: PrismaClient, signingKey: string) {
         || !(await isExpectedAssessmentReportPdf(stored, data))) throw new Error("ARTIFACT_UNVERIFIED");
       const [clock] = await db.$queryRaw<Array<{ epoch: bigint }>>`SELECT floor(extract(epoch FROM clock_timestamp()))::bigint AS epoch`;
       const iat = Number(clock.epoch);
-      const payload = JSON.stringify({ kid: "local-v1", reportId: data.reportId,
+      const payload = JSON.stringify({ kid: identity.kid, reportId: data.reportId,
         assessmentSessionId: data.assessmentSessionId, jobId, bucket: "assessment-reports",
         key: reportObjectKeyFor(data.reportId), digest, size: stored.length, nonce: randomUUID(),
-        worker: "wb_pdf_worker", iss: "wellbeing-local-pdf-worker", aud: "wellbeing-report-finalization-v1",
+        worker: "wb_pdf_worker", iss: identity.issuer, aud: "wellbeing-report-finalization-v1",
         iat, exp: iat + 30, objectIdentity: digest });
       const signature = createHmac("sha256", Buffer.from(signingKey, "hex")).update(payload).digest("hex");
       const [finalized] = await db.$queryRaw<Array<{ id: string }>>`SELECT wb_pdf.finalize(${payload},${signature}) AS id`;
