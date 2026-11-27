@@ -1,0 +1,6 @@
+# Function-specific configuration only; no database migration or Auth hook changes.
+[functions.wellbeing-signer]
+entrypoint = "../build/edge-signer/index.js"
+# The handler verifies every user JWT through project-pinned Auth /user.
+# Legacy gateway verification does not support all current JWT/key formats.
+verify_jwt = false

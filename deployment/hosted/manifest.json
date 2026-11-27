@@ -1,0 +1,67 @@
+{
+  "ref": "bofoowyzlnfhwcstlmgp",
+  "mode": "hosted",
+  "sources": [
+    {
+      "path": "docs/sql/stage3e1b/01-identity.sql",
+      "sha256": "c18b88f8dc95dcf07a4bb23f57d8abcbf2d23e99b20746833888fe40dc082329"
+    },
+    {
+      "path": "docs/sql/stage3e1b/02-runtime-policies.sql",
+      "sha256": "ca71becfbde53899e55d2f778e0dffc4dce229021102c95efe333d946f2578f5"
+    },
+    {
+      "path": "docs/sql/stage3e1b/03-mutation-guards.sql",
+      "sha256": "7820c8bb992043da01e4aaa23c0df0e7932431c6be3927c977658804da7ce607"
+    },
+    {
+      "path": "docs/sql/stage3e1b/04-monitor.sql",
+      "sha256": "c74b971293678e0e982b1296c1e02652a6e1c1ac6886ffdbb156af012ed0c7b7"
+    },
+    {
+      "path": "docs/sql/stage3e1c/01-scoring.sql",
+      "sha256": "0617760fa62596b3f8d6b42694bb6249b3ebeea91ebe1aa037d9aefa354898c1"
+    },
+    {
+      "path": "docs/sql/stage3e1c/02-projections.sql",
+      "sha256": "7a0787567904697586885f7357e739933d50cafdb3710d979471b76772dc899c"
+    },
+    {
+      "path": "docs/sql/stage3e1c/03-report-boundary.sql",
+      "sha256": "4f11fd81e24fa342e80e54932addd4d0ccf848c68dbf6054e813d2da3b65ca70"
+    },
+    {
+      "path": "docs/sql/phase4-sprint3/00-booking-consent-base.sql",
+      "sha256": "7749f70c19f11ff18e4ae2bd12efb563f8d8ec9a06862b9566b559772ae4dca9"
+    },
+    {
+      "path": "docs/sql/phase4-sprint2/00-close-interactive-finalizer.sql",
+      "sha256": "4ad8f6ac25057b193f11a75aa5d9f22dbfd29e150cfcc08d7f4297d453271639"
+    },
+    {
+      "path": "docs/sql/phase4-sprint2/01-authorities.sql",
+      "sha256": "b77cb6fe1c8d57a0c05b6312b854af83a343c7f61049030153e336a3c6b03865"
+    },
+    {
+      "path": "docs/sql/phase4-sprint2/02-gateways.sql",
+      "sha256": "e379e9eb4f6c394fee43f9996bf91f9e0ef5ec0c7484af107b59bceb49b5fb79"
+    },
+    {
+      "path": "docs/sql/phase4-sprint3/01-read-projections.sql",
+      "sha256": "245725fcab806fb9415bc9b99eb5fc08c2a224b8e009f37564fdd8cebb496008"
+    },
+    {
+      "path": "docs/sql/phase4-sprint3/02-booking-artifact.sql",
+      "sha256": "3e527e09695435ad594d11315c46f3965828a8740c29831ee57b78fc85277046"
+    },
+    {
+      "path": "docs/sql/phase4-sprint3/03-report-scope.sql",
+      "sha256": "b252664518647476dbc26a2a39ee33cef92377abb7df78b760a325aebf512754"
+    },
+    {
+      "path": "docs/sql/stage3e1/03-object-privileges.sql",
+      "sha256": "7cb683a61f5be8ac467520d17f3198f0decefc72add914c8807d6d15303a69ab"
+    }
+  ],
+  "executed": false
+}

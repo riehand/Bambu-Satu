@@ -1,0 +1,6 @@
+{
+  "id": "assessment-reports",
+  "public": false,
+  "fileSizeLimit": 5242880,
+  "allowedMimeTypes": ["application/pdf"]
+}

@@ -126,14 +126,17 @@ describe("registration and confirmation", () => {
     expect(response.status).toBe(202);
     expect(mocks.signUp.mock.calls[0][0].options.data).toEqual({ full_name: input.fullName, user_type: userType, institutional_id: input.institutionalId, phone_number: input.phoneNumber });
     expect(await response.json()).toMatchObject({ success: true });
+    expect(mocks.findUnique).not.toHaveBeenCalled();
   });
   it("rejects password mismatch before any database operation", async () => {
     expect((await register(request("register", { ...input, confirmPassword: "wrong" }))).status).toBe(400);
     expect(mocks.findUnique).not.toHaveBeenCalled();
   });
-  it("rejects a duplicate institutional ID", async () => {
-    expect((await register(request("register", input))).status).toBe(409);
-    expect(mocks.signUp).not.toHaveBeenCalled();
+  it("rejects an authoritative duplicate institutional ID/profile trigger failure without exposing profiles", async () => {
+    mocks.signUp.mockResolvedValue({ data: {}, error: { status: 500, code: "unexpected_failure" } });
+    expect((await register(request("register", input))).status).toBe(503);
+    expect(mocks.signUp).toHaveBeenCalledOnce();
+    expect(mocks.findUnique).not.toHaveBeenCalled();
   });
   it("returns the same neutral result for obscured and explicit existing-email signup", async () => {
     mocks.findUnique.mockResolvedValue(null);

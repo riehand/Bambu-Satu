@@ -69,6 +69,7 @@ export async function listConsultations(actor: ConsultationActor): Promise<Consu
 }
 
 export async function transitionConsultation(actor: ConsultationActor, appointmentId: string, action: ConsultationAction) {
+  if (["hosted", "staging"].includes(process.env.WELLBEING_RUNTIME ?? "")) throw new AppointmentError("CONSULTATION_POLICY_PENDING", "Kebijakan institusi belum disetujui.", 403);
   scope(actor);
   if (gatewayMode()) return databaseTransaction(async tx=>{
     assertDatabaseActor(actor.id,actor.role);

@@ -1,0 +1,50 @@
+# Prepared only. Importing/applying creates a PAID service and triggers deployment.
+# Obtain owner approval and push the reviewed source separately before applying.
+services:
+  - type: web
+    name: wellbeing-pdf-worker
+    runtime: node
+    plan: starter
+    region: singapore
+    branch: riehand_branch
+    autoDeployTrigger: off
+    buildCommand: npm ci --include=dev && npx prisma generate && npm run worker:build
+    startCommand: npm run worker:start
+    numInstances: 1
+    # Default TCP health check: all HTTP routes require the service bearer token.
+    disk:
+      name: worker-session
+      mountPath: /var/data/wellbeing
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: WELLBEING_RUNTIME
+        value: hosted
+      - key: WELLBEING_WORKER_HOSTING
+        value: render
+      - key: WELLBEING_HOSTED_PROJECT_REF
+        value: bofoowyzlnfhwcstlmgp
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        value: https://bofoowyzlnfhwcstlmgp.supabase.co
+      - key: WELLBEING_WORKER_SESSION_PATH
+        value: /var/data/wellbeing/session.enc
+      - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: WELLBEING_WORKER_DATABASE_URL
+        sync: false
+      - key: WELLBEING_PDF_SIGNING_KEY
+        sync: false
+      - key: WELLBEING_PDF_WORKER_TOKEN
+        sync: false
+      - key: WELLBEING_WORKER_SESSION_KEY
+        sync: false
+      - key: WELLBEING_STORAGE_WORKER_SUB
+        sync: false
+      # One-time bootstrap only. Remove all three after encrypted session persists.
+      - key: WELLBEING_WORKER_SESSION_BOOTSTRAP
+        sync: false
+      - key: WELLBEING_WORKER_BOOTSTRAP_EMAIL
+        sync: false
+      - key: WELLBEING_WORKER_BOOTSTRAP_PASSWORD
+        sync: false

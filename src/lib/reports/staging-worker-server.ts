@@ -1,22 +1,30 @@
 import "server-only";
 import { PrismaClient } from "@prisma/client";
-import { createClient } from "@supabase/supabase-js";
+import { configureHostedStorageTokens, hostedStorageClient } from "./hosted-storage";
+import { openWorkerAuthSession } from "./worker-auth-session";
 import { z } from "zod";
 import { stagingDatabase, stagingProject } from "../dal/staging-config";
 import { verifyRestrictedRole } from "../dal/hosted-bootstrap";
 import { stagingHttp } from "../dal/staging-http";
 import { reportWorker } from "./worker";
+import { workerListenHost } from "./worker-hosting";
 
 async function main() {
-  const { ref, url } = stagingProject();
+  const { ref, mode } = stagingProject();
+  const listenHost = workerListenHost();
   const key = z.string().regex(/^[a-f0-9]{64}$/).parse(process.env.WELLBEING_PDF_SIGNING_KEY);
   const db = new PrismaClient({ datasources: { db: { url: stagingDatabase(process.env.WELLBEING_WORKER_DATABASE_URL, "wb_pdf_worker", ref) } }, log: [] });
+  let session: Awaited<ReturnType<typeof openWorkerAuthSession>> | undefined;
+  let clearTokens: (() => void) | undefined;
   try {
     await verifyRestrictedRole(db, "wb_pdf_worker");
-    const storage = createClient(url, process.env.SUPABASE_SECRET_KEY!, { auth: { persistSession: false, autoRefreshToken: false } });
+    session = await openWorkerAuthSession();
+    clearTokens = configureHostedStorageTokens(session.accessToken);
+    const storage = hostedStorageClient();
     const { data: bucket, error } = await storage.storage.getBucket("assessment-reports");
-    if (error || !bucket || bucket.public) throw new Error("PRIVATE_BUCKET_REQUIRED");
-    const worker = reportWorker(db, key, { kid: "staging-v1", issuer: `wellbeing-staging-${ref}-pdf-worker` });
+    if (error || !bucket || bucket.public || Number(bucket.file_size_limit) !== 5242880
+      || bucket.allowed_mime_types?.length !== 1 || bucket.allowed_mime_types[0] !== "application/pdf") throw new Error("PRIVATE_BUCKET_REQUIRED");
+    const worker = reportWorker(db, key, { kid: `${mode}-v1`, issuer: `wellbeing-${mode}-${ref}-pdf-worker` });
     const server = stagingHttp(process.env.WELLBEING_PDF_WORKER_TOKEN ?? "", async (path, body, response) => {
       if (path === "/generate") {
         const { jobId } = z.object({ jobId: z.string().uuid() }).strict().parse(body);
@@ -29,9 +37,11 @@ async function main() {
       } else response.writeHead(404).end();
     });
     const port = z.coerce.number().int().min(1024).max(65535).parse(process.env.PORT ?? 8082);
-    server.listen(port, "127.0.0.1");
-    const close = () => server.close(() => { void db.$disconnect(); });
+    server.listen(port, listenHost);
+    const close = () => server.close(() => {
+      clearTokens?.(); void session?.close(); void db.$disconnect();
+    });
     process.on("SIGTERM", close); process.on("SIGINT", close);
-  } catch { await db.$disconnect(); throw new Error("WORKER_START_FAILED"); }
+  } catch { clearTokens?.(); await session?.close(); await db.$disconnect(); throw new Error("WORKER_START_FAILED"); }
 }
 void main().catch(() => { console.error("Staging PDF worker configuration rejected."); process.exitCode = 1; });

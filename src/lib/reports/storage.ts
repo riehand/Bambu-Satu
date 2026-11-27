@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
+import { hostedStorageClient } from "./hosted-storage";
 
 const bucket = "assessment-reports";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -13,10 +14,13 @@ export class ReportStorageError extends Error {
 let storageClient: ReturnType<typeof createClient> | undefined;
 
 function client() {
-  if (storageClient) return storageClient;
+  if (["hosted", "staging"].includes(process.env.WELLBEING_RUNTIME ?? "")) return hostedStorageClient();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const secretKey = process.env.SUPABASE_SECRET_KEY;
   if (!url || !secretKey) throw new ReportStorageError("unavailable");
+  // Legacy secret-backed adapter is retained only for optional loopback fixtures.
+  if (!["127.0.0.1", "localhost", "[::1]"].includes(new URL(url).hostname)) throw new ReportStorageError("unavailable");
+  if (storageClient) return storageClient;
   storageClient = createClient(url, secretKey, {
     auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
     global: { fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(15_000) }) },

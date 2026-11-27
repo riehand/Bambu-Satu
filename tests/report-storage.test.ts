@@ -10,7 +10,7 @@ const pdfBytes = new Uint8Array([37, 80, 68, 70, 45, 49]);
 
 beforeEach(() => {
   vi.resetAllMocks();
-  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://synthetic.supabase.test";
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "http://127.0.0.1:55421";
   process.env.SUPABASE_SECRET_KEY = "sb_secret_synthetic_only";
   mocks.createClient.mockReturnValue({ storage: { from: mocks.from } });
   mocks.from.mockReturnValue({ upload: mocks.upload, download: mocks.download });
@@ -25,7 +25,7 @@ it("derives only the deterministic report path and uploads create-only to the pr
   expect(mocks.upload).toHaveBeenCalledWith(`reports/${reportId}.pdf`, pdfBytes, {
     contentType: "application/pdf", cacheControl: "0", upsert: false,
   });
-  expect(mocks.createClient).toHaveBeenCalledWith("https://synthetic.supabase.test", "sb_secret_synthetic_only", expect.any(Object));
+  expect(mocks.createClient).toHaveBeenCalledWith("http://127.0.0.1:55421", "sb_secret_synthetic_only", expect.any(Object));
 });
 
 it("derives the read-back path internally and rejects arbitrary object paths", async () => {

@@ -1,4 +1,5 @@
 import type { AppointmentStatus, ConsultationSessionStatus } from "@prisma/client";
+import { isolatedConsultationPolicy } from "./local-policy";
 
 export type ConsultationRole = "PARTICIPANT" | "PSYCHOLOGIST";
 export type ConsultationAction = "participant-check-in" | "psychologist-check-in" | "start" | "end";
@@ -17,7 +18,7 @@ const allowed: Eligibility = { allowed: true, code: null, reason: null };
 
 // Unapproved development assumption only. No environment switch enables it in production.
 export const DEVELOPMENT_POLICY_NOTICE = "Aturan check-in sementara untuk pengembangan; kebijakan institusi belum disetujui.";
-export function developmentPolicyEnabled() { return process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test"; }
+export function developmentPolicyEnabled() { return isolatedConsultationPolicy(); }
 
 export function consistentLifecycle(row: Lifecycle) {
   const s = row.consultationSession;

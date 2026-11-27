@@ -1,7 +1,7 @@
 // Only an explicitly configured isolated browser-test stack installs the prototype.
 export async function register() {
-  if (process.env.WELLBEING_RUNTIME === "staging") {
-    if (process.env.WELLBEING_LOCAL_RUNTIME_FILE || process.env.VERCEL_ENV === "production") throw new Error("STAGING_RUNTIME_REQUIRED");
+  if (["staging", "hosted"].includes(process.env.WELLBEING_RUNTIME ?? "")) {
+    if (process.env.WELLBEING_LOCAL_RUNTIME_FILE || (process.env.WELLBEING_RUNTIME === "staging" && process.env.VERCEL_ENV === "production")) throw new Error("STAGING_RUNTIME_REQUIRED");
     if (process.env.NEXT_RUNTIME === "nodejs" && process.env.NEXT_PHASE !== "phase-production-build") {
       const { installStagingRuntime } = await import("@/lib/dal/hosted-bootstrap");
       await installStagingRuntime();

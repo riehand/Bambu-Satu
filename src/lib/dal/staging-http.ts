@@ -2,7 +2,8 @@ import "server-only";
 import { createServer, type ServerResponse } from "node:http";
 import { timingSafeEqual } from "node:crypto";
 
-// Deploy behind a provider TLS ingress; this listener stays on loopback.
+// Deploy behind TLS ingress. Caller binds loopback or an explicitly configured
+// managed-provider interface; every HTTP path still requires the service token.
 export function stagingHttp(token: string, handler: (path: string, body: unknown, response: ServerResponse) => Promise<void>) {
   if (!/^[a-f0-9]{64}$/.test(token)) throw new Error("SERVICE_TOKEN_REQUIRED");
   const server = createServer(async (request, response) => {

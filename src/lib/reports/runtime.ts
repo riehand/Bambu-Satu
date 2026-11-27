@@ -11,7 +11,7 @@ async function callWorker(path: "generate" | "download", input: { jobId: string 
   if (!endpoint || !token || !/^[a-f0-9]{64}$/.test(token)) throw new ReportError("REPORT_UNAVAILABLE", 503, 10);
   let url: URL;
   try {
-    if (process.env.WELLBEING_RUNTIME === "staging") { stagingProject(); url = httpsService(endpoint); }
+    if (["staging", "hosted"].includes(process.env.WELLBEING_RUNTIME ?? "")) { stagingProject(); url = httpsService(endpoint); }
     else {
       if ((process.env.NODE_ENV !== "test" && process.env.NODE_ENV !== "development") || !process.env.WELLBEING_LOCAL_RUNTIME_FILE) throw new Error();
       url = new URL(endpoint);

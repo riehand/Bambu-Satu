@@ -34,10 +34,10 @@ export async function installLocalRuntime(urlText:string,marker:string,sign:(pay
 }
 // Only a validated staging bootstrap can install this runtime; no owner fallback.
 export async function installHostedRuntime(client:PrismaClient, audience:string, sign:LocalRuntime["sign"]){
- if(state.local || process.env.WELLBEING_RUNTIME!=="staging" || process.env.VERCEL_ENV==="production" || process.env.WELLBEING_LOCAL_RUNTIME_FILE || !/^wellbeing-staging-[a-z0-9]{20}-v1$/.test(audience)) throw new DalError("STAGING_RUNTIME_REQUIRED");
+ if(state.local || !["staging","hosted"].includes(process.env.WELLBEING_RUNTIME??"") || (process.env.WELLBEING_RUNTIME==="staging" && process.env.VERCEL_ENV==="production") || process.env.WELLBEING_LOCAL_RUNTIME_FILE || !/^wellbeing-(staging|hosted)-[a-z0-9]{20}-v1$/.test(audience)) throw new DalError("STAGING_RUNTIME_REQUIRED");
  state.local={client,sign,audience,hosted:true};
 }
-const executionAllowed=()=>state.local?.hosted ? process.env.WELLBEING_RUNTIME==="staging" && process.env.VERCEL_ENV!=="production" : localExecutionAllowed();
+const executionAllowed=()=>state.local?.hosted ? ["staging","hosted"].includes(process.env.WELLBEING_RUNTIME??"") && !(process.env.WELLBEING_RUNTIME==="staging" && process.env.VERCEL_ENV==="production") : localExecutionAllowed();
 export async function disconnectLocalRuntime(){await state.local?.client.$disconnect();}
 export async function withVerifiedDatabaseRequest<T>(auth:Auth,work:()=>Promise<T>){
  if(!state.local||!executionAllowed()||requests.getStore())throw new DalError("REQUEST_BOUNDARY_REQUIRED");
@@ -71,6 +71,10 @@ export async function databaseTransaction<T>(work:(tx:Prisma.TransactionClient)=
  },{isolationLevel:Prisma.TransactionIsolationLevel.ReadCommitted,maxWait:5000,timeout:15000});
  } catch(error) {
   if(error instanceof Error && error.name.startsWith("PrismaClient")){
+   // Development diagnostics contain codes only, never SQL, bindings or identity.
+   if(process.env.NODE_ENV==="development") console.warn("[WellBeing DAL] Transaction failed", {
+    code:error instanceof Prisma.PrismaClientKnownRequestError?error.code:"PRISMA_ERROR",
+   });
    const known=["STALE_REVISION","REPORT_NOT_GENERATED","SLOT_NOT_AVAILABLE","SLOT_START_PASSED","CHECK_INS_REQUIRED","CONSULTATION_ALREADY_STARTED","CONSULTATION_WINDOW_ENDED","CONSULTATION_NOT_OPEN","CONSULTATION_TERMINAL","CONSULTATION_INCONSISTENT","CONSULTATION_POLICY_PENDING","CHAT_CLOSED","IDEMPOTENCY_CONFLICT","INVALID_CURSOR"];
    const code=known.find(value=>error.message.includes(value));
    const sqlstate=error instanceof Prisma.PrismaClientKnownRequestError?error.meta?.code:undefined;

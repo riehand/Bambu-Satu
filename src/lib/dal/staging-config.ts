@@ -1,11 +1,12 @@
 import "server-only";
 
 export function stagingProject(env: Record<string, string | undefined> = process.env) {
-  const ref = env.WELLBEING_STAGING_PROJECT_REF;
-  if (env.WELLBEING_RUNTIME !== "staging" || env.VERCEL_ENV === "production"
+  const mode = env.WELLBEING_RUNTIME;
+  const ref = mode === "hosted" ? env.WELLBEING_HOSTED_PROJECT_REF : env.WELLBEING_STAGING_PROJECT_REF;
+  if (!["hosted", "staging"].includes(mode ?? "") || (mode === "staging" && env.VERCEL_ENV === "production")
     || env.WELLBEING_LOCAL_RUNTIME_FILE || !ref || !/^[a-z0-9]{20}$/.test(ref)
     || env.NEXT_PUBLIC_SUPABASE_URL !== `https://${ref}.supabase.co`) throw new Error("STAGING_TARGET_REQUIRED");
-  return { ref, url: `https://${ref}.supabase.co`, audience: `wellbeing-staging-${ref}-v1` };
+  return { ref, url: `https://${ref}.supabase.co`, audience: `wellbeing-${mode}-${ref}-v1`, mode };
 }
 
 export function httpsService(value: string | undefined) {

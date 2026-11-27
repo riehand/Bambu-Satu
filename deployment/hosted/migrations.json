@@ -1,0 +1,54 @@
+{
+  "projectRef": "bofoowyzlnfhwcstlmgp",
+  "migrations": [
+    {
+      "name": "20261021144827_init_users",
+      "path": "prisma/migrations/20261021144827_init_users/migration.sql",
+      "action": "preserve-applied",
+      "sha256": "1847814270d05a8411a3c63de8121639e8bc8b4ea4436635c451ee1cb6d15b59"
+    },
+    {
+      "name": "20261023000000_supabase_auth",
+      "path": "prisma/migrations/20261023000000_supabase_auth/migration.sql",
+      "action": "preserve-applied",
+      "sha256": "c5272ddb6fdd9624848d69bbeeb05fa5a4912d9a077264b21aaf20451b16622b"
+    },
+    {
+      "name": "20261023010000_phase2_assessment",
+      "path": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "action": "apply-pending-after-approval",
+      "sha256": "6befc228490a50bcc3fb411905fa7c5e0790066f2118a6de94a22bfdb77d3823"
+    },
+    {
+      "name": "20261028000000_psychologist_profiles",
+      "path": "prisma/migrations/20261028000000_psychologist_profiles/migration.sql",
+      "action": "apply-pending-after-approval",
+      "sha256": "4234dfcb585836426079f21e2b1bb9af180bb9c85d7f60ffcbcc7bd7adf69010"
+    },
+    {
+      "name": "20261029000000_psychologist_availability",
+      "path": "prisma/migrations/20261029000000_psychologist_availability/migration.sql",
+      "action": "apply-pending-after-approval",
+      "sha256": "4f65c7aeb4ab586e5ff29f7905caadfaec10da1b285ef62d775c287604494ccb"
+    },
+    {
+      "name": "20261029000001_appointments_report_consent",
+      "path": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "action": "apply-pending-after-approval",
+      "sha256": "ad37a1fa0e8d6a97ef1c35d8a67f9067a0b6438f7ab5279d86473d4c984f93f3"
+    },
+    {
+      "name": "20261120000000_psychologist_profiles_integrity",
+      "path": "prisma/migrations/20261120000000_psychologist_profiles_integrity/migration.sql",
+      "action": "apply-pending-after-approval",
+      "sha256": "cf2bc074ba494e022bfc26e22ee3806d4022fe6549e518bf770c459033f45ea4"
+    },
+    {
+      "name": "20261121000000_consultation_messages",
+      "path": "prisma/migrations/20261121000000_consultation_messages/migration.sql",
+      "action": "apply-pending-after-approval",
+      "sha256": "7e3245ed4c0f17b1c3f5691ee2333727d0a1d7ca79278b3f37cb3f876f80d3ce"
+    }
+  ],
+  "hostedExecuted": false
+}

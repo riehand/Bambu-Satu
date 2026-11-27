@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validations/auth";
 import { getSiteUrl, jsonError, privateHeaders } from "@/lib/auth/http";
 import { logRegistrationFailure, type RegistrationStage } from "@/lib/auth/registration-diagnostics";
@@ -17,13 +16,9 @@ export async function POST(request: Request) {
     const parsed = registerSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) return jsonError(parsed.error.issues[0].message, 400);
     const input = parsed.data;
-    // Public preflight exposes only institutional-ID availability. The trigger's
-    // UNIQUE constraint remains authoritative under concurrent registrations.
-    stage = "PRISMA_PREFLIGHT";
-    const existing = await prisma.user.findUnique({
-      where: { institutionalId: input.institutionalId }, select: { id: true },
-    });
-    if (existing) return jsonError("NIM/NIP sudah digunakan. Jika sudah mendaftar, silakan masuk atau hubungi pengelola.", 409);
+    // Supabase Auth's existing profile trigger and UNIQUE institutional_id
+    // constraint are authoritative, including concurrent registrations. Public
+    // signup must not need owner SQL or enumerate profiles before authentication.
     stage = "SUPABASE_CLIENT_INITIALIZATION";
     const supabase = await createClient();
     stage = "SUPABASE_SIGNUP";

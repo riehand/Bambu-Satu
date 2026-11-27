@@ -1,0 +1,1767 @@
+{
+  "status": "STATIC_INVENTORY_NOT_HOSTED_STATE",
+  "projectRef": "bofoowyzlnfhwcstlmgp",
+  "notes": [
+    "CREATE OR REPLACE occurrences retained; not all entries are distinct objects.",
+    "Unqualified objects in migrations target public; require correct search_path.",
+    "Implicit PK/unique indexes without explicit names follow PostgreSQL naming; see SQL definitions.",
+    "Dynamic RLS/ACL loop includes public.users and 14 new public tables; see FINAL-REVIEW.md.",
+    "Inventory excludes two preserve-applied baselines."
+  ],
+  "reviewedFiles": [
+    {
+      "path": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "sha256": "6befc228490a50bcc3fb411905fa7c5e0790066f2118a6de94a22bfdb77d3823"
+    },
+    {
+      "path": "prisma/migrations/20261028000000_psychologist_profiles/migration.sql",
+      "sha256": "4234dfcb585836426079f21e2b1bb9af180bb9c85d7f60ffcbcc7bd7adf69010"
+    },
+    {
+      "path": "prisma/migrations/20261029000000_psychologist_availability/migration.sql",
+      "sha256": "4f65c7aeb4ab586e5ff29f7905caadfaec10da1b285ef62d775c287604494ccb"
+    },
+    {
+      "path": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "sha256": "ad37a1fa0e8d6a97ef1c35d8a67f9067a0b6438f7ab5279d86473d4c984f93f3"
+    },
+    {
+      "path": "prisma/migrations/20261120000000_psychologist_profiles_integrity/migration.sql",
+      "sha256": "cf2bc074ba494e022bfc26e22ee3806d4022fe6549e518bf770c459033f45ea4"
+    },
+    {
+      "path": "prisma/migrations/20261121000000_consultation_messages/migration.sql",
+      "sha256": "7e3245ed4c0f17b1c3f5691ee2333727d0a1d7ca79278b3f37cb3f876f80d3ce"
+    },
+    {
+      "path": "deployment/hosted/gateways.sql",
+      "sha256": "6b91b60318644ed46fdaaaecb9986bc9370a435fc4f91444839b2e0766156deb"
+    }
+  ],
+  "objects": [
+    {
+      "kind": "table",
+      "name": "\"academic_periods\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 24
+    },
+    {
+      "kind": "table",
+      "name": "\"questions\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 38
+    },
+    {
+      "kind": "table",
+      "name": "\"assessment_sessions\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 53
+    },
+    {
+      "kind": "table",
+      "name": "\"assessment_question_sets\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 71
+    },
+    {
+      "kind": "table",
+      "name": "\"assessment_answers\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 91
+    },
+    {
+      "kind": "table",
+      "name": "\"assessment_scores\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 103
+    },
+    {
+      "kind": "table",
+      "name": "\"reports\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 121
+    },
+    {
+      "kind": "enum",
+      "name": "\"AcademicPeriodStatus\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 6
+    },
+    {
+      "kind": "enum",
+      "name": "\"Instrument\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 9
+    },
+    {
+      "kind": "enum",
+      "name": "\"ScoringDimension\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 12
+    },
+    {
+      "kind": "enum",
+      "name": "\"AssessmentSessionStatus\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 15
+    },
+    {
+      "kind": "enum",
+      "name": "\"DassCategory\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 18
+    },
+    {
+      "kind": "enum",
+      "name": "\"ReportStatus\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 21
+    },
+    {
+      "kind": "function",
+      "name": "public.phase2_freeze_question_set",
+      "detail": "",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 202
+    },
+    {
+      "kind": "function",
+      "name": "public.phase2_freeze_question",
+      "detail": "",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 218
+    },
+    {
+      "kind": "function",
+      "name": "public.phase2_guard_answer",
+      "detail": "",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 232
+    },
+    {
+      "kind": "function",
+      "name": "public.phase2_guard_session",
+      "detail": "",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 250
+    },
+    {
+      "kind": "function",
+      "name": "public.phase2_freeze_score",
+      "detail": "",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 278
+    },
+    {
+      "kind": "index",
+      "name": "\"questions_question_set_id_instrument_question_number_key\"",
+      "detail": "\"questions\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 134
+    },
+    {
+      "kind": "index",
+      "name": "\"assessment_sessions_participant_id_academic_period_id_idx\"",
+      "detail": "\"assessment_sessions\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 137
+    },
+    {
+      "kind": "index",
+      "name": "\"assessment_question_sets_version_key\"",
+      "detail": "\"assessment_question_sets\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 140
+    },
+    {
+      "kind": "index",
+      "name": "\"assessment_answers_assessment_session_id_question_id_key\"",
+      "detail": "\"assessment_answers\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 143
+    },
+    {
+      "kind": "index",
+      "name": "\"assessment_scores_assessment_session_id_key\"",
+      "detail": "\"assessment_scores\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 146
+    },
+    {
+      "kind": "index",
+      "name": "\"reports_assessment_session_id_key\"",
+      "detail": "\"reports\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 149
+    },
+    {
+      "kind": "index",
+      "name": "academic_periods_one_active",
+      "detail": "academic_periods",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 175
+    },
+    {
+      "kind": "index",
+      "name": "assessment_sessions_one_in_progress",
+      "detail": "assessment_sessions",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 176
+    },
+    {
+      "kind": "index",
+      "name": "assessment_sessions_history",
+      "detail": "assessment_sessions",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 177
+    },
+    {
+      "kind": "trigger",
+      "name": "phase2_freeze_question_set",
+      "detail": "assessment_question_sets",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 216
+    },
+    {
+      "kind": "trigger",
+      "name": "phase2_freeze_question",
+      "detail": "questions",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 230
+    },
+    {
+      "kind": "trigger",
+      "name": "phase2_guard_answer",
+      "detail": "assessment_answers",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 248
+    },
+    {
+      "kind": "trigger",
+      "name": "phase2_guard_session",
+      "detail": "assessment_sessions",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 276
+    },
+    {
+      "kind": "trigger",
+      "name": "phase2_freeze_score",
+      "detail": "assessment_scores",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 282
+    },
+    {
+      "kind": "constraint",
+      "name": "\"academic_periods_pkey\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 34
+    },
+    {
+      "kind": "constraint",
+      "name": "\"questions_pkey\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 49
+    },
+    {
+      "kind": "constraint",
+      "name": "\"assessment_sessions_pkey\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 67
+    },
+    {
+      "kind": "constraint",
+      "name": "\"assessment_question_sets_pkey\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 87
+    },
+    {
+      "kind": "constraint",
+      "name": "\"assessment_answers_pkey\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 99
+    },
+    {
+      "kind": "constraint",
+      "name": "\"assessment_scores_pkey\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 117
+    },
+    {
+      "kind": "constraint",
+      "name": "\"reports_pkey\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 130
+    },
+    {
+      "kind": "constraint",
+      "name": "\"questions_question_set_id_fkey\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 152
+    },
+    {
+      "kind": "constraint",
+      "name": "\"assessment_sessions_question_set_id_fkey\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 155
+    },
+    {
+      "kind": "constraint",
+      "name": "\"assessment_sessions_participant_id_fkey\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 158
+    },
+    {
+      "kind": "constraint",
+      "name": "\"assessment_sessions_academic_period_id_fkey\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 161
+    },
+    {
+      "kind": "constraint",
+      "name": "\"assessment_answers_assessment_session_id_fkey\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 164
+    },
+    {
+      "kind": "constraint",
+      "name": "\"assessment_answers_question_id_fkey\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 167
+    },
+    {
+      "kind": "constraint",
+      "name": "\"assessment_scores_assessment_session_id_fkey\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 170
+    },
+    {
+      "kind": "constraint",
+      "name": "\"reports_assessment_session_id_fkey\"",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 173
+    },
+    {
+      "kind": "constraint",
+      "name": "academic_period_valid_range",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 178
+    },
+    {
+      "kind": "constraint",
+      "name": "assessment_session_state",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 179
+    },
+    {
+      "kind": "constraint",
+      "name": "question_valid_number_dimension",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 183
+    },
+    {
+      "kind": "constraint",
+      "name": "assessment_score_ranges",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 190
+    },
+    {
+      "kind": "constraint",
+      "name": "published_question_set_approval",
+      "source": "prisma/migrations/20261023010000_phase2_assessment/migration.sql",
+      "line": 195
+    },
+    {
+      "kind": "table",
+      "name": "public.psychologist_profiles",
+      "source": "prisma/migrations/20261028000000_psychologist_profiles/migration.sql",
+      "line": 3
+    },
+    {
+      "kind": "constraint",
+      "name": "psychologist_profiles_user_id_fkey",
+      "source": "prisma/migrations/20261028000000_psychologist_profiles/migration.sql",
+      "line": 16
+    },
+    {
+      "kind": "table",
+      "name": "public.psychologist_availability",
+      "source": "prisma/migrations/20261029000000_psychologist_availability/migration.sql",
+      "line": 8
+    },
+    {
+      "kind": "enum",
+      "name": "\"ConsultationSessionType\"",
+      "source": "prisma/migrations/20261029000000_psychologist_availability/migration.sql",
+      "line": 5
+    },
+    {
+      "kind": "enum",
+      "name": "\"PsychologistAvailabilityStatus\"",
+      "source": "prisma/migrations/20261029000000_psychologist_availability/migration.sql",
+      "line": 6
+    },
+    {
+      "kind": "index",
+      "name": "psychologist_availability_psychologist_date_session_key",
+      "detail": "public.psychologist_availability",
+      "source": "prisma/migrations/20261029000000_psychologist_availability/migration.sql",
+      "line": 21
+    },
+    {
+      "kind": "index",
+      "name": "psychologist_availability_date_status_idx",
+      "detail": "public.psychologist_availability",
+      "source": "prisma/migrations/20261029000000_psychologist_availability/migration.sql",
+      "line": 23
+    },
+    {
+      "kind": "constraint",
+      "name": "psychologist_availability_pkey",
+      "source": "prisma/migrations/20261029000000_psychologist_availability/migration.sql",
+      "line": 16
+    },
+    {
+      "kind": "constraint",
+      "name": "psychologist_availability_psychologist_id_fkey",
+      "source": "prisma/migrations/20261029000000_psychologist_availability/migration.sql",
+      "line": 17
+    },
+    {
+      "kind": "table",
+      "name": "public.appointments",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 21
+    },
+    {
+      "kind": "table",
+      "name": "public.consultation_sessions",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 62
+    },
+    {
+      "kind": "table",
+      "name": "public.consents",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 85
+    },
+    {
+      "kind": "table",
+      "name": "public.consent_audit_events",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 132
+    },
+    {
+      "kind": "enum",
+      "name": "\"AppointmentStatus\"",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 5
+    },
+    {
+      "kind": "enum",
+      "name": "\"ConsultationSessionStatus\"",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 6
+    },
+    {
+      "kind": "enum",
+      "name": "\"ConsultationEndedBy\"",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 7
+    },
+    {
+      "kind": "enum",
+      "name": "\"ConsultationEndReason\"",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 8
+    },
+    {
+      "kind": "enum",
+      "name": "\"ConsentType\"",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 9
+    },
+    {
+      "kind": "enum",
+      "name": "\"ConsentAuditAction\"",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 10
+    },
+    {
+      "kind": "enum",
+      "name": "\"ConsentAuditActorType\"",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 11
+    },
+    {
+      "kind": "function",
+      "name": "public.phase3_protect_consent_grant",
+      "detail": "",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 151
+    },
+    {
+      "kind": "function",
+      "name": "public.phase3_protect_consent_audit",
+      "detail": "",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 170
+    },
+    {
+      "kind": "index",
+      "name": "appointments_id_scope_key",
+      "detail": "public.appointments",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 55
+    },
+    {
+      "kind": "index",
+      "name": "appointments_one_active_per_slot_key",
+      "detail": "public.appointments",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 56
+    },
+    {
+      "kind": "index",
+      "name": "appointments_participant_status_start_idx",
+      "detail": "public.appointments",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 58
+    },
+    {
+      "kind": "index",
+      "name": "appointments_psychologist_status_start_idx",
+      "detail": "public.appointments",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 59
+    },
+    {
+      "kind": "index",
+      "name": "appointments_rescheduled_from_idx",
+      "detail": "public.appointments",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 60
+    },
+    {
+      "kind": "index",
+      "name": "consents_active_appointment_scope_key",
+      "detail": "public.consents",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 122
+    },
+    {
+      "kind": "index",
+      "name": "consents_active_standalone_scope_key",
+      "detail": "public.consents",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 125
+    },
+    {
+      "kind": "index",
+      "name": "consents_participant_granted_at_idx",
+      "detail": "public.consents",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 128
+    },
+    {
+      "kind": "index",
+      "name": "consents_target_report_type_idx",
+      "detail": "public.consents",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 129
+    },
+    {
+      "kind": "index",
+      "name": "consents_appointment_type_idx",
+      "detail": "public.consents",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 130
+    },
+    {
+      "kind": "index",
+      "name": "consent_audit_events_consent_time_idx",
+      "detail": "public.consent_audit_events",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 149
+    },
+    {
+      "kind": "trigger",
+      "name": "phase3_protect_consent_grant",
+      "detail": "public.consents",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 167
+    },
+    {
+      "kind": "trigger",
+      "name": "phase3_protect_consent_audit",
+      "detail": "public.consent_audit_events",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 175
+    },
+    {
+      "kind": "constraint",
+      "name": "assessment_sessions_id_participant_key",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 15
+    },
+    {
+      "kind": "constraint",
+      "name": "reports_id_assessment_session_key",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 17
+    },
+    {
+      "kind": "constraint",
+      "name": "psychologist_availability_id_psychologist_key",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 19
+    },
+    {
+      "kind": "constraint",
+      "name": "appointments_pkey",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 38
+    },
+    {
+      "kind": "constraint",
+      "name": "appointments_time_window_check",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 39
+    },
+    {
+      "kind": "constraint",
+      "name": "appointments_participant_fkey",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 42
+    },
+    {
+      "kind": "constraint",
+      "name": "appointments_psychologist_fkey",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 44
+    },
+    {
+      "kind": "constraint",
+      "name": "appointments_assessment_owner_fkey",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 46
+    },
+    {
+      "kind": "constraint",
+      "name": "appointments_report_session_fkey",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 48
+    },
+    {
+      "kind": "constraint",
+      "name": "appointments_availability_psychologist_fkey",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 50
+    },
+    {
+      "kind": "constraint",
+      "name": "appointments_rescheduled_from_fkey",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 52
+    },
+    {
+      "kind": "constraint",
+      "name": "consultation_sessions_pkey",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 76
+    },
+    {
+      "kind": "constraint",
+      "name": "consultation_sessions_appointment_key",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 77
+    },
+    {
+      "kind": "constraint",
+      "name": "consultation_sessions_appointment_fkey",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 78
+    },
+    {
+      "kind": "constraint",
+      "name": "consultation_sessions_time_window_check",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 80
+    },
+    {
+      "kind": "constraint",
+      "name": "consents_pkey",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 101
+    },
+    {
+      "kind": "constraint",
+      "name": "consents_type_appointment_check",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 102
+    },
+    {
+      "kind": "constraint",
+      "name": "consents_temporal_order_check",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 106
+    },
+    {
+      "kind": "constraint",
+      "name": "consents_participant_fkey",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 111
+    },
+    {
+      "kind": "constraint",
+      "name": "consents_target_fkey",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 113
+    },
+    {
+      "kind": "constraint",
+      "name": "consents_assessment_owner_fkey",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 115
+    },
+    {
+      "kind": "constraint",
+      "name": "consents_report_session_fkey",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 117
+    },
+    {
+      "kind": "constraint",
+      "name": "consents_appointment_scope_fkey",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 119
+    },
+    {
+      "kind": "constraint",
+      "name": "consent_audit_events_pkey",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 139
+    },
+    {
+      "kind": "constraint",
+      "name": "consent_audit_events_actor_check",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 140
+    },
+    {
+      "kind": "constraint",
+      "name": "consent_audit_events_consent_fkey",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 144
+    },
+    {
+      "kind": "constraint",
+      "name": "consent_audit_events_actor_fkey",
+      "source": "prisma/migrations/20261029000001_appointments_report_consent/migration.sql",
+      "line": 146
+    },
+    {
+      "kind": "constraint",
+      "name": "psychologist_profiles_pkey",
+      "source": "prisma/migrations/20261120000000_psychologist_profiles_integrity/migration.sql",
+      "line": 35
+    },
+    {
+      "kind": "table",
+      "name": "public.consultation_messages",
+      "source": "prisma/migrations/20261121000000_consultation_messages/migration.sql",
+      "line": 6
+    },
+    {
+      "kind": "function",
+      "name": "public.guard_consultation_message",
+      "detail": "",
+      "source": "prisma/migrations/20261121000000_consultation_messages/migration.sql",
+      "line": 22
+    },
+    {
+      "kind": "index",
+      "name": "consultation_messages_session_order_idx",
+      "detail": "public.consultation_messages",
+      "source": "prisma/migrations/20261121000000_consultation_messages/migration.sql",
+      "line": 20
+    },
+    {
+      "kind": "trigger",
+      "name": "consultation_message_before_insert",
+      "detail": "public.consultation_messages",
+      "source": "prisma/migrations/20261121000000_consultation_messages/migration.sql",
+      "line": 52
+    },
+    {
+      "kind": "trigger",
+      "name": "consultation_message_commit_guard",
+      "detail": "public.consultation_messages",
+      "source": "prisma/migrations/20261121000000_consultation_messages/migration.sql",
+      "line": 56
+    },
+    {
+      "kind": "constraint",
+      "name": "consultation_messages_session_fkey",
+      "source": "prisma/migrations/20261121000000_consultation_messages/migration.sql",
+      "line": 13
+    },
+    {
+      "kind": "constraint",
+      "name": "consultation_messages_sender_fkey",
+      "source": "prisma/migrations/20261121000000_consultation_messages/migration.sql",
+      "line": 15
+    },
+    {
+      "kind": "constraint",
+      "name": "consultation_messages_body_check",
+      "source": "prisma/migrations/20261121000000_consultation_messages/migration.sql",
+      "line": 17
+    },
+    {
+      "kind": "constraint",
+      "name": "consultation_messages_idempotency_key",
+      "source": "prisma/migrations/20261121000000_consultation_messages/migration.sql",
+      "line": 18
+    },
+    {
+      "kind": "schema",
+      "name": "wb_crypto",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 55
+    },
+    {
+      "kind": "schema",
+      "name": "wb_guard",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 64
+    },
+    {
+      "kind": "schema",
+      "name": "wb_pdf",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 648
+    },
+    {
+      "kind": "role",
+      "name": "website_runtime",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 15
+    },
+    {
+      "kind": "role",
+      "name": "wb_identity_guard",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 53
+    },
+    {
+      "kind": "role",
+      "name": "wb_operational_monitor",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 247
+    },
+    {
+      "kind": "role",
+      "name": "wb_score_gateway",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 285
+    },
+    {
+      "kind": "role",
+      "name": "wb_display_projection",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 383
+    },
+    {
+      "kind": "role",
+      "name": "wb_booking",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 434
+    },
+    {
+      "kind": "role",
+      "name": "wb_consent",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 436
+    },
+    {
+      "kind": "role",
+      "name": "wb_pdf_worker",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 641
+    },
+    {
+      "kind": "role",
+      "name": "wb_pdf_reader",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 642
+    },
+    {
+      "kind": "role",
+      "name": "wb_pdf_finalizer",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 644
+    },
+    {
+      "kind": "role",
+      "name": "wb_pdf_access",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 646
+    },
+    {
+      "kind": "table",
+      "name": "wb_guard.signing_key",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 68
+    },
+    {
+      "kind": "table",
+      "name": "wb_pdf.keys",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 653
+    },
+    {
+      "kind": "table",
+      "name": "wb_pdf.jobs",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 655
+    },
+    {
+      "kind": "table",
+      "name": "wb_pdf.artifacts",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 656
+    },
+    {
+      "kind": "table",
+      "name": "wb_pdf.tickets",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 657
+    },
+    {
+      "kind": "function",
+      "name": "wb_crypto.hmac",
+      "detail": "bytea,bytea,text",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 58
+    },
+    {
+      "kind": "function",
+      "name": "wb_crypto.gen_random_bytes",
+      "detail": "integer",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 60
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.subject",
+      "detail": "",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 73
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.actor_role",
+      "detail": "",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 105
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.own_profile",
+      "detail": "",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 107
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.purpose",
+      "detail": "",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 116
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.protect_runtime_mutation",
+      "detail": "",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 203
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.operational_counts",
+      "detail": "date_from date,date_to date",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 257
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.submit_assessment",
+      "detail": "session_id uuid,expected_revision integer",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 315
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.psychologist_display",
+      "detail": "psychologist_id uuid",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 394
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.assignment_display",
+      "detail": "appointment_id uuid",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 401
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.finalize_report",
+      "detail": "report_id uuid,object_key text",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 425
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.d_actor",
+      "detail": "",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 472
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.d_lock_pair",
+      "detail": "participant uuid,psychologist uuid",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 479
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.d_lock_appointment",
+      "detail": "target uuid",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 487
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.d_new_consent",
+      "detail": "participant uuid,assessment uuid,report uuid,psychologist uuid,appointment uuid,deadline timestamptz",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 503
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.d_expire",
+      "detail": "target uuid",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 516
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.grant_consent",
+      "detail": "report_id uuid,psychologist_id uuid,appointment_id uuid,affirmative boolean",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 547
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.expire_consents",
+      "detail": "appointment_id uuid",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 566
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.revoke_consent",
+      "detail": "consent_id uuid",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 571
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.report_access",
+      "detail": "report_id uuid",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 587
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.finalize_report",
+      "detail": "report_id uuid,object_key text",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 632
+    },
+    {
+      "kind": "function",
+      "name": "wb_pdf.render_data",
+      "detail": "target uuid",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 701
+    },
+    {
+      "kind": "function",
+      "name": "wb_pdf.enqueue",
+      "detail": "target uuid",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 704
+    },
+    {
+      "kind": "function",
+      "name": "wb_pdf.worker_input",
+      "detail": "job_id uuid",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 713
+    },
+    {
+      "kind": "function",
+      "name": "wb_pdf.authorize",
+      "detail": "target uuid,appointment_scope uuid DEFAULT NULL,record_access boolean DEFAULT false",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 725
+    },
+    {
+      "kind": "function",
+      "name": "wb_pdf.download_input",
+      "detail": "ticket_id uuid",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 752
+    },
+    {
+      "kind": "function",
+      "name": "wb_pdf.finalize",
+      "detail": "payload text,signature text",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 763
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.psychologist_directory",
+      "detail": "target uuid DEFAULT NULL,focus text DEFAULT NULL,lang text DEFAULT NULL,page_number integer DEFAULT 1,page_size integer DEFAULT 20",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 841
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.public_slots",
+      "detail": "target uuid,first_date date,last_date date",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 853
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.appointment_views",
+      "detail": "target uuid DEFAULT NULL",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 865
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.booking_report_ready",
+      "detail": "target uuid",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 910
+    },
+    {
+      "kind": "function",
+      "name": "wb_guard.book_appointment",
+      "detail": "psychologist_id uuid,assessment_id uuid,report_id uuid,slot_id uuid,affirmative boolean,note text DEFAULT NULL",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 921
+    },
+    {
+      "kind": "function",
+      "name": "wb_pdf.authorize",
+      "detail": "target uuid,appointment_scope uuid DEFAULT NULL,record_access boolean DEFAULT false",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 957
+    },
+    {
+      "kind": "policy",
+      "name": "wb_guard_own_identity",
+      "detail": "public.users",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 103
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_profile",
+      "detail": "public.users",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 128
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_profile_lock",
+      "detail": "public.users",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 131
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_period",
+      "detail": "public.academic_periods",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 133
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_period_lock",
+      "detail": "public.academic_periods",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 135
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_content",
+      "detail": "public.assessment_question_sets",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 138
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_questions",
+      "detail": "public.questions",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 140
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_assessment_read",
+      "detail": "public.assessment_sessions",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 143
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_assessment_insert",
+      "detail": "public.assessment_sessions",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 145
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_assessment_update",
+      "detail": "public.assessment_sessions",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 148
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_answers",
+      "detail": "public.assessment_answers",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 151
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_answer_insert",
+      "detail": "public.assessment_answers",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 153
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_answer_update",
+      "detail": "public.assessment_answers",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 155
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_score_read",
+      "detail": "public.assessment_scores",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 158
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_report_read",
+      "detail": "public.reports",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 163
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_report_insert",
+      "detail": "public.reports",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 166
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_psychologist_profile",
+      "detail": "public.psychologist_profiles",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 171
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_availability",
+      "detail": "public.psychologist_availability",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 174
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_appointments",
+      "detail": "public.appointments",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 178
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_consultation",
+      "detail": "public.consultation_sessions",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 181
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_consent",
+      "detail": "public.consents",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 183
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_consent_audit",
+      "detail": "public.consent_audit_events",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 186
+    },
+    {
+      "kind": "policy",
+      "name": "wb_runtime_chat_read",
+      "detail": "public.consultation_messages",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 188
+    },
+    {
+      "kind": "policy",
+      "name": "wb_monitor_users",
+      "detail": "public.users",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 254
+    },
+    {
+      "kind": "policy",
+      "name": "wb_monitor_assessments",
+      "detail": "public.assessment_sessions",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 255
+    },
+    {
+      "kind": "policy",
+      "name": "wb_monitor_appointments",
+      "detail": "public.appointments",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 256
+    },
+    {
+      "kind": "policy",
+      "name": "wb_score_users",
+      "detail": "public.users",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 294
+    },
+    {
+      "kind": "policy",
+      "name": "wb_score_user_lock",
+      "detail": "public.users",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 295
+    },
+    {
+      "kind": "policy",
+      "name": "wb_score_period",
+      "detail": "public.academic_periods",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 296
+    },
+    {
+      "kind": "policy",
+      "name": "wb_score_period_lock",
+      "detail": "public.academic_periods",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 297
+    },
+    {
+      "kind": "policy",
+      "name": "wb_score_sets",
+      "detail": "public.assessment_question_sets",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 298
+    },
+    {
+      "kind": "policy",
+      "name": "wb_score_questions",
+      "detail": "public.questions",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 299
+    },
+    {
+      "kind": "policy",
+      "name": "wb_score_sessions_read",
+      "detail": "public.assessment_sessions",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 300
+    },
+    {
+      "kind": "policy",
+      "name": "wb_score_sessions_write",
+      "detail": "public.assessment_sessions",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 301
+    },
+    {
+      "kind": "policy",
+      "name": "wb_score_answers",
+      "detail": "public.assessment_answers",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 302
+    },
+    {
+      "kind": "policy",
+      "name": "wb_score_results_read",
+      "detail": "public.assessment_scores",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 303
+    },
+    {
+      "kind": "policy",
+      "name": "wb_score_results_insert",
+      "detail": "public.assessment_scores",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 304
+    },
+    {
+      "kind": "policy",
+      "name": "wb_score_report_read",
+      "detail": "public.reports",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 305
+    },
+    {
+      "kind": "policy",
+      "name": "wb_score_report_insert",
+      "detail": "public.reports",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 306
+    },
+    {
+      "kind": "policy",
+      "name": "wb_score_answer_association_insert",
+      "detail": "public.assessment_answers",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 309
+    },
+    {
+      "kind": "policy",
+      "name": "wb_score_answer_association_update",
+      "detail": "public.assessment_answers",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 311
+    },
+    {
+      "kind": "policy",
+      "name": "wb_projection_assignment",
+      "detail": "public.appointments",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 389
+    },
+    {
+      "kind": "policy",
+      "name": "wb_projection_users",
+      "detail": "public.users",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 391
+    },
+    {
+      "kind": "policy",
+      "name": "wb_d_appointments",
+      "detail": "public.appointments",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 443
+    },
+    {
+      "kind": "policy",
+      "name": "wb_d_sessions",
+      "detail": "public.consultation_sessions",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 446
+    },
+    {
+      "kind": "policy",
+      "name": "wb_d_consents",
+      "detail": "public.consents",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 448
+    },
+    {
+      "kind": "policy",
+      "name": "wb_d_users_read",
+      "detail": "public.users",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 451
+    },
+    {
+      "kind": "policy",
+      "name": "wb_d_users_lock",
+      "detail": "public.users",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 455
+    },
+    {
+      "kind": "policy",
+      "name": "wb_d_assessments",
+      "detail": "public.assessment_sessions",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 459
+    },
+    {
+      "kind": "policy",
+      "name": "wb_d_scores",
+      "detail": "public.assessment_scores",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 460
+    },
+    {
+      "kind": "policy",
+      "name": "wb_d_reports",
+      "detail": "public.reports",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 461
+    },
+    {
+      "kind": "policy",
+      "name": "wb_d_slot",
+      "detail": "public.psychologist_availability",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 463
+    },
+    {
+      "kind": "policy",
+      "name": "wb_d_audit",
+      "detail": "public.consent_audit_events",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 468
+    },
+    {
+      "kind": "policy",
+      "name": "key_read",
+      "detail": "wb_pdf.keys",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 664
+    },
+    {
+      "kind": "policy",
+      "name": "job_access",
+      "detail": "wb_pdf.jobs",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 670
+    },
+    {
+      "kind": "policy",
+      "name": "job_reader",
+      "detail": "wb_pdf.jobs",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 671
+    },
+    {
+      "kind": "policy",
+      "name": "ticket_access",
+      "detail": "wb_pdf.tickets",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 672
+    },
+    {
+      "kind": "policy",
+      "name": "ticket_read",
+      "detail": "wb_pdf.tickets",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 673
+    },
+    {
+      "kind": "policy",
+      "name": "artifact_write",
+      "detail": "wb_pdf.artifacts",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 674
+    },
+    {
+      "kind": "policy",
+      "name": "artifact_read",
+      "detail": "wb_pdf.artifacts",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 675
+    },
+    {
+      "kind": "policy",
+      "name": "pdf_reports",
+      "detail": "public.reports",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 681
+    },
+    {
+      "kind": "policy",
+      "name": "pdf_sessions",
+      "detail": "public.assessment_sessions",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 682
+    },
+    {
+      "kind": "policy",
+      "name": "pdf_scores",
+      "detail": "public.assessment_scores",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 683
+    },
+    {
+      "kind": "policy",
+      "name": "pdf_finalize",
+      "detail": "public.reports",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 684
+    },
+    {
+      "kind": "policy",
+      "name": "pdf_users",
+      "detail": "public.users",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 685
+    },
+    {
+      "kind": "policy",
+      "name": "pdf_user_lock",
+      "detail": "public.users",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 686
+    },
+    {
+      "kind": "policy",
+      "name": "pdf_consents",
+      "detail": "public.consents",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 690
+    },
+    {
+      "kind": "policy",
+      "name": "pdf_consent_lock",
+      "detail": "public.consents",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 691
+    },
+    {
+      "kind": "policy",
+      "name": "pdf_appointments",
+      "detail": "public.appointments",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 692
+    },
+    {
+      "kind": "policy",
+      "name": "pdf_consultations",
+      "detail": "public.consultation_sessions",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 693
+    },
+    {
+      "kind": "policy",
+      "name": "pdf_audit",
+      "detail": "public.consent_audit_events",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 694
+    },
+    {
+      "kind": "policy",
+      "name": "sprint3_identity",
+      "detail": "public.users",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 827
+    },
+    {
+      "kind": "policy",
+      "name": "sprint3_profiles",
+      "detail": "public.psychologist_profiles",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 829
+    },
+    {
+      "kind": "policy",
+      "name": "sprint3_slots",
+      "detail": "public.psychologist_availability",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 830
+    },
+    {
+      "kind": "policy",
+      "name": "sprint3_sessions",
+      "detail": "public.consultation_sessions",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 833
+    },
+    {
+      "kind": "policy",
+      "name": "sprint3_assessments",
+      "detail": "public.assessment_sessions",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 834
+    },
+    {
+      "kind": "policy",
+      "name": "sprint3_scores",
+      "detail": "public.assessment_scores",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 835
+    },
+    {
+      "kind": "policy",
+      "name": "sprint3_reports",
+      "detail": "public.reports",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 836
+    },
+    {
+      "kind": "policy",
+      "name": "sprint3_artifacts",
+      "detail": "wb_pdf.artifacts",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 837
+    },
+    {
+      "kind": "policy",
+      "name": "sprint3_consents",
+      "detail": "public.consents",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 838
+    },
+    {
+      "kind": "trigger",
+      "name": "wb_guard_profile",
+      "detail": "public.users",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 234
+    },
+    {
+      "kind": "trigger",
+      "name": "wb_guard_answer",
+      "detail": "public.assessment_answers",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 236
+    },
+    {
+      "kind": "trigger",
+      "name": "wb_guard_session",
+      "detail": "public.assessment_sessions",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 238
+    },
+    {
+      "kind": "trigger",
+      "name": "wb_guard_availability",
+      "detail": "public.psychologist_availability",
+      "source": "deployment/hosted/gateways.sql",
+      "line": 240
+    }
+  ]
+}

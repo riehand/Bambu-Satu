@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --hostname localhost --port 3000",
+    "worker:build": "node scripts/build-hosted-worker.mjs",
+    "worker:start": "node build/hosted-worker/pdf-worker.cjs",
     "build": "next build",
     "build:vercel": "prisma generate && next build",
     "start": "next start",

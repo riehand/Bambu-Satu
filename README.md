@@ -44,3 +44,18 @@ For relevant future changes, use `npm test`, `npx tsc --noEmit`, `npm run lint`,
 Preserve all eight historical migration files and their checksums. Follow the migration guide on an explicitly approved development target; do not use `db push`, reset the shared database or rewrite applied migrations. Hosted migrations, permission changes and activation require separate authorization. Joint agreement is needed before changing shared objects or integrating Chatbot, not before starting independent Phase 3 UI/service work.
 
 Never commit `.env`, credentials, archives or owner-only operational evidence. Existing tracked operational files require the index-only cleanup described in the readiness review; `.gitignore` alone cannot remove them. Do not use blanket `git add .` for handover. No commit, push, restore, backup or hosted operation is performed by this review.
+
+## Hosted development (setup bersama satu kali)
+
+Gunakan satu aplikasi dan project Supabase yang disetujui. Developer: clone/pull,
+`npm ci`, isi `.env.local` secara privat dari `.env.example`, lalu `npm run dev`
+dan buka `http://localhost:3000`. Docker/GoTrue/launcher lokal bukan prasyarat.
+Jangan menyalin `.env` milik orang lain ke repository atau memakai role postgres.
+
+**Status integrasi:** registrasi memakai Supabase Auth + trigger constraint existing;
+fitur klinis masih menunggu [persetujuan paket database hosted](deployment/hosted/APPROVAL.md)
+dan endpoint signer/PDF hosted. Env hosted baru diaktifkan setelah setup selesai;
+placeholder bukan konfigurasi siap pakai. Chat/lifecycle hosted tetap nonaktif,
+termasuk pada Next development. Lingkungan sintetis lama hanya opsi pengujian.
+Vercel memakai source/runtime yang sama dengan SITE_URL sesuai origin preview;
+tidak ada migration/seed otomatis saat build.
