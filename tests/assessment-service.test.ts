@@ -7,12 +7,19 @@ const db = vi.hoisted(() => ({
   assessmentAnswer: { upsert: vi.fn() }, assessmentScore: { create: vi.fn() }, report: { create: vi.fn() },
 }));
 vi.mock("@/lib/prisma",()=>({prisma:db}));
+vi.mock("@/lib/dal/context", async importOriginal => ({
+  ...await importOriginal<typeof import("@/lib/dal/context")>(),
+  gatewayMode: vi.fn(() => false),
+  assertDatabaseActor: vi.fn(),
+}));
+import { assertDatabaseActor, DalError, gatewayMode } from "@/lib/dal/context";
 import { getActiveAcademicPeriod, getQuota, getSession, getQuestionnaire, getAssessmentHistory, startAssessmentSession, saveAnswers, submitAssessment } from "@/lib/assessment/service";
 const participantId = fixtureId(200), sessionId=fixtureId(300), periodId=fixtureId(400);
 const period = {id:periodId,name:"Synthetic semester",assessmentLimit:3,status:"ACTIVE"};
 function session() { return { id:sessionId,academicPeriodId:periodId,questionSetId:fixtureId(100),status:"IN_PROGRESS",revision:0,startedAt:new Date(),completedAt:null,answers:[],score:null,report:null }; }
 beforeEach(()=>{
   vi.resetAllMocks();
+  vi.mocked(gatewayMode).mockReturnValue(false);
   db.$transaction.mockImplementation(async fn=>fn(db)); db.$queryRaw.mockResolvedValue([{id:participantId}]);
   db.academicPeriod.findMany.mockResolvedValue([period]); db.assessmentQuestionSet.findMany.mockResolvedValue([syntheticQuestionSet()]);
   db.assessmentSession.count.mockResolvedValue(0); db.assessmentSession.findFirst.mockResolvedValue(null);
@@ -75,6 +82,14 @@ describe("answer persistence",()=>{
   it("never edits completed sessions",async()=>{ db.assessmentSession.findFirst.mockResolvedValue({...session(),status:"COMPLETED"}); await expect(saveAnswers(sessionId,participantId,input)).rejects.toMatchObject({code:"ASSESSMENT_ALREADY_COMPLETED"}); expect(db.assessmentAnswer.upsert).not.toHaveBeenCalled(); });
 });
 describe("atomic completion",()=>{
+  const completed = {
+    ...session(),
+    status: "COMPLETED",
+    completedAt: new Date("2026-10-23T10:00:00Z"),
+    score: { depressionScore: 0, depressionCategory: "NORMAL", anxietyScore: 0, anxietyCategory: "NORMAL", stressScore: 0, stressCategory: "NORMAL", wemwbsScore: 42 },
+    report: { id: fixtureId(500) },
+  };
+
   it("requires the revision reviewed by the participant",async()=>{
     await expect(submitAssessment(sessionId,participantId,{})).rejects.toMatchObject({code:"VALIDATION_ERROR"});
     expect(db.$transaction).not.toHaveBeenCalled();
@@ -96,11 +111,18 @@ describe("atomic completion",()=>{
     await expect(submitAssessment(sessionId,participantId,{expectedRevision:0})).rejects.toMatchObject({code:"RESOURCE_NOT_FOUND"});
     expect(db.assessmentScore.create).not.toHaveBeenCalled();
   });
-  it("rejects missing answers before scores or reports",async()=>{ db.assessmentSession.findFirst.mockResolvedValue(session()); await expect(submitAssessment(sessionId,participantId,{expectedRevision:0})).rejects.toMatchObject({code:"ASSESSMENT_INCOMPLETE"}); expect(db.assessmentScore.create).not.toHaveBeenCalled(); expect(db.report.create).not.toHaveBeenCalled(); });
+  it.each([1, 2, 23])("rejects missing answer %s before writing scores or reports", async question => {
+    const answers = syntheticQuestionSet().questions
+      .filter(item => item.id !== fixtureId(question))
+      .map(item => ({ questionId: item.id, answerValue: 1 }));
+    db.assessmentSession.findFirst.mockResolvedValue({ ...session(), answers });
+    await expect(submitAssessment(sessionId, participantId, { expectedRevision: 0 })).rejects.toMatchObject({ code: "ASSESSMENT_INCOMPLETE" });
+    expect(db.assessmentScore.create).not.toHaveBeenCalled();
+    expect(db.report.create).not.toHaveBeenCalled();
+  });
   it("calculates scores, creates pending metadata and completes in one transaction",async()=>{
     const answers=syntheticQuestionSet().questions.map(q=>({questionId:q.id,answerValue:q.instrument==="DASS21"?0:3}));
-    const result={...session(),status:"COMPLETED",completedAt:new Date("2026-10-23T10:00:00Z"),score:{depressionScore:0,depressionCategory:"NORMAL",anxietyScore:0,anxietyCategory:"NORMAL",stressScore:0,stressCategory:"NORMAL",wemwbsScore:42},report:{id:fixtureId(500)}};
-    db.assessmentSession.findFirst.mockResolvedValueOnce({...session(),answers}).mockResolvedValue(result);
+    db.assessmentSession.findFirst.mockResolvedValueOnce({...session(),answers}).mockResolvedValue(completed);
     const first=await submitAssessment(sessionId,participantId,{expectedRevision:0}); expect(first).toMatchObject({scores:{wemwbs:{score:42}},completedAt:"2026-10-23T10:00:00.000Z"});
     expect(db.report.create).toHaveBeenCalledWith({data:{assessmentSessionId:sessionId,status:"PENDING"}});
     expect(await submitAssessment(sessionId,participantId,{expectedRevision:0})).toEqual(first); expect(db.assessmentScore.create).toHaveBeenCalledTimes(1); expect(db.report.create).toHaveBeenCalledTimes(1);
@@ -108,6 +130,32 @@ describe("atomic completion",()=>{
   it("propagates report failure so the transaction rolls back",async()=>{
     db.assessmentSession.findFirst.mockResolvedValue({...session(),answers:syntheticQuestionSet().questions.map(q=>({questionId:q.id,answerValue:1}))}); db.report.create.mockRejectedValue(new Error("write failed"));
     await expect(submitAssessment(sessionId,participantId,{expectedRevision:0})).rejects.toThrow("write failed"); expect(db.assessmentSession.update).not.toHaveBeenCalled();
+  });
+
+  it.each(["score", "report", "completedAt"] as const)("rejects a completed result missing %s", async field => {
+    db.assessmentSession.findFirst.mockResolvedValue({ ...completed, [field]: null });
+    await expect(submitAssessment(sessionId, participantId, { expectedRevision: 0 })).rejects.toMatchObject({ code: "RESULT_UNAVAILABLE" });
+    expect(db.assessmentScore.create).not.toHaveBeenCalled();
+    expect(db.report.create).not.toHaveBeenCalled();
+  });
+
+  it("uses the restricted submit gateway and reads back the authorized result", async () => {
+    vi.mocked(gatewayMode).mockReturnValue(true);
+    db.assessmentSession.findFirst.mockResolvedValue(completed);
+    await expect(submitAssessment(sessionId, participantId, { expectedRevision: 4 })).resolves.toMatchObject({
+      assessmentSessionId: sessionId, reportId: completed.report.id, status: "COMPLETED",
+    });
+    expect(assertDatabaseActor).toHaveBeenCalledWith(participantId, "PARTICIPANT");
+    expect(db.$queryRaw).toHaveBeenNthCalledWith(2, ["SELECT wb_guard.submit_assessment(", "::uuid,", "::integer)"], sessionId, 4);
+    expect(db.assessmentScore.create).not.toHaveBeenCalled();
+    expect(db.report.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects a mismatched actor before any query in gateway mode", async () => {
+    vi.mocked(gatewayMode).mockReturnValue(true);
+    vi.mocked(assertDatabaseActor).mockImplementation(() => { throw new DalError("FORBIDDEN"); });
+    await expect(submitAssessment(sessionId, participantId, { expectedRevision: 0 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(db.$queryRaw).not.toHaveBeenCalled();
   });
 });
 

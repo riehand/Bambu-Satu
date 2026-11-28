@@ -1,11 +1,19 @@
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppointmentStatus, ConsultationSessionStatus } from "@prisma/client";
 const mocks = vi.hoisted(() => ({ profile: vi.fn(), appointment: vi.fn(), query: vi.fn(), list: vi.fn(), existing: vi.fn(), create: vi.fn(), committed: vi.fn(), transaction: vi.fn() }));
+const restricted = vi.hoisted(() => ({ assertActor: vi.fn(), transaction: vi.fn(), inTransaction: vi.fn() }));
+vi.mock("@/lib/dal/context", async importOriginal => ({
+  ...await importOriginal<typeof import("@/lib/dal/context")>(),
+  assertDatabaseActor: restricted.assertActor,
+  databaseTransaction: restricted.transaction,
+  inDatabaseTransaction: restricted.inTransaction,
+}));
 vi.mock("@/lib/prisma", () => {
   const db = { $queryRaw: mocks.query, user: { findFirst: mocks.profile }, appointment: { findFirst: mocks.appointment }, consultationMessage: { findFirst: mocks.committed, findMany: mocks.list, findUnique: mocks.existing, create: mocks.create } };
   return { prisma: { ...db, $transaction: (work: (tx: typeof db) => unknown) => { mocks.transaction(); return work(db); } } };
 });
 import { listChatMessages, sendChatMessage } from "@/lib/consultations/chat-service";
+import { runtimeChatRead, runtimeChatSend } from "@/lib/consultations/chat-runtime";
 import { chatCommand, chatQuery } from "@/lib/validations/chat";
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const p = { id: id(1), role: "PARTICIPANT" as const }, psy = { id: id(2), role: "PSYCHOLOGIST" as const };
@@ -26,6 +34,37 @@ beforeEach(() => {
   mocks.committed.mockResolvedValue({ id: message().id });
 });
 afterEach(() => vi.unstubAllEnvs());
+describe("restricted chat gateway", () => {
+  beforeEach(() => {
+    restricted.inTransaction.mockReturnValue(false);
+    restricted.transaction.mockImplementation(work => work({
+      $queryRaw: mocks.query,
+      appointment: { findUniqueOrThrow: async () => ({ scheduledEndAt: end }) },
+    }));
+  });
+
+  it.each([true, false])("only acknowledges a replay when the commit is confirmed (%s)", async confirmed => {
+    mocks.query.mockResolvedValueOnce([{ value: { ...message(), replayed: true } }]).mockResolvedValueOnce([{ ok: confirmed }]);
+    const sent = runtimeChatSend(p, row.id, command);
+    if (confirmed) await expect(sent).resolves.toMatchObject({ message: { id: message().id, senderRole: "PARTICIPANT" }, replayed: true });
+    else await expect(sent).rejects.toMatchObject({ code: "CHAT_SEND_FAILED" });
+    expect(restricted.assertActor).toHaveBeenCalledWith(p.id, p.role);
+    expect(restricted.transaction).toHaveBeenCalledTimes(2);
+  });
+
+  it("blocks acknowledgement inside a nested transaction", async () => {
+    restricted.inTransaction.mockReturnValue(true);
+    await expect(runtimeChatSend(p, row.id, command)).rejects.toMatchObject({ code: "CHAT_SEND_FAILED" });
+    expect(restricted.transaction).not.toHaveBeenCalled();
+  });
+
+  it("denies fetched messages when database time reaches the end of the consultation", async () => {
+    mocks.query.mockResolvedValueOnce([{ value: { items: [message()], nextCursor: null, latestCursor: message().id } }])
+      .mockResolvedValueOnce([{ now: end }]);
+    await expect(runtimeChatRead(p, row.id, { limit: 30 }, null)).rejects.toMatchObject({ code: "CHAT_CLOSED" });
+  });
+});
+
 it("never acknowledges a transaction resolved by Prisma without a committed row", async () => {
   mocks.committed.mockResolvedValue(null);
   await expect(sendChatMessage(p, row.id, command)).rejects.toMatchObject({ code: "CHAT_SEND_FAILED" });

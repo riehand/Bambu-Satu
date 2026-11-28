@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:browser": "node scripts/run-browser-tests.mjs",
     "auth:preflight": "node scripts/auth-preflight.mjs"
   },
@@ -35,6 +36,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "3.2.7",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "prisma": "^5.22.0",

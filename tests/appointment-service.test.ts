@@ -1,10 +1,17 @@
-import { beforeEach, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   queryRaw: vi.fn(), transaction: vi.fn(), latest: vi.fn(), userFindFirst: vi.fn(), slotUpdate: vi.fn(),
   appointmentCreate: vi.fn(), appointmentFindMany: vi.fn(), appointmentFindFirst: vi.fn(), sessionCreate: vi.fn(),
   consentCreate: vi.fn(), consentFindMany: vi.fn(), consentFindFirst: vi.fn(), consentUpdate: vi.fn(),
   auditCreate: vi.fn(), reportFindFirst: vi.fn(), reportFindUnique: vi.fn(), scoreFindUnique: vi.fn(),
+  assertActor: vi.fn(), restrictedTransaction: vi.fn(),
+}));
+
+vi.mock("@/lib/dal/context", async importOriginal => ({
+  ...await importOriginal<typeof import("@/lib/dal/context")>(),
+  databaseTransaction: mocks.restrictedTransaction,
+  assertDatabaseActor: mocks.assertActor,
 }));
 
 vi.mock("@/lib/prisma", () => {
@@ -24,6 +31,7 @@ vi.mock("@/lib/prisma", () => {
 });
 
 import { confirmReportDownloadAccess, createAppointment, getBookingContext, getReportArtifactForActor, grantAppointmentConsent, grantStandaloneConsent, revokeConsent } from "@/lib/appointments/service";
+import { runtimeBooking } from "@/lib/appointments/runtime";
 
 const participantId = "00000000-0000-4000-8000-000000000101";
 const psychologistId = "00000000-0000-4000-8000-000000000102";
@@ -55,6 +63,42 @@ beforeEach(() => {
     consultationSession: { create: mocks.sessionCreate }, consent: { create: mocks.consentCreate, findMany: mocks.consentFindMany, findFirst: mocks.consentFindFirst, update: mocks.consentUpdate },
     consentAuditEvent: { create: mocks.auditCreate }, report: { findFirst: mocks.reportFindFirst, findUnique: mocks.reportFindUnique }, assessmentScore: { findUnique: mocks.scoreFindUnique },
   }));
+});
+
+describe("restricted booking gateway", () => {
+  const booking = {
+    appointmentId, consentId, consultationSessionId: "synthetic-session", status: "CONFIRMED",
+    scheduledStartAt: "2030-01-01T02:00:00Z", scheduledEndAt: "2030-01-01T04:00:00Z",
+  };
+
+  beforeEach(() => {
+    mocks.restrictedTransaction.mockImplementation(work => work({ $queryRaw: mocks.queryRaw }));
+    mocks.queryRaw.mockResolvedValueOnce([{ value: booking }])
+      .mockResolvedValueOnce([{ value: { id: psychologistId, fullName: "Synthetic psychologist" } }]);
+  });
+
+  it("blocks a booking without consent before the restricted transaction", async () => {
+    await expect(runtimeBooking(participantId, request(false))).rejects.toMatchObject({ code: "REPORT_CONSENT_REQUIRED" });
+    expect(mocks.restrictedTransaction).not.toHaveBeenCalled();
+  });
+
+  it("binds the verified participant and resolves the returned start time to a Jakarta slot", async () => {
+    await expect(runtimeBooking(participantId, request())).resolves.toMatchObject({
+      appointmentId, consentId, date: "2030-01-01", sessionType: "MORNING",
+      scheduledStartAt: "2030-01-01T02:00:00.000Z", psychologist: { id: psychologistId },
+    });
+    expect(mocks.assertActor).toHaveBeenCalledWith(participantId, "PARTICIPANT");
+    expect(mocks.queryRaw.mock.calls[0].slice(1)).toEqual([
+      psychologistId, assessmentSessionId, reportId, availabilityId, true, request().participantNote,
+    ]);
+  });
+
+  it("rejects an out-of-grid start time returned by the booking gateway", async () => {
+    mocks.queryRaw.mockReset()
+      .mockResolvedValueOnce([{ value: { ...booking, scheduledStartAt: "2030-01-01T02:05:00Z" } }])
+      .mockResolvedValueOnce([{ value: { id: psychologistId, fullName: "Synthetic psychologist" } }]);
+    await expect(runtimeBooking(participantId, request())).rejects.toMatchObject({ code: "SLOT_ALREADY_BOOKED" });
+  });
 });
 
 it("creates immediate CONFIRMED booking, session, slot reservation, and appointment-linked consent", async () => {

@@ -37,7 +37,7 @@ beforeEach(() => {
 });
 afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
-it("reproduces the reported 503 when SITE_URL is missing, before validation or Prisma", async () => {
+it("returns 503 when SITE_URL is missing before initializing Supabase", async () => {
   vi.stubEnv("SITE_URL", "");
   expect(() => getSiteUrl()).toThrow("SITE_URL is missing");
   const response = await POST(new Request("http://localhost:3000/api/auth/register", {
@@ -76,30 +76,8 @@ it("identifies client initialization failure", async () => {
   expect(mocks.signUp).not.toHaveBeenCalled();
 });
 
-it("diagnoses the verified runtime credential failure safely", async () => {
-  mocks.findUnique.mockRejectedValue(Object.assign(new Error("password authentication failed; DO_NOT_LOG_CONNECTION_STRING"), { name: "PrismaClientInitializationError" }));
-  const response = await POST(request());
-  expect(response.status).toBe(503);
-  expect(diagnostic()).toMatchObject({ stage: "PRISMA_PREFLIGHT", prismaFailure: "initialization", prismaReason: "DATABASE_AUTHENTICATION_REJECTED" });
-  expect((await response.text()).includes("DO_NOT_LOG")).toBe(false);
-  expect(JSON.stringify(vi.mocked(console.error).mock.calls).includes("DO_NOT_LOG")).toBe(false);
-  expect(mocks.signUp).not.toHaveBeenCalled();
-});
-
-it.each(["P2021", "P2022"])("diagnoses Prisma schema mismatch %s", async code => {
-  mocks.findUnique.mockRejectedValue(Object.assign(new Error("missing table/column"), { name: "PrismaClientKnownRequestError", code }));
-  expect((await POST(request())).status).toBe(503);
-  expect(diagnostic()).toMatchObject({ stage: "PRISMA_PREFLIGHT", errorCode: code, prismaFailure: "query", prismaReason: "DATABASE_SCHEMA_MISMATCH" });
-});
-
-it("diagnoses Prisma client validation errors", async () => {
-  mocks.findUnique.mockRejectedValue(Object.assign(new Error("outdated client"), { name: "PrismaClientValidationError" }));
-  expect((await POST(request())).status).toBe(503);
-  expect(diagnostic()).toMatchObject({ stage: "PRISMA_PREFLIGHT", errorName: "PrismaClientValidationError" });
-});
-
 it.each([
-  ["weak_password", 422, 400], ["email_address_invalid", 400, 400],
+  ["weak_password", 422, 400], ["email_address_invalid", 400, 400], ["validation_failed", 422, 400],
   ["over_email_send_rate_limit", 429, 429], ["unexpected_failure", 500, 503],
 ])("maps Supabase %s safely", async (code, status, expected) => {
   mocks.signUp.mockResolvedValue({ data: {}, error: { name: "AuthApiError", code, status, message: "private details" } });
@@ -117,6 +95,7 @@ it("diagnoses thrown network failures during signup", async () => {
 
 it.each(["STUDENT", "LECTURER"])("reaches Supabase signup for %s after configuration is corrected", async userType => {
   expect((await POST(request({ ...input, userType, role: "SUPERADMIN" }))).status).toBe(202);
+  expect(mocks.findUnique).not.toHaveBeenCalled();
   expect(mocks.signUp.mock.calls[0][0]).toMatchObject({ options: {
     emailRedirectTo: "http://localhost:3000/auth/confirm",
     data: { full_name: input.fullName, institutional_id: input.institutionalId, phone_number: input.phoneNumber, user_type: userType },
@@ -134,11 +113,21 @@ it.each([
   expect(mocks.signUp).not.toHaveBeenCalled();
 });
 
-it("keeps institutional-ID conflicts separate from dependency failures", async () => {
-  mocks.findUnique.mockResolvedValue({ id: "existing-id" });
-  expect((await POST(request())).status).toBe(409);
-  expect(mocks.signUp).not.toHaveBeenCalled();
+it("keeps the pending response neutral when Supabase reports an existing email", async () => {
+  const pending = await POST(request());
+  mocks.signUp.mockResolvedValue({ data: {}, error: { code: "email_exists", status: 422 } });
+  const existing = await POST(request());
+  expect(existing.status).toBe(pending.status);
+  expect(await existing.json()).toEqual(await pending.json());
+  expect(mocks.findUnique).not.toHaveBeenCalled();
   expect(console.error).not.toHaveBeenCalled();
+});
+
+it("returns the processed message when signup produces a session", async () => {
+  mocks.signUp.mockResolvedValue({ data: { session: { access_token: "unused-synthetic-token" } }, error: null });
+  const response = await POST(request());
+  expect(response.status).toBe(202);
+  expect(await response.json()).toEqual({ success: true, message: "Pendaftaran diproses. Silakan masuk untuk melanjutkan." });
 });
 
 it("does not return success for an unexpected response shape", async () => {
